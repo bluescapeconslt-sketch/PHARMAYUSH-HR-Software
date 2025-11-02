@@ -9,8 +9,9 @@ const Onboarding: React.FC = () => {
   const [tasks, setTasks] = useState<(OnboardingTask & { employeeName: string })[]>([]);
   const [filter, setFilter] = useState<'All' | 'Pending' | 'Completed'>('Pending');
 
-  const fetchTasks = () => {
-    setTasks(getOnboardingTasks());
+  const fetchTasks = async () => {
+    const data = await getOnboardingTasks();
+    setTasks(data);
   };
 
   useEffect(() => {

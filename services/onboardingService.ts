@@ -7,7 +7,7 @@ import { getCurrentUser, hasPermission } from './authService.ts';
 
 const STORAGE_KEY = 'pharmayush_hr_onboarding_tasks';
 
-export const getOnboardingTasks = (): (OnboardingTask & { employeeName: string })[] => {
+export const getOnboardingTasks = async (): Promise<(OnboardingTask & { employeeName: string })[]> => {
   let allTasks: OnboardingTask[] = [];
   try {
     const storedData = localStorage.getItem(STORAGE_KEY);
@@ -29,8 +29,8 @@ export const getOnboardingTasks = (): (OnboardingTask & { employeeName: string }
   const tasksToProcess = hasPermission('manage:onboarding')
     ? allTasks
     : allTasks.filter(task => task.employeeId === currentUser.id);
-    
-  const employees = getEmployees();
+
+  const employees = await getEmployees();
   return tasksToProcess.map((task: OnboardingTask) => {
       const employee = employees.find(e => e.id === task.employeeId);
       return {

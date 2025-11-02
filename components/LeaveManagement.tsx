@@ -21,8 +21,8 @@ const LeaveManagement: React.FC = () => {
     fetchRequests();
   }, []);
   
-  const handleUpdateStatus = (id: number, status: 'Approved' | 'Rejected') => {
-    const updatedRequests = updateLeaveRequestStatus(id, status);
+  const handleUpdateStatus = async (id: number, status: 'Approved' | 'Rejected') => {
+    const updatedRequests = await updateLeaveRequestStatus(id, status);
     setRequests(updatedRequests);
   };
 

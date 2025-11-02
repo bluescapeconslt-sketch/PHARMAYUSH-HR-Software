@@ -59,12 +59,12 @@ export const addLeaveRequest = (newRequestData: Omit<LeaveRequest, 'id' | 'statu
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedRequests));
 };
 
-export const updateLeaveRequestStatus = (id: number, status: 'Approved' | 'Rejected'): LeaveRequest[] => {
+export const updateLeaveRequestStatus = async (id: number, status: 'Approved' | 'Rejected'): Promise<LeaveRequest[]> => {
   const allRequests: LeaveRequest[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
   const requestToUpdate = allRequests.find(req => req.id === id);
 
   if (requestToUpdate && status === 'Approved') {
-    const employees = getEmployees();
+    const employees = await getEmployees();
     const employee = employees.find(e => e.id === requestToUpdate.employeeId);
 
     if (employee) {

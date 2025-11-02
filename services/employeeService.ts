@@ -26,9 +26,9 @@ export interface EmployeeData {
   updated_at: string;
 }
 
-const transformToEmployee = (data: EmployeeData, departments: any[]): Employee => {
+const transformToEmployee = (data: EmployeeData, departments: any[], index: number): Employee => {
   const department = departments.find(d => d.id === data.department_id);
-  const idNum = parseInt(data.id.replace(/-/g, '').substring(0, 8), 16);
+  const idNum = index + 1;
 
   return {
     id: idNum,
@@ -67,7 +67,7 @@ export const getEmployees = async (): Promise<Employee[]> => {
     }
 
     const departments = departmentsRes.data || [];
-    return (employeesRes.data || []).map(emp => transformToEmployee(emp, departments));
+    return (employeesRes.data || []).map((emp, index) => transformToEmployee(emp, departments, index));
   } catch (error) {
     console.error('Failed to fetch employees:', error);
     return [];
