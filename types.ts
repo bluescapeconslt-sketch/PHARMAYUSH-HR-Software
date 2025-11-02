@@ -53,6 +53,11 @@ export interface Employee {
   avatar: string;
   status: 'Active' | 'On Leave';
   birthday: string; // YYYY-MM-DD
+  leaveBalance: {
+    vacation: number;
+    sick: number;
+    personal: number;
+  };
   roleId: number; // Links to Role interface
 }
 

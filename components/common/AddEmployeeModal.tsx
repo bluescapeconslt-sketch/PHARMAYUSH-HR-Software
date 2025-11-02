@@ -22,6 +22,12 @@ const initialFormState: Omit<Employee, 'id'> = {
   avatar: '',
   status: 'Active',
   birthday: '',
+  // FIX: Added the required 'leaveBalance' property with default zero values for new employees.
+  leaveBalance: {
+    vacation: 0,
+    sick: 0,
+    personal: 0,
+  },
   roleId: 0,
 };
 
