@@ -7,12 +7,12 @@ import { ICONS } from '../constants.tsx';
 import { getPolicies } from '../services/policyService.ts';
 
 const HrAssistant: React.FC = () => {
+  const chat = useRef(getHrAssistantChat());
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { sender: 'ai', text: "Hello! I'm Gem, your AI HR Assistant. How can I help you today?" }
+    { sender: 'ai', text: chat.current ? "Hello! I'm Gem, your AI HR Assistant. How can I help you today?" : "Gemini API key is not configured. AI features are not available." }
   ]);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const chat = useRef(getHrAssistantChat());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -22,24 +22,22 @@ const HrAssistant: React.FC = () => {
   useEffect(scrollToBottom, [messages]);
 
   const handleSendMessage = async () => {
-    if (!userInput.trim()) return;
+    if (!userInput.trim() || !chat.current) return;
 
     const currentInput = userInput.trim();
     const userMessage: ChatMessage = { sender: 'user', text: currentInput };
     setMessages(prev => [...prev, userMessage]);
     setUserInput('');
     setIsLoading(true);
-    
+
     let finalPrompt = currentInput;
     const lowerCaseInput = currentInput.toLowerCase();
 
-    // Check for policy-related keywords to provide context to the AI
     const policyKeywords = ['policy', 'policies', 'rule', 'guideline', 'bylaw', 'conduct', 'pto', 'leave', 'time off', 'vacation', 'sick'];
     if (policyKeywords.some(keyword => lowerCaseInput.includes(keyword))) {
         const policies = getPolicies();
-        
+
         if (policies.length > 0) {
-            // We have policies, so let's use them as context for the AI.
             const policiesContext = policies.map(p => `
                 --- POLICY START ---
                 Title: ${p.title}
@@ -62,7 +60,6 @@ const HrAssistant: React.FC = () => {
             `;
         }
     }
-
 
     try {
       const response = await chat.current.sendMessage({ message: finalPrompt });
