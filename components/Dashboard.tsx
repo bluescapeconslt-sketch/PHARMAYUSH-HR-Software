@@ -95,33 +95,36 @@ const TodaysMeetings: React.FC = () => {
     const [meetings, setMeetings] = useState<EnrichedMeeting[]>([]);
 
     useEffect(() => {
-        const allMeetings = getMeetings();
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
-        const todayDay = today.getDay(); // 0 for Sunday, 1 for Monday, etc.
+        const fetchMeetings = async () => {
+            const allMeetings = await getMeetings();
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            const todayDay = today.getDay();
 
-        const todaysMeetings = allMeetings.filter(m => {
-            const meetingDate = new Date(m.date + "T00:00:00");
-            
-            if (m.recurrence === 'None') {
-                return m.date === todayStr;
-            }
-            if (meetingDate > today) {
-                return false; // Recurring meeting hasn't started yet
-            }
-            if (m.recurrence === 'Daily') {
-                return true;
-            }
-            if (m.recurrence === 'Weekly') {
-                return meetingDate.getDay() === todayDay;
-            }
-            if (m.recurrence === 'Monthly') {
-                return meetingDate.getDate() === today.getDate();
-            }
-            return false;
-        }).sort((a,b) => a.time.localeCompare(b.time));
+            const todaysMeetings = allMeetings.filter(m => {
+                const meetingDate = new Date(m.date + "T00:00:00");
 
-        setMeetings(todaysMeetings);
+                if (m.recurrence === 'None') {
+                    return m.date === todayStr;
+                }
+                if (meetingDate > today) {
+                    return false;
+                }
+                if (m.recurrence === 'Daily') {
+                    return true;
+                }
+                if (m.recurrence === 'Weekly') {
+                    return meetingDate.getDay() === todayDay;
+                }
+                if (m.recurrence === 'Monthly') {
+                    return meetingDate.getDate() === today.getDate();
+                }
+                return false;
+            }).sort((a,b) => a.time.localeCompare(b.time));
+
+            setMeetings(todaysMeetings);
+        };
+        fetchMeetings();
     }, []);
 
     if (meetings.length === 0) {

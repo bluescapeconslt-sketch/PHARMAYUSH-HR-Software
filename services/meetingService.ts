@@ -8,7 +8,7 @@ export interface EnrichedMeeting extends Meeting {
     departmentName: string;
 }
 
-export const getMeetings = (): EnrichedMeeting[] => {
+export const getMeetings = async (): Promise<EnrichedMeeting[]> => {
   let meetings: Meeting[] = [];
   try {
     const storedData = localStorage.getItem(STORAGE_KEY);
@@ -22,10 +22,10 @@ export const getMeetings = (): EnrichedMeeting[] => {
     console.error("Failed to parse meetings from localStorage", error);
     meetings = [];
   }
-  
-  const departments = getDepartments();
+
+  const departments = await getDepartments();
   return meetings.map(meeting => {
-      const department = departments.find(d => d.id === meeting.departmentId);
+      const department = departments.find(d => d.id === meeting.departmentId.toString());
       return {
           ...meeting,
           departmentName: department ? department.name : 'Unknown Department',
@@ -33,7 +33,7 @@ export const getMeetings = (): EnrichedMeeting[] => {
   }).sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
 };
 
-export const addMeeting = (newMeetingData: Omit<Meeting, 'id'>): EnrichedMeeting[] => {
+export const addMeeting = async (newMeetingData: Omit<Meeting, 'id'>): Promise<EnrichedMeeting[]> => {
   const meetings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as Meeting[];
   const newMeeting: Meeting = {
     ...newMeetingData,
@@ -41,21 +41,21 @@ export const addMeeting = (newMeetingData: Omit<Meeting, 'id'>): EnrichedMeeting
   };
   const updatedMeetings = [...meetings, newMeeting];
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedMeetings));
-  return getMeetings(); // Return enriched data
+  return await getMeetings();
 };
 
-export const updateMeeting = (updatedMeeting: Meeting): EnrichedMeeting[] => {
+export const updateMeeting = async (updatedMeeting: Meeting): Promise<EnrichedMeeting[]> => {
   let meetings: Meeting[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
   meetings = meetings.map(m =>
     m.id === updatedMeeting.id ? updatedMeeting : m
   );
   localStorage.setItem(STORAGE_KEY, JSON.stringify(meetings));
-  return getMeetings();
+  return await getMeetings();
 };
 
-export const deleteMeeting = (id: number): EnrichedMeeting[] => {
+export const deleteMeeting = async (id: number): Promise<EnrichedMeeting[]> => {
     let meetings: Meeting[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     meetings = meetings.filter(m => m.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(meetings));
-    return getMeetings();
+    return await getMeetings();
 };

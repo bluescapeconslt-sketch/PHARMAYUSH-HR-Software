@@ -9,8 +9,9 @@ const MeetingScheduler: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
 
-    const fetchMeetings = () => {
-        setMeetings(getMeetings());
+    const fetchMeetings = async () => {
+        const data = await getMeetings();
+        setMeetings(data);
     };
 
     useEffect(() => {
