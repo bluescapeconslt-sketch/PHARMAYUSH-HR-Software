@@ -22,6 +22,29 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #64748b;
       }
+
+      /* Animation for Pharmayush Buddy */
+      @keyframes float {
+        0% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+        100% {
+          transform: translateY(0px);
+        }
+      }
+
+      .buddy-avatar {
+        animation: float 4s ease-in-out infinite;
+        cursor: pointer;
+        transition: transform 0.2s ease-in-out;
+      }
+
+      .buddy-avatar:hover {
+        transform: scale(1.05);
+      }
     </style>
   <script type="importmap">
 {

@@ -3,10 +3,90 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Card from './common/Card.tsx';
 import { getEmployees } from '../services/employeeService.ts';
 import { getLeaveRequests } from '../services/leaveService.ts';
+import { getHealthTip } from '../services/geminiService.ts';
+import { getBuddySettings } from '../services/buddyService.ts';
 import { Employee, LeaveRequest } from '../types.ts';
 import BirthdayNotification from './common/BirthdayNotification.tsx';
 import DailyMotivation from './common/DailyMotivation.tsx';
 import NoticeBoard from './common/NoticeBoard.tsx';
+
+const HEALTH_TIP_KEY = 'pharmayush_hr_health_tip';
+interface StoredTip {
+    tip: string;
+    date: string;
+}
+
+const PharmayushBuddy: React.FC = () => {
+    // FIX: Corrected a syntax error where the useState call was split across two lines.
+    const [tip, setTip] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [buddyImage, setBuddyImage] = useState('');
+
+    const fetchTip = async (forceNew = false) => {
+        setIsLoading(true);
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (!forceNew) {
+            try {
+                const storedData = localStorage.getItem(HEALTH_TIP_KEY);
+                if (storedData) {
+                    const { tip: storedTip, date: storedDate }: StoredTip = JSON.parse(storedData);
+                    if (storedDate === today) {
+                        setTip(storedTip);
+                        setIsLoading(false);
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to parse stored health tip", error);
+            }
+        }
+
+        try {
+            const newTip = await getHealthTip();
+            setTip(newTip);
+            localStorage.setItem(HEALTH_TIP_KEY, JSON.stringify({ tip: newTip, date: today }));
+        } catch (error) {
+            console.error("Failed to fetch health tip", error);
+            setTip("Remember to stay hydrated throughout the day!");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchTip(false);
+        const settings = getBuddySettings();
+        setBuddyImage(settings.avatarImage);
+    }, []);
+
+    return (
+        <Card title="Pharmayush Buddy's Wellness Tip">
+            <div className="flex flex-col items-center gap-4 text-center">
+                <img 
+                    src={buddyImage} 
+                    alt="Pharmayush Buddy" 
+                    className="h-32 w-32 object-contain buddy-avatar"
+                    onClick={() => fetchTip(true)}
+                    title="Click me for a new tip!"
+                />
+                <div className="flex-grow min-h-[60px]">
+                    {isLoading ? (
+                        <div className="space-y-2 pt-2">
+                           <div className="h-4 bg-slate-200 rounded w-full animate-pulse"></div>
+                           <div className="h-4 bg-slate-200 rounded w-3/4 animate-pulse mx-auto"></div>
+                       </div>
+                    ) : (
+                        <p className="text-gray-700 text-base italic">"{tip}"</p>
+                    )}
+                </div>
+                <p className="mt-2 text-xs text-gray-500">
+                    {isLoading ? 'Thinking of a good tip...' : 'Click the buddy for another wellness tip!'}
+                </p>
+            </div>
+        </Card>
+    );
+};
 
 const Dashboard: React.FC = () => {
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -44,9 +124,12 @@ const Dashboard: React.FC = () => {
 
     return (
         <div>
-            <Card className="mb-6 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50">
-                <DailyMotivation />
-            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <Card className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50">
+                    <DailyMotivation />
+                </Card>
+                <PharmayushBuddy />
+            </div>
 
             <div className="mb-6">
                 <NoticeBoard />

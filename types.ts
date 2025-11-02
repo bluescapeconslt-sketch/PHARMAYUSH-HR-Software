@@ -89,6 +89,10 @@ export interface CompanySettings {
   companyLogo: string;
 }
 
+export interface BuddySettings {
+  avatarImage: string;
+}
+
 export interface Policy {
   id: number;
   title: string;

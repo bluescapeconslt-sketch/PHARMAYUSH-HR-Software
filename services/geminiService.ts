@@ -148,3 +148,22 @@ export const getMotivationalQuote = async (): Promise<string> => {
         return `"Believe you can and you're halfway there." - Theodore Roosevelt`;
     }
 };
+
+export const getHealthTip = async (): Promise<string> => {
+    const prompt = `Generate a short, practical health and wellness tip suitable for a professional workplace. The tip should be aimed at reducing stress and be easy to implement during a workday. Keep it concise and encouraging.`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                temperature: 0.8,
+            }
+        });
+        return response.text;
+    } catch (error) {
+        console.error("Error generating health tip:", error);
+        // Provide a fallback tip in case of API error
+        return `Remember to take short breaks to stretch and rest your eyes. A 5-minute break every hour can make a big difference!`;
+    }
+};
