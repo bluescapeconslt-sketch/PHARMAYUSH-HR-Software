@@ -8,8 +8,11 @@ const OrganizationChart: React.FC = () => {
     const [hierarchy, setHierarchy] = useState<HierarchyNode[]>([]);
 
     useEffect(() => {
-        const tree = buildHierarchy();
-        setHierarchy(tree);
+        const fetchHierarchy = async () => {
+            const tree = await buildHierarchy();
+            setHierarchy(tree);
+        };
+        fetchHierarchy();
     }, []);
 
     return (

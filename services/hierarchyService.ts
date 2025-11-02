@@ -43,8 +43,8 @@ const findParent = (child: HierarchyNode, nodes: HierarchyNode[]): HierarchyNode
 };
 
 
-export const buildHierarchy = (): HierarchyNode[] => {
-    const employees = getEmployees();
+export const buildHierarchy = async (): Promise<HierarchyNode[]> => {
+    const employees = await getEmployees();
 
     // 1. Create a map of nodes by ID for easy lookup and add a 'children' array
     const nodes: Record<number, HierarchyNode> = {};
