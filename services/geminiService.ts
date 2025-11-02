@@ -2,8 +2,7 @@ import { GoogleGenAI, Chat } from "@google/genai";
 import { ReviewTone, LetterType } from '../types.ts';
 import { getSettings } from "./settingsService.ts";
 
-// FIX: Removed 'as string' for API key
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 export const generatePerformanceReview = async (
     employeeName: string,
