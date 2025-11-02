@@ -1,4 +1,4 @@
-import { Permission } from '../types.ts';
+import { Permission, Role } from '../types.ts';
 import { supabase } from './supabaseClient.ts';
 
 export interface RoleData {
@@ -9,7 +9,15 @@ export interface RoleData {
   created_at: string;
 }
 
-export const getRoles = async (): Promise<RoleData[]> => {
+const transformToRole = (data: RoleData, index: number): Role => {
+  return {
+    id: index + 1,
+    name: data.name,
+    permissions: data.permissions
+  };
+};
+
+export const getRoles = async (): Promise<Role[]> => {
   try {
     const { data, error } = await supabase
       .from('roles')
@@ -21,7 +29,7 @@ export const getRoles = async (): Promise<RoleData[]> => {
       return [];
     }
 
-    return data || [];
+    return (data || []).map((role, index) => transformToRole(role, index));
   } catch (error) {
     console.error('Failed to fetch roles:', error);
     return [];

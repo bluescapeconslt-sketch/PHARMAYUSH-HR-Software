@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient.ts';
+import { Department } from '../types.ts';
 
 export interface DepartmentData {
   id: string;
@@ -9,7 +10,14 @@ export interface DepartmentData {
   updated_at: string;
 }
 
-export const getDepartments = async (): Promise<DepartmentData[]> => {
+const transformToDepartment = (data: DepartmentData, index: number): Department => {
+  return {
+    id: index + 1,
+    name: data.name
+  };
+};
+
+export const getDepartments = async (): Promise<Department[]> => {
   try {
     const { data, error } = await supabase
       .from('departments')
@@ -21,7 +29,7 @@ export const getDepartments = async (): Promise<DepartmentData[]> => {
       return [];
     }
 
-    return data || [];
+    return (data || []).map((dept, index) => transformToDepartment(dept, index));
   } catch (error) {
     console.error('Failed to fetch departments:', error);
     return [];
