@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient.ts';
+import { Employee, Position } from '../types.ts';
 
 export interface EmployeeData {
   id: string;
@@ -25,19 +26,48 @@ export interface EmployeeData {
   updated_at: string;
 }
 
-export const getEmployees = async (): Promise<EmployeeData[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('employees')
-      .select('*')
-      .order('created_at', { ascending: false });
+const transformToEmployee = (data: EmployeeData, departments: any[]): Employee => {
+  const department = departments.find(d => d.id === data.department_id);
+  const idNum = parseInt(data.id.replace(/-/g, '').substring(0, 8), 16);
 
-    if (error) {
-      console.error('Error fetching employees:', error);
+  return {
+    id: idNum,
+    name: `${data.first_name} ${data.last_name}`,
+    position: 'Employee' as Position,
+    jobTitle: data.job_title || 'Employee',
+    department: department?.name || 'Unknown',
+    email: data.email,
+    password: data.password,
+    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.first_name)}+${encodeURIComponent(data.last_name)}&background=4f46e5&color=fff`,
+    status: data.employment_status === 'active' ? 'Active' : 'On Leave',
+    birthday: data.date_of_birth || '2000-01-01',
+    leaveBalance: {
+      vacation: 20,
+      sick: 10,
+      personal: 5
+    },
+    roleId: data.role_id ? parseInt(data.role_id.replace(/-/g, '').substring(0, 8), 16) : 1
+  };
+};
+
+export const getEmployees = async (): Promise<Employee[]> => {
+  try {
+    const [employeesRes, departmentsRes] = await Promise.all([
+      supabase.from('employees').select('*').order('created_at', { ascending: false }),
+      supabase.from('departments').select('*')
+    ]);
+
+    if (employeesRes.error) {
+      console.error('Error fetching employees:', employeesRes.error);
       return [];
     }
 
-    return data || [];
+    if (departmentsRes.error) {
+      console.error('Error fetching departments:', departmentsRes.error);
+    }
+
+    const departments = departmentsRes.data || [];
+    return (employeesRes.data || []).map(emp => transformToEmployee(emp, departments));
   } catch (error) {
     console.error('Failed to fetch employees:', error);
     return [];
