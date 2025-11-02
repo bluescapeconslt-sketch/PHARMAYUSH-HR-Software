@@ -40,10 +40,10 @@ const UserManagement: React.FC = () => {
         setIsEditModalOpen(true);
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if(window.confirm('Are you sure you want to delete this user? This action is permanent.')) {
-            deleteEmployee(id);
-            fetchData();
+            await deleteEmployee(id);
+            await fetchData();
         }
     };
     
