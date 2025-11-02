@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 // FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
@@ -10,8 +9,6 @@ import { Employee, LeaveRequest } from '../types.ts';
 import BirthdayNotification from './common/BirthdayNotification.tsx';
 import DailyMotivation from './common/DailyMotivation.tsx';
 import NoticeBoard from './common/NoticeBoard.tsx';
-import { hasPermission } from '../services/authService.ts';
-import { getMeetings, EnrichedMeeting } from '../services/meetingService.ts';
 
 const HEALTH_TIP_KEY = 'pharmayush_hr_health_tip';
 interface StoredTip {
@@ -91,87 +88,19 @@ const PharmayushBuddy: React.FC = () => {
     );
 };
 
-const TodaysMeetings: React.FC = () => {
-    const [meetings, setMeetings] = useState<EnrichedMeeting[]>([]);
-
-    useEffect(() => {
-        const allMeetings = getMeetings();
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
-        const todayDay = today.getDay(); // 0 for Sunday, 1 for Monday, etc.
-
-        const todaysMeetings = allMeetings.filter(m => {
-            const meetingDate = new Date(m.date + "T00:00:00");
-            
-            if (m.recurrence === 'None') {
-                return m.date === todayStr;
-            }
-            if (meetingDate > today) {
-                return false; // Recurring meeting hasn't started yet
-            }
-            if (m.recurrence === 'Daily') {
-                return true;
-            }
-            if (m.recurrence === 'Weekly') {
-                return meetingDate.getDay() === todayDay;
-            }
-            if (m.recurrence === 'Monthly') {
-                return meetingDate.getDate() === today.getDate();
-            }
-            return false;
-        }).sort((a,b) => a.time.localeCompare(b.time));
-
-        setMeetings(todaysMeetings);
-    }, []);
-
-    if (meetings.length === 0) {
-        return (
-            <Card title="Today's Meetings">
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-green-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <p className="text-gray-500 text-sm">No meetings scheduled. Enjoy the focus time!</p>
-                </div>
-            </Card>
-        );
-    }
-
-    return (
-        <Card title="Today's Meetings">
-            <div className="space-y-3 max-h-48 overflow-y-auto">
-                {meetings.map(m => (
-                    <div key={m.id} className="flex items-center gap-3 p-2 rounded-md bg-gray-50">
-                        <div className="font-semibold text-indigo-600">{m.time}</div>
-                        <div>
-                            <p className="text-sm font-medium text-gray-800">{m.title}</p>
-                            <p className="text-xs text-gray-500">{m.departmentName}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </Card>
-    )
-}
-
 const Dashboard: React.FC = () => {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-    const canViewAllEmployees = useMemo(() => hasPermission('view:employees'), []);
 
     useEffect(() => {
-        if (canViewAllEmployees) {
-            setEmployees(getEmployees());
-        }
+        setEmployees(getEmployees());
         setLeaveRequests(getLeaveRequests());
-    }, [canViewAllEmployees]);
+    }, []);
 
     const pendingRequests = useMemo(() => leaveRequests.filter(r => r.status === 'Pending'), [leaveRequests]);
-    
-    // These memos will be based on the full employee list for managers, or an empty list for employees.
-    // This is efficient and avoids fetching unnecessary data.
     const activeEmployees = useMemo(() => employees.filter(e => e.status === 'Active'), [employees]);
     const onLeaveEmployeesCount = useMemo(() => employees.filter(e => e.status === 'On Leave').length, [employees]);
+
     const upcomingBirthdays = useMemo(() => {
         const today = new Date();
         const inAWeek = new Date();
@@ -193,9 +122,6 @@ const Dashboard: React.FC = () => {
         });
     }, [employees]);
 
-    const requestsCardTitle = canViewAllEmployees ? 'Pending Leave Requests' : 'My Pending Requests';
-    const recentRequestsCardTitle = canViewAllEmployees ? 'Recent Pending Leave Requests' : 'My Recent Pending Requests';
-
     return (
         <div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -205,44 +131,31 @@ const Dashboard: React.FC = () => {
                 <PharmayushBuddy />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                <div className="lg:col-span-2">
-                    <NoticeBoard />
-                </div>
-                 <div className="lg:col-span-1">
-                    <TodaysMeetings />
-                </div>
+            <div className="mb-6">
+                <NoticeBoard />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                {canViewAllEmployees && (
-                    <>
-                        <Card title="Total Employees">
-                            <p className="text-4xl font-bold text-gray-800">{employees.length}</p>
-                            <p className="text-sm text-gray-500">{activeEmployees.length} Active</p>
-                        </Card>
-                    </>
-                )}
-                <Card title={requestsCardTitle}>
+                <Card title="Total Employees">
+                    <p className="text-4xl font-bold text-gray-800">{employees.length}</p>
+                    <p className="text-sm text-gray-500">{activeEmployees.length} Active</p>
+                </Card>
+                <Card title="Pending Leave Requests">
                     <p className="text-4xl font-bold text-indigo-600">{pendingRequests.length}</p>
                     <p className="text-sm text-gray-500">Awaiting approval</p>
                 </Card>
-                {canViewAllEmployees && (
-                    <>
-                        <Card title="Employees on Leave">
-                            <p className="text-4xl font-bold text-gray-800">{onLeaveEmployeesCount}</p>
-                            <p className="text-sm text-gray-500">Currently on leave</p>
-                        </Card>
-                        <Card title="Upcoming Birthdays">
-                            <p className="text-4xl font-bold text-gray-800">{upcomingBirthdays.length}</p>
-                            <p className="text-sm text-gray-500">In the next 7 days</p>
-                        </Card>
-                    </>
-                )}
+                <Card title="Employees on Leave">
+                    <p className="text-4xl font-bold text-gray-800">{onLeaveEmployeesCount}</p>
+                    <p className="text-sm text-gray-500">Currently on leave</p>
+                </Card>
+                <Card title="Upcoming Birthdays">
+                    <p className="text-4xl font-bold text-gray-800">{upcomingBirthdays.length}</p>
+                    <p className="text-sm text-gray-500">In the next 7 days</p>
+                </Card>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card title={recentRequestsCardTitle} className={canViewAllEmployees ? "lg:col-span-2" : "lg:col-span-3"}>
+                <Card title="Recent Pending Leave Requests" className="lg:col-span-2">
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
@@ -275,11 +188,9 @@ const Dashboard: React.FC = () => {
                     </div>
                 </Card>
 
-                {canViewAllEmployees && (
-                    <Card title="Birthdays This Week">
-                        <BirthdayNotification employees={upcomingBirthdays} />
-                    </Card>
-                )}
+                <Card title="Birthdays This Week">
+                    <BirthdayNotification employees={upcomingBirthdays} />
+                </Card>
             </div>
         </div>
     );

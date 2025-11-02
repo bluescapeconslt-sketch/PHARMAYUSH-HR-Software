@@ -1,5 +1,3 @@
-// FIX: Removed self-imports of 'Employee' and 'Position' which caused declaration conflicts.
-
 export type Permission =
   // Employee Permissions
   | 'view:employees'
@@ -17,8 +15,6 @@ export type Permission =
   | 'manage:notices'
   // Department Permissions
   | 'manage:departments'
-  // Meeting Permissions
-  | 'manage:meetings'
   // AI Tools Permissions
   | 'use:performance-review'
   | 'use:job-description'
@@ -37,15 +33,12 @@ export interface Role {
 
 export interface Department {
     id: number;
-    name:string;
+    name: string;
 }
-
-export type Position = 'Intern' | 'Employee' | 'Dept. Head' | 'Manager' | 'CEO';
 
 export interface Employee {
   id: number;
   name: string;
-  position: Position;
   jobTitle: string; // Renamed from 'role'
   department: string;
   email: string; // Used as login ID
@@ -53,16 +46,7 @@ export interface Employee {
   avatar: string;
   status: 'Active' | 'On Leave';
   birthday: string; // YYYY-MM-DD
-  leaveBalance: {
-    vacation: number;
-    sick: number;
-    personal: number;
-  };
   roleId: number; // Links to Role interface
-}
-
-export interface HierarchyNode extends Employee {
-  children: HierarchyNode[];
 }
 
 export interface LeaveRequest {
@@ -70,13 +54,11 @@ export interface LeaveRequest {
   employeeId: number;
   employeeName: string;
   employeeAvatar: string;
-  leaveType: 'Vacation' | 'Sick Leave' | 'Personal' | 'Unpaid' | 'Short Leave';
+  leaveType: 'Vacation' | 'Sick Leave' | 'Personal' | 'Unpaid';
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   reason: string;
   status: 'Pending' | 'Approved' | 'Rejected';
-  startTime?: string; // HH:MM for short leaves
-  endTime?: string;   // HH:MM for short leaves
 }
 
 export enum ReviewTone {
@@ -125,13 +107,4 @@ export interface Notice {
     authorName: string;
     date: string; // YYYY-MM-DD
     color: 'yellow' | 'blue' | 'green' | 'pink' | 'purple';
-}
-
-export interface Meeting {
-  id: number;
-  title: string;
-  departmentId: number;
-  date: string; // YYYY-MM-DD (Start date for recurring meetings)
-  time: string; // HH:MM
-  recurrence: 'None' | 'Daily' | 'Weekly' | 'Monthly';
 }

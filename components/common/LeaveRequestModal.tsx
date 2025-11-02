@@ -19,8 +19,6 @@ const initialFormState: Omit<LeaveRequest, 'id' | 'status'> = {
   startDate: '',
   endDate: '',
   reason: '',
-  startTime: '09:00',
-  endTime: '',
 };
 
 const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, onSubmitted }) => {
@@ -30,12 +28,6 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
 
   const currentUser = getCurrentUser();
   const canManage = hasPermission('manage:leaves');
-  const isShortLeave = formData.leaveType === 'Short Leave';
-
-  const timeSlots = Array.from({ length: 9 }, (_, i) => {
-    const hour = (i + 9).toString().padStart(2, '0');
-    return `${hour}:00`;
-  }); // 09:00 to 17:00
 
   useEffect(() => {
     if (isOpen) {
@@ -43,8 +35,10 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
         setEmployees(fetchedEmployees);
 
         if (currentUser && !canManage) {
+            // If user is not a manager, auto-select them and disable the dropdown
             setFormData(prev => ({ ...prev, employeeId: currentUser.id }));
         } else if (fetchedEmployees.length > 0) {
+            // Default for managers
             setFormData(prev => ({ ...prev, employeeId: fetchedEmployees[0].id }));
         }
     }
@@ -52,16 +46,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
-    setFormData(prev => {
-        const newState = { ...prev, [name]: value };
-        // If leave type changes, reset time fields
-        if (name === 'leaveType') {
-            newState.startTime = '09:00';
-            newState.endTime = '';
-        }
-        return newState;
-    });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
   
   const handleClose = () => {
@@ -73,17 +58,11 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.employeeId || !formData.startDate || !formData.reason) {
+    if (!formData.employeeId || !formData.startDate || !formData.endDate || !formData.reason) {
       setError('Please fill out all required fields.');
       return;
     }
-
-    if (!isShortLeave && !formData.endDate) {
-        setError('End date is required for this leave type.');
-        return;
-    }
-
-    if (!isShortLeave && new Date(formData.startDate) > new Date(formData.endDate)) {
+    if (new Date(formData.startDate) > new Date(formData.endDate)) {
         setError('Start date cannot be after end date.');
         return;
     }
@@ -95,26 +74,12 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
         return;
     }
 
-    let payload: Omit<LeaveRequest, 'id' | 'status'> = {
+    const payload = {
       ...formData,
       employeeId: selectedEmployee.id,
       employeeName: selectedEmployee.name,
       employeeAvatar: selectedEmployee.avatar,
     };
-
-    if (isShortLeave) {
-        const startHour = parseInt(payload.startTime!.split(':')[0], 10);
-        const endHour = (startHour + 1).toString().padStart(2, '0');
-        payload = {
-            ...payload,
-            endDate: payload.startDate,
-            endTime: `${endHour}:00`
-        };
-    } else {
-        payload.startTime = undefined;
-        payload.endTime = undefined;
-    }
-
 
     addLeaveRequest(payload);
     onSubmitted();
@@ -137,6 +102,16 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
                 {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
             </select>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Start Date</label>
+                <input type="date" id="startDate" name="startDate" value={formData.startDate} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+            </div>
+            <div>
+                <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">End Date</label>
+                <input type="date" id="endDate" name="endDate" value={formData.endDate} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+            </div>
+        </div>
         <div>
             <label htmlFor="leaveType" className="block text-sm font-medium text-gray-700">Leave Type</label>
             <select id="leaveType" name="leaveType" value={formData.leaveType} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
@@ -144,29 +119,8 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
                 <option>Sick Leave</option>
                 <option>Personal</option>
                 <option>Unpaid</option>
-                <option>Short Leave</option>
             </select>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">{isShortLeave ? 'Date' : 'Start Date'}</label>
-                <input type="date" id="startDate" name="startDate" value={formData.startDate} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
-            </div>
-            {isShortLeave ? (
-                <div>
-                    <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">Time (1 hr)</label>
-                    <select id="startTime" name="startTime" value={formData.startTime} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-                        {timeSlots.map(time => <option key={time} value={time}>{time}</option>)}
-                    </select>
-                </div>
-            ) : (
-                <div>
-                    <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">End Date</label>
-                    <input type="date" id="endDate" name="endDate" value={formData.endDate} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
-                </div>
-            )}
-        </div>
-        
         <div>
             <label htmlFor="reason" className="block text-sm font-medium text-gray-700">Reason</label>
             <textarea id="reason" name="reason" rows={3} value={formData.reason} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="Please provide a brief reason for your leave."/>

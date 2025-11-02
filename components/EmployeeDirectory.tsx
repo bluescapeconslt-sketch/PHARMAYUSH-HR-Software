@@ -3,21 +3,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 // FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
 import { getEmployees } from '../services/employeeService.ts';
-import { Employee, Position } from '../types.ts';
+import { Employee } from '../types.ts';
 import AddEmployeeModal from './common/AddEmployeeModal.tsx';
 import EditEmployeeModal from './common/EditEmployeeModal.tsx';
 import EmployeeDetailModal from './common/EmployeeDetailModal.tsx';
-
-const getPositionBadgeColor = (position: Position) => {
-    switch (position) {
-        case 'CEO': return 'bg-yellow-100 text-yellow-800';
-        case 'Manager': return 'bg-green-100 text-green-800';
-        case 'Dept. Head': return 'bg-purple-100 text-purple-800';
-        case 'Employee': return 'bg-blue-100 text-blue-800';
-        case 'Intern': return 'bg-gray-100 text-gray-800';
-        default: return 'bg-gray-100 text-gray-800';
-    }
-};
 
 const EmployeeDirectory: React.FC = () => {
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -38,7 +27,6 @@ const EmployeeDirectory: React.FC = () => {
     const filteredEmployees = useMemo(() => {
         return employees.filter(employee =>
             employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
             // FIX: The 'role' property on the Employee type was renamed to 'jobTitle'.
             employee.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
             employee.department.toLowerCase().includes(searchTerm.toLowerCase())
@@ -89,11 +77,6 @@ const EmployeeDirectory: React.FC = () => {
                         <div key={employee.id} className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center text-center border hover:shadow-lg transition-shadow">
                             <img src={employee.avatar} alt={employee.name} className="h-24 w-24 rounded-full object-cover mb-3" />
                             <h4 className="text-lg font-semibold text-gray-900">{employee.name}</h4>
-                             <div className="my-1">
-                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPositionBadgeColor(employee.position)}`}>
-                                    {employee.position}
-                                </span>
-                            </div>
                             {/* FIX: The 'role' property on the Employee type was renamed to 'jobTitle'. */}
                             <p className="text-sm text-gray-600">{employee.jobTitle}</p>
                             <p className="text-xs text-gray-500">{employee.department}</p>
