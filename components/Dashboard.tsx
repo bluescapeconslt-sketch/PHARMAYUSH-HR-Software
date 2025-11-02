@@ -66,13 +66,15 @@ const PharmayushBuddy: React.FC = () => {
     return (
         <Card title="Pharmayush Buddy's Wellness Tip">
             <div className="flex flex-col items-center gap-4 text-center">
-                <img 
-                    src={buddyImage} 
-                    alt="Pharmayush Buddy" 
-                    className="h-32 w-32 object-contain buddy-avatar"
-                    onClick={() => fetchTip(true)}
-                    title="Click me for a new tip!"
-                />
+                {buddyImage && (
+                    <img
+                        src={buddyImage}
+                        alt="Pharmayush Buddy"
+                        className="h-32 w-32 object-contain buddy-avatar"
+                        onClick={() => fetchTip(true)}
+                        title="Click me for a new tip!"
+                    />
+                )}
                 <div className="flex-grow min-h-[60px]">
                     {isLoading ? (
                         <div className="space-y-2 pt-2">
@@ -163,10 +165,14 @@ const Dashboard: React.FC = () => {
     const canViewAllEmployees = useMemo(() => hasPermission('view:employees'), []);
 
     useEffect(() => {
-        if (canViewAllEmployees) {
-            setEmployees(getEmployees());
-        }
-        setLeaveRequests(getLeaveRequests());
+        const fetchData = async () => {
+            if (canViewAllEmployees) {
+                const employeeData = await getEmployees();
+                setEmployees(employeeData as any);
+            }
+            setLeaveRequests(getLeaveRequests());
+        };
+        fetchData();
     }, [canViewAllEmployees]);
 
     const pendingRequests = useMemo(() => leaveRequests.filter(r => r.status === 'Pending'), [leaveRequests]);

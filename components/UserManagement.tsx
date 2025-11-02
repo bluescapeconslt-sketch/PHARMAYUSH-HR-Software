@@ -14,9 +14,11 @@ const UserManagement: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-    const fetchData = () => {
-        setEmployees(getEmployees());
-        setRoles(getRoles());
+    const fetchData = async () => {
+        const employeesData = await getEmployees();
+        const rolesData = await getRoles();
+        setEmployees(employeesData as any);
+        setRoles(rolesData as any);
     };
 
     useEffect(() => {

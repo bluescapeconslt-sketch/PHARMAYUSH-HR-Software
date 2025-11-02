@@ -27,8 +27,9 @@ const EmployeeDirectory: React.FC = () => {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-    const fetchEmployees = () => {
-        setEmployees(getEmployees());
+    const fetchEmployees = async () => {
+        const data = await getEmployees();
+        setEmployees(data as any);
     };
 
     useEffect(() => {
