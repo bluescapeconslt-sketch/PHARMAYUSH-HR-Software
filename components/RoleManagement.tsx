@@ -118,7 +118,8 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, onSave, role }) 
             return;
         }
         
-        const roleData = { name, permissions: Array.from(permissions) };
+        // FIX: Explicitly type `roleData` to match the `addRole` function's expected parameter type, resolving a TypeScript inference issue.
+        const roleData: Omit<Role, 'id'> = { name, permissions: Array.from(permissions) };
 
         if (role) {
             updateRole({ ...role, ...roleData });

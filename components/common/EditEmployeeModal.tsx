@@ -3,7 +3,8 @@ import Modal from './Modal.tsx';
 import { updateEmployee } from '../../services/employeeService.ts';
 import { getRoles } from '../../services/roleService.ts';
 import { getDepartments } from '../../services/departmentService.ts';
-import { Employee, Role, Department } from '../../types.ts';
+import { Employee, Role, Department, Position } from '../../types.ts';
+import { POSITIONS } from '../../constants.tsx';
 
 interface EditEmployeeModalProps {
   isOpen: boolean;
@@ -36,6 +37,22 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
     setFormData(prev => prev ? { ...prev, [name]: finalValue } : null);
   };
   
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!formData) return;
+    if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        if (!file.type.startsWith('image/')) {
+            setError('Please select a valid image file.');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setFormData(prev => prev ? { ...prev, avatar: reader.result as string } : null);
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
   const handleClose = () => {
     setFormData(null);
     setError('');
@@ -50,7 +67,7 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
       return;
     }
 
-    if (!formData.name || !formData.jobTitle || !formData.email || !formData.password || !formData.birthday || !formData.roleId || !formData.department) {
+    if (!formData.name || !formData.position || !formData.jobTitle || !formData.email || !formData.password || !formData.birthday || !formData.roleId || !formData.department) {
       setError('Please fill out all required fields.');
       return;
     }
@@ -66,6 +83,26 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Edit Employee Details">
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+            <img 
+                src={formData.avatar || 'https://i.pravatar.cc/96?u=placeholder'} 
+                alt="Avatar Preview" 
+                className="h-24 w-24 rounded-full object-cover border-2 border-white shadow" 
+            />
+            <div>
+                <label htmlFor="avatar-upload-edit" className="cursor-pointer text-sm font-medium text-indigo-600 bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">
+                    Change Picture
+                </label>
+                <input 
+                    id="avatar-upload-edit" 
+                    name="avatar-upload-edit" 
+                    type="file" 
+                    className="sr-only" 
+                    accept="image/*" 
+                    onChange={handleAvatarChange} 
+                />
+            </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name</label>
@@ -81,10 +118,18 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
             <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div>
+                <label htmlFor="position" className="block text-sm font-medium text-gray-700">Position</label>
+                <select id="position" name="position" value={formData.position} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                    {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                </select>
+            </div>
             <div>
                 <label htmlFor="jobTitle" className="block text-sm font-medium text-gray-700">Job Title</label>
                 <input type="text" id="jobTitle" name="jobTitle" value={formData.jobTitle} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
             </div>
+        </div>
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label htmlFor="department" className="block text-sm font-medium text-gray-700">Department</label>
                 <select id="department" name="department" value={formData.department} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
@@ -92,8 +137,6 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
                     {departments.map(dept => <option key={dept.id} value={dept.name}>{dept.name}</option>)}
                 </select>
             </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label htmlFor="roleId" className="block text-sm font-medium text-gray-700">Role</label>
                 <select id="roleId" name="roleId" value={formData.roleId} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
@@ -101,6 +144,8 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
                     {roles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}
                 </select>
             </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <div>
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700">Status</label>
                 <select id="status" name="status" value={formData.status} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
@@ -108,14 +153,10 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
                     <option>On Leave</option>
                 </select>
             </div>
-        </div>
-        <div>
-            <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">Birthday</label>
-            <input type="date" id="birthday" name="birthday" value={formData.birthday} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
-        </div>
-        <div>
-            <label htmlFor="avatar" className="block text-sm font-medium text-gray-700">Avatar URL</label>
-            <input type="text" id="avatar" name="avatar" value={formData.avatar} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md"/>
+            <div>
+                <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">Birthday</label>
+                <input type="date" id="birthday" name="birthday" value={formData.birthday} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+            </div>
         </div>
         
         {error && <p className="text-sm text-red-600">{error}</p>}

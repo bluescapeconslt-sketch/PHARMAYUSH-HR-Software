@@ -14,6 +14,7 @@ interface SidebarProps {
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: ICONS.dashboard, permission: null },
   { id: 'employees', label: 'Employees', icon: ICONS.employees, permission: 'view:employees' },
+  { id: 'org-chart', label: 'Org Chart', icon: ICONS.orgChart, permission: 'view:employees' },
   { id: 'leaves', label: 'Leave', icon: ICONS.leaves, permission: 'view:leaves' },
   { id: 'onboarding', label: 'Onboarding', icon: ICONS.onboarding, permission: 'view:onboarding' },
   { id: 'policies', label: 'Policies', icon: ICONS.policies, permission: 'view:policies' },
@@ -27,6 +28,7 @@ const navItems = [
   { id: 'admin-tools', label: 'Administration', isHeader: true, permission: 'manage:users' }, // Header for admin section
   { id: 'manage-notices', label: 'Manage Notices', icon: ICONS.notices, permission: 'manage:notices' },
   { id: 'manage-departments', label: 'Manage Departments', icon: ICONS.departments, permission: 'manage:departments' },
+  { id: 'meetings', label: 'Schedule Meetings', icon: ICONS.meetings, permission: 'manage:meetings' },
   { id: 'user-management', label: 'User Management', icon: ICONS.userManagement, permission: 'manage:users' },
   { id: 'role-management', label: 'Role Management', icon: ICONS.roleManagement, permission: 'manage:roles' },
   { id: 'settings', label: 'Settings', icon: ICONS.settings, permission: 'manage:settings' },

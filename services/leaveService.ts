@@ -2,22 +2,36 @@
 // FIX: Add file extension to import paths
 import { LeaveRequest } from '../types.ts';
 import { LEAVE_REQUESTS as initialData } from '../constants.tsx';
+import { getCurrentUser, hasPermission } from './authService.ts';
 
 const STORAGE_KEY = 'pharmayush_hr_leave_requests';
 
 export const getLeaveRequests = (): LeaveRequest[] => {
+  let allRequests: LeaveRequest[] = [];
   try {
     const storedData = localStorage.getItem(STORAGE_KEY);
     if (!storedData) {
       // Seed initial data if nothing is in localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
-      return initialData;
+      allRequests = initialData;
+    } else {
+        allRequests = JSON.parse(storedData);
     }
-    return JSON.parse(storedData);
   } catch (error) {
     console.error("Failed to parse leave requests from localStorage", error);
-    return initialData;
+    allRequests = [];
   }
+
+  const currentUser = getCurrentUser();
+  if (!currentUser) return [];
+
+  // Users with 'manage:leaves' permission (e.g., HR Manager, Admin) see all requests.
+  if (hasPermission('manage:leaves')) {
+    return allRequests;
+  }
+  
+  // Regular employees only see their own requests.
+  return allRequests.filter(req => req.employeeId === currentUser.id);
 };
 
 export const addLeaveRequest = (newRequestData: Omit<LeaveRequest, 'id' | 'status'>): LeaveRequest[] => {

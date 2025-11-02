@@ -100,7 +100,12 @@ const LeaveManagement: React.FC = () => {
                           </div>
                       </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{req.startDate} to {req.endDate}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {req.leaveType === 'Short Leave' && req.startTime
+                      ? `${req.startDate} @ ${req.startTime}`
+                      : `${req.startDate} to ${req.endDate}`
+                    }
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{req.leaveType}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(req.status)}`}>

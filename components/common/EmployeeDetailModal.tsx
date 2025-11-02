@@ -2,13 +2,24 @@
 import React from 'react';
 // FIX: Add file extension to import paths
 import Modal from './Modal.tsx';
-import { Employee } from '../../types.ts';
+import { Employee, Position } from '../../types.ts';
 
 interface EmployeeDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   employee: Employee | null;
 }
+
+const getPositionBadgeColor = (position: Position) => {
+    switch (position) {
+        case 'CEO': return 'bg-yellow-100 text-yellow-800';
+        case 'Manager': return 'bg-green-100 text-green-800';
+        case 'Dept. Head': return 'bg-purple-100 text-purple-800';
+        case 'Employee': return 'bg-blue-100 text-blue-800';
+        case 'Intern': return 'bg-gray-100 text-gray-800';
+        default: return 'bg-gray-100 text-gray-800';
+    }
+};
 
 const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClose, employee }) => {
   if (!employee) return null;
@@ -19,8 +30,13 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
         <img src={employee.avatar} alt={employee.name} className="h-24 w-24 rounded-full object-cover" />
         <div className="flex-1 text-center sm:text-left">
           <h3 className="text-2xl font-bold text-gray-900">{employee.name}</h3>
+          <div className="mt-1">
+            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPositionBadgeColor(employee.position)}`}>
+                {employee.position}
+            </span>
+          </div>
           {/* FIX: The 'role' property on the Employee type was renamed to 'jobTitle'. */}
-          <p className="text-md text-gray-600">{employee.jobTitle}</p>
+          <p className="text-md text-gray-600 mt-2">{employee.jobTitle}</p>
           <p className="text-sm text-gray-500">{employee.department}</p>
         </div>
       </div>
