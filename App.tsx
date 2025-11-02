@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar.tsx';
 import Header from './components/Header.tsx';
@@ -17,6 +16,8 @@ import UserManagement from './components/UserManagement.tsx';
 import RoleManagement from './components/RoleManagement.tsx';
 import ManageNotices from './components/ManageNotices.tsx';
 import ManageDepartments from './components/ManageDepartments.tsx';
+import MeetingScheduler from './components/MeetingScheduler.tsx';
+import OrganizationChart from './components/OrganizationChart.tsx';
 // FIX: Import AuthenticatedUser to correctly type the user state.
 import { getCurrentUser, logout, AuthenticatedUser } from './services/authService.ts';
 
@@ -50,6 +51,8 @@ const App: React.FC = () => {
                 return <Dashboard />;
             case 'employees':
                 return <EmployeeDirectory />;
+            case 'org-chart':
+                return <OrganizationChart />;
             case 'leaves':
                 return <LeaveManagement />;
             case 'onboarding':
@@ -74,6 +77,8 @@ const App: React.FC = () => {
                 return <ManageNotices />;
             case 'manage-departments':
                 return <ManageDepartments />;
+            case 'meetings':
+                return <MeetingScheduler />;
             default:
                 return <Dashboard />;
         }
