@@ -121,7 +121,12 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
                     {leaveHistory.length > 0 ? leaveHistory.map(req => (
                         <tr key={req.id}>
                             <td className="px-4 py-2 whitespace-nowrap text-sm">{req.leaveType}</td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{req.startDate} to {req.endDate}</td>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                {req.leaveType === 'Short Leave' && req.startTime && req.endTime
+                                    ? `${req.startDate} (${req.startTime} - ${req.endTime})`
+                                    : `${req.startDate} to ${req.endDate}`
+                                }
+                            </td>
                             <td className="px-4 py-2 whitespace-nowrap">
                                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(req.status)}`}>
                                     {req.status}

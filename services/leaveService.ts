@@ -67,37 +67,38 @@ export const updateLeaveRequestStatus = (id: number, status: 'Approved' | 'Rejec
     const employee = employees.find(e => e.id === requestToUpdate.employeeId);
 
     if (employee) {
-        // Calculate leave duration in days (inclusive)
-        const startDate = new Date(requestToUpdate.startDate);
-        const endDate = new Date(requestToUpdate.endDate);
-        const duration = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 24)) + 1;
-
         const newBalance = { ...employee.leaveBalance };
         let balanceUpdated = false;
 
-        switch (requestToUpdate.leaveType) {
-            case 'Short Leave':
-                if (newBalance.short >= duration) {
-                    newBalance.short -= duration;
-                    balanceUpdated = true;
-                }
-                break;
-            case 'Sick Leave':
-                if (newBalance.sick >= duration) {
-                    newBalance.sick -= duration;
-                    balanceUpdated = true;
-                }
-                break;
-            case 'Personal':
-                if (newBalance.personal >= duration) {
-                    newBalance.personal -= duration;
-                    balanceUpdated = true;
-                }
-                break;
-            // 'Unpaid' and 'Hourly Leave' do not affect balances
-            default:
-                balanceUpdated = true; // Still allow approval without balance change
-                break;
+        if (requestToUpdate.leaveType === 'Short Leave') {
+            if (newBalance.short >= 0.125) {
+                newBalance.short -= 0.125;
+                balanceUpdated = true;
+            }
+        } else {
+            // Calculate leave duration in days (inclusive) for full-day leaves
+            const startDate = new Date(requestToUpdate.startDate);
+            const endDate = new Date(requestToUpdate.endDate);
+            const duration = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 24)) + 1;
+
+            switch (requestToUpdate.leaveType) {
+                case 'Sick Leave':
+                    if (newBalance.sick >= duration) {
+                        newBalance.sick -= duration;
+                        balanceUpdated = true;
+                    }
+                    break;
+                case 'Personal':
+                    if (newBalance.personal >= duration) {
+                        newBalance.personal -= duration;
+                        balanceUpdated = true;
+                    }
+                    break;
+                // 'Unpaid' does not affect balances
+                default:
+                    balanceUpdated = true; // Still allow approval without balance change
+                    break;
+            }
         }
         
         if (balanceUpdated) {

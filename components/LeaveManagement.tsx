@@ -107,9 +107,9 @@ const LeaveManagement: React.FC = () => {
                       </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {req.leaveType === 'Hourly Leave' && req.startTime
-                      ? `${req.startDate} @ ${req.startTime}`
-                      : `${req.startDate} to ${req.endDate}`
+                    {req.leaveType === 'Short Leave' && req.startTime && req.endTime
+                        ? `${req.startDate} (${req.startTime} - ${req.endTime})`
+                        : `${req.startDate} to ${req.endDate}`
                     }
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{req.leaveType}</td>

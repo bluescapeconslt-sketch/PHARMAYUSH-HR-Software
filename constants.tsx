@@ -86,10 +86,10 @@ export const EMPLOYEES: Employee[] = [
 ];
 
 export const LEAVE_REQUESTS: LeaveRequest[] = [
-  { id: 1, employeeId: 3, employeeName: 'Charlie Brown', employeeAvatar: 'https://picsum.photos/id/1011/200/200', leaveType: 'Short Leave', startDate: '2024-08-01', endDate: '2024-08-10', reason: 'Family vacation.', status: 'Approved' },
+  { id: 1, employeeId: 3, employeeName: 'Charlie Brown', employeeAvatar: 'https://picsum.photos/id/1011/200/200', leaveType: 'Short Leave', startDate: '2024-08-01', endDate: '2024-08-01', startTime: '10:00', endTime: '11:00', reason: 'Doctor appointment.', status: 'Approved' },
   { id: 2, employeeId: 1, employeeName: 'Alice Johnson', employeeAvatar: 'https://picsum.photos/id/1027/200/200', leaveType: 'Sick Leave', startDate: '2024-07-20', endDate: '2024-07-21', reason: 'Fever and cold.', status: 'Approved' },
   { id: 3, employeeId: 5, employeeName: 'Ethan Hunt', employeeAvatar: 'https://picsum.photos/id/1013/200/200', leaveType: 'Personal', startDate: '2024-09-05', endDate: '2024-09-07', reason: 'Personal matters.', status: 'Pending' },
-  { id: 4, employeeId: 2, employeeName: 'Bob Smith', employeeAvatar: 'https://picsum.photos/id/1005/200/200', leaveType: 'Short Leave', startDate: '2024-10-10', endDate: '2024-10-20', reason: 'Annual leave.', status: 'Pending' },
+  { id: 4, employeeId: 2, employeeName: 'Bob Smith', employeeAvatar: 'https://picsum.photos/id/1005/200/200', leaveType: 'Short Leave', startDate: '2024-10-10', endDate: '2024-10-10', startTime: '14:00', endTime: '15:00', reason: 'Bank appointment.', status: 'Pending' },
 ];
 
 export const ONBOARDING_TASKS: OnboardingTask[] = [

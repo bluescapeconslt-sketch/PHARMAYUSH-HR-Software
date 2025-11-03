@@ -78,13 +78,13 @@ export interface LeaveRequest {
   employeeId: number;
   employeeName: string;
   employeeAvatar: string;
-  leaveType: 'Short Leave' | 'Sick Leave' | 'Personal' | 'Unpaid' | 'Hourly Leave';
+  leaveType: 'Short Leave' | 'Sick Leave' | 'Personal' | 'Unpaid';
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
+  startTime?: string; // HH:MM for Short Leave
+  endTime?: string; // HH:MM for Short Leave
   reason: string;
   status: 'Pending' | 'Approved' | 'Rejected';
-  startTime?: string; // HH:MM for short leaves
-  endTime?: string;   // HH:MM for short leaves
 }
 
 export enum ReviewTone {
