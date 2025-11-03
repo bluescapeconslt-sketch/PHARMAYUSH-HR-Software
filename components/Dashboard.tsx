@@ -11,7 +11,7 @@ import DailyMotivation from './common/DailyMotivation.tsx';
 import NoticeBoard from './common/NoticeBoard.tsx';
 import { getCurrentUser, hasPermission } from '../services/authService.ts';
 import { getMeetings, EnrichedMeeting } from '../services/meetingService.ts';
-import { punchIn, punchOut, getEmployeeStatus } from '../services/attendanceService.ts';
+import { punchIn, punchOut, getEmployeeStatus, undoPunchIn } from '../services/attendanceService.ts';
 
 
 const HEALTH_TIP_KEY = 'pharmayush_hr_health_tip';
@@ -24,13 +24,13 @@ const TimeClock: React.FC = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [status, setStatus] = useState<'in' | 'out'>('out');
     const [lastPunchIn, setLastPunchIn] = useState<Date | null>(null);
-    const [workDuration, setWorkDuration] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [isLocating, setIsLocating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showUndo, setShowUndo] = useState(false);
 
     const currentUser = getCurrentUser();
-
+    
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
@@ -42,6 +42,8 @@ const TimeClock: React.FC = () => {
             setStatus(currentStatus.status);
             if (currentStatus.record) {
                 setLastPunchIn(new Date(currentStatus.record.punchInTime));
+            } else {
+                setLastPunchIn(null);
             }
         }
         setIsLoading(false);
@@ -55,23 +57,14 @@ const TimeClock: React.FC = () => {
         const seconds = String(totalSeconds % 60).padStart(2, '0');
         return `${hours}:${minutes}:${seconds}`;
     };
-
-    useEffect(() => {
-        let timer: number | undefined;
-
+    
+    const workDuration = useMemo(() => {
         if (status === 'in' && lastPunchIn) {
-            timer = window.setInterval(() => {
-                const diff = new Date().getTime() - lastPunchIn.getTime();
-                setWorkDuration(formatDuration(diff));
-            }, 1000);
-        } else {
-            setWorkDuration('');
+            const diff = currentTime.getTime() - lastPunchIn.getTime();
+            return formatDuration(diff);
         }
-
-        return () => {
-            if (timer) clearInterval(timer);
-        };
-    }, [status, lastPunchIn]);
+        return '';
+    }, [status, lastPunchIn, currentTime]);
 
     const handlePunchIn = async () => {
         if (!currentUser) return;
@@ -81,6 +74,8 @@ const TimeClock: React.FC = () => {
             const record = await punchIn(currentUser.id);
             setStatus('in');
             setLastPunchIn(new Date(record.punchInTime));
+            setShowUndo(true);
+            setTimeout(() => setShowUndo(false), 15000); // Undo available for 15 seconds
         } catch (err: any) {
             setError(err.message || 'An unknown error occurred while trying to punch in.');
         } finally {
@@ -93,7 +88,16 @@ const TimeClock: React.FC = () => {
         punchOut(currentUser.id);
         setStatus('out');
         setLastPunchIn(null);
-        setError(null); // Clear any previous errors on successful punch out
+        setError(null);
+    };
+    
+    const handleUndoPunchIn = () => {
+        if (!currentUser) return;
+        undoPunchIn(currentUser.id);
+        setStatus('out');
+        setLastPunchIn(null);
+        setShowUndo(false);
+        setError(null);
     };
     
     const buttonDisabled = isLoading || !currentUser || isLocating;
@@ -108,19 +112,25 @@ const TimeClock: React.FC = () => {
                 <div className="text-gray-500">
                     {currentTime.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
-                <div className="min-h-[48px] mt-4 flex flex-col justify-center items-center">
+                <div className="min-h-[72px] mt-4 flex flex-col justify-center items-center">
                     {isLoading ? (
                         <div className="h-6 bg-slate-200 rounded w-48 animate-pulse"></div>
+                    ) : status === 'out' ? (
+                        <p className="text-lg text-gray-600">You are <span className="font-bold text-red-600">Punched Out</span>.</p>
                     ) : (
-                        status === 'out' ? (
-                            <p className="text-lg text-gray-600">You are <span className="font-bold text-red-600">Punched Out</span>.</p>
-                        ) : (
-                             <div className="text-center">
-                                <p className="text-lg text-gray-600">You are <span className="font-bold text-green-600">Punched In</span>.</p>
-                                <p className="text-2xl font-mono font-bold text-gray-800 mt-2">{workDuration}</p>
-                                <p className="text-xs text-gray-500">Current Session Duration</p>
-                            </div>
-                        )
+                         <div className="text-center">
+                            <p className="text-lg text-gray-600">You are <span className="font-bold text-green-600">Punched In</span>.</p>
+                            <p className="text-2xl font-mono font-bold text-gray-800 mt-2">{workDuration || '00:00:00'}</p>
+                            <p className="text-xs text-gray-500">Current Session Duration</p>
+                            {showUndo && (
+                                <div className="mt-2">
+                                    <p className="text-sm text-green-600">Punched in successfully!</p>
+                                    <button onClick={handleUndoPunchIn} className="text-sm text-blue-600 hover:underline">
+                                        Accidental punch? Undo
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     )}
                     {error && <p className="text-sm text-red-600 mt-2 px-2">{error}</p>}
                 </div>

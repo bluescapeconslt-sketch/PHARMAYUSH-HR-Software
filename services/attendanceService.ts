@@ -122,3 +122,24 @@ export const punchOut = (employeeId: number): AttendanceRecord | null => {
     console.error("Punch out attempted for an employee who is not punched in.");
     return null;
 };
+
+export const undoPunchIn = (employeeId: number): void => {
+    const records = getAttendanceRecords();
+    const employeeRecords = records.filter(r => r.employeeId === employeeId);
+    
+    const latestRecord = employeeRecords.sort((a, b) => new Date(b.punchInTime).getTime() - new Date(a.punchInTime).getTime())[0];
+
+    // Check if the latest record is a punch-in (no punch-out time)
+    if (latestRecord && latestRecord.punchOutTime === null) {
+        const punchInTime = new Date(latestRecord.punchInTime).getTime();
+        const now = new Date().getTime();
+        
+        // Allow undo only within 20 seconds for safety margin
+        if ((now - punchInTime) < 20000) { 
+            const updatedRecords = records.filter(r => r.id !== latestRecord.id);
+            saveAttendanceRecords(updatedRecords);
+        } else {
+            console.warn("Undo punch-in attempted after the grace period.");
+        }
+    }
+};
