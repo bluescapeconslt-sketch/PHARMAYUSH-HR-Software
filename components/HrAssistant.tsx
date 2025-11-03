@@ -1,17 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
-// FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
 import { getHrAssistantChat } from '../services/geminiService.ts';
 import { ChatMessage } from '../types.ts';
 import { ICONS } from '../constants.tsx';
 import { getPolicies } from '../services/policyService.ts';
+import { getCurrentUser } from '../services/authService.ts';
+import { getBuddySettings } from '../services/buddyService.ts';
 
 const HrAssistant: React.FC = () => {
+  const currentUser = getCurrentUser();
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { sender: 'ai', text: "Hello! I'm Gem, your AI HR Assistant. How can I help you today?" }
+    { sender: 'ai', text: `Hello ${currentUser?.name.split(' ')[0] || ''}! I'm Gem, your AI HR Assistant. How can I help you today?` }
   ]);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [avatar, setAvatar] = useState('');
   const chat = useRef(getHrAssistantChat());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -19,12 +22,17 @@ const HrAssistant: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(scrollToBottom, [messages]);
+  useEffect(() => {
+    const settings = getBuddySettings();
+    setAvatar(settings.avatarImage);
+  }, []);
 
-  const handleSendMessage = async () => {
-    if (!userInput.trim()) return;
+  useEffect(scrollToBottom, [messages, isLoading]);
 
-    const currentInput = userInput.trim();
+  const handleSendMessage = async (messageOverride?: string) => {
+    const currentInput = (messageOverride || userInput).trim();
+    if (!currentInput) return;
+
     const userMessage: ChatMessage = { sender: 'user', text: currentInput };
     setMessages(prev => [...prev, userMessage]);
     setUserInput('');
@@ -39,7 +47,6 @@ const HrAssistant: React.FC = () => {
         const policies = getPolicies();
         
         if (policies.length > 0) {
-            // We have policies, so let's use them as context for the AI.
             const policiesContext = policies.map(p => `
                 --- POLICY START ---
                 Title: ${p.title}
@@ -76,54 +83,83 @@ const HrAssistant: React.FC = () => {
       setIsLoading(false);
     }
   };
+  
+  const suggestionChips = [
+    "What is the PTO policy?",
+    "How do I request a leave?",
+    "Summarize the Code of Conduct.",
+  ];
 
   return (
-    <Card title="HR Assistant 'Gem'" className="h-[80vh] flex flex-col">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 rounded-md">
-        {messages.map((msg, index) => (
-          <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {msg.sender === 'ai' && (
-              <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">G</div>
-            )}
-            <div className={`max-w-md p-3 rounded-lg ${msg.sender === 'user' ? 'bg-indigo-600 text-white' : 'bg-white border'}`}>
-              <p className="text-sm">{msg.text}</p>
+    <Card className="h-[80vh] flex flex-col p-0 overflow-hidden">
+      <div className="p-4 border-b bg-gray-50 rounded-t-lg flex-shrink-0">
+        <h2 className="text-xl font-semibold text-gray-800 text-center">HR Assistant 'Gem'</h2>
+      </div>
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-gradient-to-br from-gray-50 to-slate-100">
+        {messages.length === 1 && (
+             <div className="text-center py-8 animate-message-in">
+                <img src={avatar} alt="Gem Avatar" className="h-24 w-24 mx-auto mb-4 buddy-avatar"/>
+                <h3 className="text-2xl font-bold text-gray-800">Hi, {currentUser?.name.split(' ')[0]}! I'm Gem.</h3>
+                <p className="text-gray-600 mt-2">Your friendly HR Assistant. Ask me anything about our policies, procedures, or benefits.</p>
+                <div className="mt-6 flex flex-wrap justify-center gap-2">
+                    {suggestionChips.map((chip, i) => (
+                        <button 
+                            key={i}
+                            onClick={() => handleSendMessage(chip)}
+                            className="px-4 py-2 bg-white border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-100 hover:border-gray-400 transition-all shadow-sm"
+                        >
+                            {chip}
+                        </button>
+                    ))}
+                </div>
             </div>
-             {msg.sender === 'user' && (
-              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold flex-shrink-0">U</div>
+        )}
+      
+        {messages.length > 1 && messages.map((msg, index) => (
+          <div key={index} className={`flex items-end gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} animate-message-in`}>
+            {msg.sender === 'ai' && (
+              <img src={avatar} alt="Gem Avatar" className="h-8 w-8 object-contain flex-shrink-0 self-start" />
             )}
+            <div className={`max-w-xl p-3 rounded-2xl ${msg.sender === 'user' ? 'bg-indigo-600 text-white rounded-br-none shadow-md' : 'bg-white border rounded-bl-none shadow-sm'}`}>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+            </div>
           </div>
         ))}
+
         {isLoading && (
-          <div className="flex items-start gap-3 justify-start">
-             <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0">G</div>
-             <div className="max-w-md p-3 rounded-lg bg-white border">
-                <div className="flex items-center justify-center space-x-1">
-                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"></div>
+          <div className="flex items-end gap-3 justify-start animate-message-in">
+             <img src={avatar} alt="Gem Avatar" className="h-8 w-8 object-contain flex-shrink-0 self-start" />
+             <div className="max-w-lg p-3 rounded-2xl shadow-sm bg-white border rounded-bl-none">
+                <div className="flex items-center space-x-1">
+                    <span className="text-sm text-gray-500">Gem is typing</span>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
                 </div>
              </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
-      <div className="mt-4 flex items-center gap-2">
-        <input
-          type="text"
-          value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSendMessage()}
-          placeholder="Ask an HR-related question..."
-          className="flex-1 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          disabled={isLoading}
-        />
-        <button
-          onClick={handleSendMessage}
-          disabled={isLoading}
-          className="p-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:bg-indigo-300 transition-colors"
-        >
-          {ICONS.send}
-        </button>
+      <div className="p-4 bg-white border-t flex-shrink-0">
+        <div className="relative">
+            <input
+            type="text"
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSendMessage()}
+            placeholder="Ask an HR-related question..."
+            className="w-full p-3 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50"
+            disabled={isLoading}
+            />
+            <button
+                onClick={() => handleSendMessage()}
+                disabled={isLoading || !userInput.trim()}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors"
+            >
+                {ICONS.send}
+            </button>
+        </div>
       </div>
     </Card>
   );

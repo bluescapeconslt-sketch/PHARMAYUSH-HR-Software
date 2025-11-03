@@ -1,4 +1,4 @@
-import { BUDDY_AVATAR as defaultAvatar } from '../constants.tsx';
+import { GEM_AVATAR as defaultAvatar } from '../constants.tsx';
 
 const STORAGE_KEY = 'pharmayush_hr_buddy_settings';
 

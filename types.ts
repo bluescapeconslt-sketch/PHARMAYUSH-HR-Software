@@ -53,14 +53,15 @@ export interface Employee {
   email: string; // Used as login ID
   password: string;
   avatar: string;
-  status: 'Active' | 'On Leave';
+  status: 'Active' | 'On Leave' | 'Probation';
   birthday: string; // YYYY-MM-DD
   leaveBalance: {
-    vacation: number;
+    short: number;
     sick: number;
     personal: number;
   };
   roleId: number; // Links to Role interface
+  lastLeaveAllocation: string; // YYYY-MM
   workLocation?: {
     latitude: number;
     longitude: number;
@@ -77,7 +78,7 @@ export interface LeaveRequest {
   employeeId: number;
   employeeName: string;
   employeeAvatar: string;
-  leaveType: 'Vacation' | 'Sick Leave' | 'Personal' | 'Unpaid' | 'Short Leave';
+  leaveType: 'Short Leave' | 'Sick Leave' | 'Personal' | 'Unpaid' | 'Hourly Leave';
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   reason: string;
@@ -112,6 +113,12 @@ export interface CompanySettings {
   companyName: string;
   companyAddress: string;
   companyLogo: string;
+}
+
+export interface LeaveAllocationSettings {
+  short: number;
+  sick: number;
+  personal: number;
 }
 
 export interface BuddySettings {

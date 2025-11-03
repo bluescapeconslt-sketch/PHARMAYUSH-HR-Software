@@ -1,4 +1,3 @@
-
 // FIX: Add file extension to import paths
 import { LeaveRequest } from '../types.ts';
 import { LEAVE_REQUESTS as initialData } from '../constants.tsx';
@@ -77,9 +76,9 @@ export const updateLeaveRequestStatus = (id: number, status: 'Approved' | 'Rejec
         let balanceUpdated = false;
 
         switch (requestToUpdate.leaveType) {
-            case 'Vacation':
-                if (newBalance.vacation >= duration) {
-                    newBalance.vacation -= duration;
+            case 'Short Leave':
+                if (newBalance.short >= duration) {
+                    newBalance.short -= duration;
                     balanceUpdated = true;
                 }
                 break;
@@ -95,7 +94,7 @@ export const updateLeaveRequestStatus = (id: number, status: 'Approved' | 'Rejec
                     balanceUpdated = true;
                 }
                 break;
-            // 'Unpaid' and 'Short Leave' do not affect balances
+            // 'Unpaid' and 'Hourly Leave' do not affect balances
             default:
                 balanceUpdated = true; // Still allow approval without balance change
                 break;

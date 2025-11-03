@@ -19,23 +19,34 @@ import ManageDepartments from './components/ManageDepartments.tsx';
 import MeetingScheduler from './components/MeetingScheduler.tsx';
 import OrganizationChart from './components/OrganizationChart.tsx';
 import AttendanceReport from './components/AttendanceReport.tsx';
+import EmployeeProfile from './components/EmployeeProfile.tsx';
 // FIX: Import AuthenticatedUser to correctly type the user state.
 import { getCurrentUser, logout, AuthenticatedUser } from './services/authService.ts';
+import { checkAndAllocateMonthlyLeaves } from './services/employeeService.ts';
 
 const App: React.FC = () => {
     // FIX: Explicitly type the user state with AuthenticatedUser for better type safety.
-    const [user, setUser] = useState<AuthenticatedUser | null>(getCurrentUser());
+    const [user, setUser] = useState<AuthenticatedUser | null>(null);
     const [activeView, setActiveView] = useState('dashboard');
 
     useEffect(() => {
-        // Redirect to dashboard if trying to access a restricted page after logout
-        if (!user) {
-            setActiveView('dashboard');
+        // Run startup tasks
+        checkAndAllocateMonthlyLeaves();
+        
+        const currentUser = getCurrentUser();
+        setUser(currentUser);
+        if (!currentUser) {
+            setActiveView('dashboard'); // Should be handled by main check but good practice
         }
-    }, [user]);
+    }, []);
 
     const handleLogin = () => {
-        setUser(getCurrentUser());
+        const currentUser = getCurrentUser();
+        // Run leave allocation again in case a month has passed while logged out
+        if(currentUser){
+            checkAndAllocateMonthlyLeaves();
+            setUser(getCurrentUser());
+        }
         setActiveView('dashboard');
     };
 
@@ -50,6 +61,8 @@ const App: React.FC = () => {
         switch (activeView) {
             case 'dashboard':
                 return <Dashboard />;
+            case 'my-profile':
+                return <EmployeeProfile />;
             case 'employees':
                 return <EmployeeDirectory />;
             case 'org-chart':

@@ -48,6 +48,15 @@ const UserManagement: React.FC = () => {
     const handleModalSubmit = () => {
         fetchData(); // Refresh data after add/edit
     };
+    
+    const getStatusBadgeColor = (status: Employee['status']) => {
+        switch (status) {
+            case 'Active': return 'bg-green-100 text-green-800';
+            case 'On Leave': return 'bg-yellow-100 text-yellow-800';
+            case 'Probation': return 'bg-orange-100 text-orange-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    };
 
     return (
         <>
@@ -98,9 +107,7 @@ const UserManagement: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{getRoleName(employee.roleId)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                            employee.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                        }`}>
+                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(employee.status)}`}>
                                             {employee.status}
                                         </span>
                                     </td>

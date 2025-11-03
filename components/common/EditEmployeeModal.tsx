@@ -196,6 +196,7 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
                 <select id="status" name="status" value={formData.status} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
                     <option>Active</option>
                     <option>On Leave</option>
+                    <option>Probation</option>
                 </select>
             </div>
             <div>

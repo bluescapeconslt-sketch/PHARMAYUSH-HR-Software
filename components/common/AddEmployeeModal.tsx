@@ -12,7 +12,7 @@ interface AddEmployeeModalProps {
   onSubmitted: () => void;
 }
 
-const initialFormState: Omit<Employee, 'id' | 'workLocation'> = {
+const initialFormState: Omit<Employee, 'id' | 'workLocation' | 'lastLeaveAllocation'> = {
   name: '',
   position: 'Employee',
   jobTitle: '',
@@ -23,7 +23,7 @@ const initialFormState: Omit<Employee, 'id' | 'workLocation'> = {
   status: 'Active',
   birthday: '',
   leaveBalance: {
-    vacation: 12,
+    short: 12,
     sick: 8,
     personal: 4,
   },
@@ -136,6 +136,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
       ...formData,
       avatar: formData.avatar || `https://picsum.photos/seed/${formData.name.replace(/\s/g, '')}/200/200`,
       workLocation,
+      lastLeaveAllocation: new Date().toISOString().slice(0, 7), // Set to current month
     };
 
     addEmployee(payload);
@@ -222,6 +223,14 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
             <div>
                 <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">Birthday</label>
                 <input type="date" id="birthday" name="birthday" value={formData.birthday} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" required />
+            </div>
+            <div>
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700">Status</label>
+                <select id="status" name="status" value={formData.status} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                    <option>Active</option>
+                    <option>On Leave</option>
+                    <option>Probation</option>
+                </select>
             </div>
         </div>
         

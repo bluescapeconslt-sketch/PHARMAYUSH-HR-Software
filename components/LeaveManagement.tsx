@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 // FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
 import { getLeaveRequests, updateLeaveRequestStatus } from '../services/leaveService.ts';
 import { LeaveRequest } from '../types.ts';
 import LeaveRequestModal from './common/LeaveRequestModal.tsx';
+import { hasPermission, getCurrentUser } from '../services/authService.ts';
 
 type StatusFilter = 'Pending' | 'Approved' | 'Rejected' | 'All';
 
@@ -12,6 +12,10 @@ const LeaveManagement: React.FC = () => {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Pending');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const canManage = useMemo(() => hasPermission('manage:leaves'), []);
+  
+  const currentUser = getCurrentUser();
+  const isLeaveDisabled = currentUser?.position === 'Intern' || currentUser?.status === 'Probation';
 
   const fetchRequests = () => {
     setRequests(getLeaveRequests());
@@ -68,7 +72,9 @@ const LeaveManagement: React.FC = () => {
             </div>
             <button
                 onClick={() => setIsModalOpen(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                disabled={isLeaveDisabled}
+                title={isLeaveDisabled ? 'Interns and employees on probation cannot request leave.' : 'Request time off'}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed"
             >
                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -101,7 +107,7 @@ const LeaveManagement: React.FC = () => {
                       </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {req.leaveType === 'Short Leave' && req.startTime
+                    {req.leaveType === 'Hourly Leave' && req.startTime
                       ? `${req.startDate} @ ${req.startTime}`
                       : `${req.startDate} to ${req.endDate}`
                     }
@@ -113,7 +119,7 @@ const LeaveManagement: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {req.status === 'Pending' && (
+                    {req.status === 'Pending' && canManage && (
                       <div className="flex justify-end gap-2">
                         <button onClick={() => handleUpdateStatus(req.id, 'Approved')} className="text-green-600 hover:text-green-900">Approve</button>
                         <button onClick={() => handleUpdateStatus(req.id, 'Rejected')} className="text-red-600 hover:text-red-900">Reject</button>

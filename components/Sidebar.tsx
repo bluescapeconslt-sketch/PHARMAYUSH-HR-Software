@@ -13,6 +13,7 @@ interface SidebarProps {
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: ICONS.dashboard, permission: null },
+  { id: 'my-profile', label: 'My Profile', icon: ICONS.myProfile, permission: null },
   { id: 'employees', label: 'Employees', icon: ICONS.employees, permission: 'view:employees' },
   { id: 'org-chart', label: 'Org Chart', icon: ICONS.orgChart, permission: 'view:employees' },
   { id: 'leaves', label: 'Leave', icon: ICONS.leaves, permission: 'view:leaves' },

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 // FIX: Add file extension to import paths
 import Modal from './Modal.tsx';
@@ -43,6 +42,15 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
       case 'Rejected': return 'bg-red-100 text-red-800';
     }
   };
+  
+  const getEmployeeStatusBadgeColor = (status: Employee['status']) => {
+    switch (status) {
+        case 'Active': return 'bg-green-100 text-green-800';
+        case 'On Leave': return 'bg-yellow-100 text-yellow-800';
+        case 'Probation': return 'bg-orange-100 text-orange-800';
+        default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Employee Details">
@@ -67,9 +75,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
         </div>
         <div className="flex justify-between">
           <span className="font-medium text-gray-500">Status</span>
-          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-            employee.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-          }`}>
+          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getEmployeeStatusBadgeColor(employee.status)}`}>
             {employee.status}
           </span>
         </div>
@@ -85,8 +91,8 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
         {/* Balance Section */}
         <div className="grid grid-cols-3 gap-4 mb-6 text-center">
             <div className="bg-blue-50 p-3 rounded-lg">
-                <p className="text-sm text-blue-700 font-semibold">Vacation</p>
-                <p className="text-2xl font-bold text-blue-800">{employee.leaveBalance.vacation}</p>
+                <p className="text-sm text-blue-700 font-semibold">Short Leave</p>
+                <p className="text-2xl font-bold text-blue-800">{employee.leaveBalance.short}</p>
                 <p className="text-xs text-blue-600">days left</p>
             </div>
              <div className="bg-green-50 p-3 rounded-lg">
