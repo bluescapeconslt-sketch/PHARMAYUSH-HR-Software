@@ -22,32 +22,49 @@ import OrganizationChart from './components/OrganizationChart.tsx';
 import AttendanceReport from './components/AttendanceReport.tsx';
 import EmployeeProfile from './components/EmployeeProfile.tsx';
 import Payroll from './components/Payroll.tsx';
-// FIX: Import AuthenticatedUser to correctly type the user state.
 import { getCurrentUser, logout, AuthenticatedUser } from './services/authService.ts';
-import { checkAndAllocateMonthlyLeaves } from './services/employeeService.ts';
+import { checkAndAllocateMonthlyLeaves, fetchEmployees } from './services/employeeService.ts';
+import { fetchRoles } from './services/roleService.ts';
+import { fetchDepartments } from './services/departmentService.ts';
+import { fetchShifts } from './services/shiftService.ts';
 
 const App: React.FC = () => {
-    // FIX: Explicitly type the user state with AuthenticatedUser for better type safety.
     const [user, setUser] = useState<AuthenticatedUser | null>(null);
     const [activeView, setActiveView] = useState('dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Run startup tasks
-        checkAndAllocateMonthlyLeaves();
-        
-        const currentUser = getCurrentUser();
-        setUser(currentUser);
-        if (!currentUser) {
-            setActiveView('dashboard'); // Should be handled by main check but good practice
-        }
+        const initializeApp = async () => {
+            try {
+                await Promise.all([
+                    fetchEmployees(),
+                    fetchRoles(),
+                    fetchDepartments(),
+                    fetchShifts(),
+                ]);
+
+                await checkAndAllocateMonthlyLeaves();
+
+                const currentUser = getCurrentUser();
+                setUser(currentUser);
+                if (!currentUser) {
+                    setActiveView('dashboard');
+                }
+            } catch (error) {
+                console.error('Error initializing app:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        initializeApp();
     }, []);
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
         const currentUser = getCurrentUser();
-        // Run leave allocation again in case a month has passed while logged out
         if(currentUser){
-            checkAndAllocateMonthlyLeaves();
+            await checkAndAllocateMonthlyLeaves();
             setUser(getCurrentUser());
         }
         setActiveView('dashboard');
@@ -107,6 +124,17 @@ const App: React.FC = () => {
         }
     };
     
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-100">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    <p className="mt-4 text-gray-600">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
     if (!user) {
         return <Login onLogin={handleLogin} />;
     }

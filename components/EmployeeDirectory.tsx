@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-// FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
-import { getEmployees } from '../services/employeeService.ts';
+import { getEmployees, fetchEmployees as loadEmployees } from '../services/employeeService.ts';
 import { Employee, Position } from '../types.ts';
 import AddEmployeeModal from './common/AddEmployeeModal.tsx';
 import EditEmployeeModal from './common/EditEmployeeModal.tsx';
@@ -27,12 +26,13 @@ const EmployeeDirectory: React.FC = () => {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-    const fetchEmployees = () => {
-        setEmployees(getEmployees());
+    const refreshEmployees = async () => {
+        const data = await loadEmployees();
+        setEmployees(data);
     };
 
     useEffect(() => {
-        fetchEmployees();
+        setEmployees(getEmployees());
     }, []);
 
     const filteredEmployees = useMemo(() => {
@@ -56,7 +56,7 @@ const EmployeeDirectory: React.FC = () => {
     };
 
     const handleModalSubmit = () => {
-        fetchEmployees(); // Refresh data after add/edit
+        refreshEmployees();
     };
 
     return (
