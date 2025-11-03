@@ -33,19 +33,28 @@ const HrAssistant: React.FC = () => {
     const currentInput = (messageOverride || userInput).trim();
     if (!currentInput) return;
 
+    if (!chat.current) {
+      const errorMessage: ChatMessage = {
+        sender: 'ai',
+        text: "Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your .env file to use the HR Assistant."
+      };
+      setMessages(prev => [...prev, { sender: 'user', text: currentInput }, errorMessage]);
+      setUserInput('');
+      return;
+    }
+
     const userMessage: ChatMessage = { sender: 'user', text: currentInput };
     setMessages(prev => [...prev, userMessage]);
     setUserInput('');
     setIsLoading(true);
-    
+
     let finalPrompt = currentInput;
     const lowerCaseInput = currentInput.toLowerCase();
 
-    // Check for policy-related keywords to provide context to the AI
     const policyKeywords = ['policy', 'policies', 'rule', 'guideline', 'bylaw', 'conduct', 'pto', 'leave', 'time off', 'vacation', 'sick'];
     if (policyKeywords.some(keyword => lowerCaseInput.includes(keyword))) {
         const policies = getPolicies();
-        
+
         if (policies.length > 0) {
             const policiesContext = policies.map(p => `
                 --- POLICY START ---
@@ -69,7 +78,6 @@ const HrAssistant: React.FC = () => {
             `;
         }
     }
-
 
     try {
       const response = await chat.current.sendMessage({ message: finalPrompt });
