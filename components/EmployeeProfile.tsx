@@ -3,7 +3,8 @@ import Card from './common/Card.tsx';
 import { getCurrentUser, AuthenticatedUser } from '../services/authService.ts';
 import { getLeaveRequestsForEmployee } from '../services/leaveService.ts';
 import { getOnboardingTasks } from '../services/onboardingService.ts';
-import { LeaveRequest, OnboardingTask, Position, Employee } from '../types.ts';
+import { getShifts } from '../services/shiftService.ts';
+import { LeaveRequest, OnboardingTask, Position, Employee, Shift } from '../types.ts';
 
 const getPositionBadgeColor = (position: Position) => {
     switch (position) {
@@ -37,6 +38,7 @@ const EmployeeProfile: React.FC = () => {
     const [user, setUser] = useState<AuthenticatedUser | null>(null);
     const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
     const [onboardingTasks, setOnboardingTasks] = useState<(OnboardingTask & { employeeName: string })[]>([]);
+    const [assignedShift, setAssignedShift] = useState<Shift | null>(null);
 
     useEffect(() => {
         const currentUser = getCurrentUser();
@@ -51,6 +53,13 @@ const EmployeeProfile: React.FC = () => {
             // Fetch pending onboarding tasks
             const tasks = getOnboardingTasks().filter(task => task.employeeId === currentUser.id && !task.completed);
             setOnboardingTasks(tasks);
+            
+            // Fetch shift info
+            if(currentUser.shiftId){
+                const shifts = getShifts();
+                const shift = shifts.find(s => s.id === currentUser.shiftId);
+                setAssignedShift(shift || null);
+            }
         }
     }, []);
 
@@ -63,10 +72,10 @@ const EmployeeProfile: React.FC = () => {
             {/* Profile Header Card */}
             <Card>
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-                    <img src={user.avatar} alt={user.name} className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg" />
+                    <img src={user.avatar} alt={user.name} className="h-24 w-24 md:h-32 md:w-32 rounded-full object-cover border-4 border-white shadow-lg" />
                     <div className="flex-1 text-center md:text-left">
-                        <h2 className="text-3xl font-bold text-gray-800">{user.name}</h2>
-                        <p className="text-lg text-indigo-600 font-medium mt-1">{user.jobTitle}</p>
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-800">{user.name}</h2>
+                        <p className="text-md md:text-lg text-indigo-600 font-medium mt-1">{user.jobTitle}</p>
                         <p className="text-md text-gray-500">{user.department}</p>
                         <div className="mt-4 flex items-center justify-center md:justify-start gap-4">
                             <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getPositionBadgeColor(user.position)}`}>
@@ -97,6 +106,12 @@ const EmployeeProfile: React.FC = () => {
                                     <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                                 </svg>
                                 <span className="text-gray-700">Born on {new Date(user.birthday).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-gray-700">Shift: {assignedShift ? `${assignedShift.name} (${assignedShift.startTime} - ${assignedShift.endTime})` : 'N/A'}</span>
                             </div>
                         </div>
                     </Card>

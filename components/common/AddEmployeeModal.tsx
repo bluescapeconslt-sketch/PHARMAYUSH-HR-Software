@@ -3,7 +3,8 @@ import Modal from './Modal.tsx';
 import { addEmployee } from '../../services/employeeService.ts';
 import { getRoles } from '../../services/roleService.ts';
 import { getDepartments } from '../../services/departmentService.ts';
-import { Employee, Role, Department, Position } from '../../types.ts';
+import { getShifts } from '../../services/shiftService.ts';
+import { Employee, Role, Department, Position, Shift } from '../../types.ts';
 import { POSITIONS } from '../../constants.tsx';
 
 interface AddEmployeeModalProps {
@@ -28,12 +29,14 @@ const initialFormState: Omit<Employee, 'id' | 'workLocation' | 'lastLeaveAllocat
     personal: 4,
   },
   roleId: 0,
+  shiftId: undefined,
 };
 
 const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, onSubmitted }) => {
   const [formData, setFormData] = useState(initialFormState);
   const [roles, setRoles] = useState<Role[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
   const [locationData, setLocationData] = useState({ latitude: '', longitude: '', radius: '50' });
   const [error, setError] = useState('');
 
@@ -41,8 +44,10 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
     if (isOpen) {
         const fetchedRoles = getRoles();
         const fetchedDepts = getDepartments();
+        const fetchedShifts = getShifts();
         setRoles(fetchedRoles);
         setDepartments(fetchedDepts);
+        setShifts(fetchedShifts);
 
         if (fetchedRoles.length > 0) {
             const employeeRole = fetchedRoles.find(r => r.name === 'Employee');
@@ -51,12 +56,15 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
         if (fetchedDepts.length > 0) {
             setFormData(prev => ({ ...prev, department: fetchedDepts[0].name }));
         }
+        if (fetchedShifts.length > 0) {
+            setFormData(prev => ({ ...prev, shiftId: fetchedShifts[0].id }));
+        }
     }
   }, [isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const finalValue = name === 'roleId' ? Number(value) : value;
+    const finalValue = name === 'roleId' || name === 'shiftId' ? Number(value) : value;
     setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
   
@@ -134,6 +142,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
 
     const payload = {
       ...formData,
+      shiftId: formData.shiftId ? Number(formData.shiftId) : undefined,
       avatar: formData.avatar || `https://picsum.photos/seed/${formData.name.replace(/\s/g, '')}/200/200`,
       workLocation,
       lastLeaveAllocation: new Date().toISOString().slice(0, 7), // Set to current month
@@ -221,8 +230,11 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">Birthday</label>
-                <input type="date" id="birthday" name="birthday" value={formData.birthday} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" required />
+                <label htmlFor="shiftId" className="block text-sm font-medium text-gray-700">Shift</label>
+                <select id="shiftId" name="shiftId" value={formData.shiftId || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                    <option value="">No Shift Assigned</option>
+                    {shifts.map(shift => <option key={shift.id} value={shift.id}>{shift.name} ({shift.startTime} - {shift.endTime})</option>)}
+                </select>
             </div>
             <div>
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700">Status</label>
@@ -232,6 +244,10 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
                     <option>Probation</option>
                 </select>
             </div>
+        </div>
+        <div>
+            <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">Birthday</label>
+            <input type="date" id="birthday" name="birthday" value={formData.birthday} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" required />
         </div>
         
         <div className="pt-4 border-t">

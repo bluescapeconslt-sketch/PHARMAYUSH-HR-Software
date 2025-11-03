@@ -3,7 +3,8 @@ import Modal from './Modal.tsx';
 import { updateEmployee } from '../../services/employeeService.ts';
 import { getRoles } from '../../services/roleService.ts';
 import { getDepartments } from '../../services/departmentService.ts';
-import { Employee, Role, Department, Position } from '../../types.ts';
+import { getShifts } from '../../services/shiftService.ts';
+import { Employee, Role, Department, Position, Shift } from '../../types.ts';
 import { POSITIONS } from '../../constants.tsx';
 
 interface EditEmployeeModalProps {
@@ -17,6 +18,7 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
   const [formData, setFormData] = useState<Employee | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
   const [locationData, setLocationData] = useState({ latitude: '', longitude: '', radius: '50' });
   const [error, setError] = useState('');
 
@@ -32,13 +34,14 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
         }
         setRoles(getRoles());
         setDepartments(getDepartments());
+        setShifts(getShifts());
     }
   }, [isOpen, employee]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!formData) return;
     const { name, value } = e.target;
-    const finalValue = name === 'roleId' ? Number(value) : value;
+    const finalValue = name === 'roleId' || name === 'shiftId' ? Number(value) : value;
     setFormData(prev => prev ? { ...prev, [name]: finalValue } : null);
   };
   
@@ -118,7 +121,11 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
     }
 
 
-    updateEmployee({ ...formData, workLocation });
+    updateEmployee({ 
+        ...formData,
+        shiftId: formData.shiftId ? Number(formData.shiftId) : undefined,
+        workLocation
+    });
     onSubmitted();
     handleClose();
   };
@@ -192,6 +199,13 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <div>
+                <label htmlFor="shiftId" className="block text-sm font-medium text-gray-700">Shift</label>
+                <select id="shiftId" name="shiftId" value={formData.shiftId || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                    <option value="">No Shift Assigned</option>
+                    {shifts.map(shift => <option key={shift.id} value={shift.id}>{shift.name} ({shift.startTime} - {shift.endTime})</option>)}
+                </select>
+            </div>
+            <div>
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700">Status</label>
                 <select id="status" name="status" value={formData.status} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
                     <option>Active</option>
@@ -199,10 +213,10 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
                     <option>Probation</option>
                 </select>
             </div>
-            <div>
-                <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">Birthday</label>
-                <input type="date" id="birthday" name="birthday" value={formData.birthday} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
-            </div>
+        </div>
+        <div>
+            <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">Birthday</label>
+            <input type="date" id="birthday" name="birthday" value={formData.birthday} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
         </div>
         
         <div className="pt-4 border-t">

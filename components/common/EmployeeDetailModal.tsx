@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 // FIX: Add file extension to import paths
 import Modal from './Modal.tsx';
-import { Employee, Position, LeaveRequest } from '../../types.ts';
+import { Employee, Position, LeaveRequest, Shift } from '../../types.ts';
 import { getLeaveRequestsForEmployee } from '../../services/leaveService.ts';
+import { getShifts } from '../../services/shiftService.ts';
 
 interface EmployeeDetailModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ const getPositionBadgeColor = (position: Position) => {
 
 const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClose, employee }) => {
   const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
 
   useEffect(() => {
     if (employee) {
@@ -30,6 +32,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
         const history = getLeaveRequestsForEmployee(employee.id)
             .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
         setLeaveHistory(history);
+        setShifts(getShifts());
     }
   }, [employee, isOpen]); // Re-fetch if the employee prop changes or modal re-opens
 
@@ -51,6 +54,8 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
         default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const assignedShift = shifts.find(s => s.id === employee.shiftId);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Employee Details">
@@ -78,6 +83,10 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getEmployeeStatusBadgeColor(employee.status)}`}>
             {employee.status}
           </span>
+        </div>
+         <div className="flex justify-between">
+          <span className="font-medium text-gray-500">Assigned Shift</span>
+          <span className="text-gray-800">{assignedShift ? `${assignedShift.name} (${assignedShift.startTime} - ${assignedShift.endTime})` : 'N/A'}</span>
         </div>
         <div className="flex justify-between">
           <span className="font-medium text-gray-500">Birthday</span>

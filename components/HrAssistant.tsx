@@ -72,16 +72,6 @@ const HrAssistant: React.FC = () => {
 
 
     try {
-      if (!chat.current) {
-        const errorMessage: ChatMessage = {
-          sender: 'ai',
-          text: "Gemini API is not configured. Please add VITE_GEMINI_API_KEY to your .env file."
-        };
-        setMessages(prev => [...prev, errorMessage]);
-        setIsLoading(false);
-        return;
-      }
-
       const response = await chat.current.sendMessage({ message: finalPrompt });
       const aiMessage: ChatMessage = { sender: 'ai', text: response.text };
       setMessages(prev => [...prev, aiMessage]);

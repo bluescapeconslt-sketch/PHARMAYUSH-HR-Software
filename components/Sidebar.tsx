@@ -9,6 +9,8 @@ interface SidebarProps {
   user: AuthenticatedUser;
   activeView: string;
   setActiveView: (view: string) => void;
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
 }
 
 const navItems = [
@@ -29,6 +31,7 @@ const navItems = [
   { id: 'admin-tools', label: 'Administration', isHeader: true, permission: 'manage:users' }, // Header for admin section
   { id: 'manage-notices', label: 'Manage Notices', icon: ICONS.notices, permission: 'manage:notices' },
   { id: 'manage-departments', label: 'Manage Departments', icon: ICONS.departments, permission: 'manage:departments' },
+  { id: 'manage-shifts', label: 'Manage Shifts', icon: ICONS.shifts, permission: 'manage:shifts' },
   { id: 'meetings', label: 'Schedule Meetings', icon: ICONS.meetings, permission: 'manage:meetings' },
   { id: 'attendance-report', label: 'Attendance Report', icon: ICONS.attendanceReport, permission: 'view:attendance-report' },
   { id: 'user-management', label: 'User Management', icon: ICONS.userManagement, permission: 'manage:users' },
@@ -36,7 +39,7 @@ const navItems = [
   { id: 'settings', label: 'Settings', icon: ICONS.settings, permission: 'manage:settings' },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ user, activeView, setActiveView }) => {
+const Sidebar: React.FC<SidebarProps> = ({ user, activeView, setActiveView, isOpen, setIsOpen }) => {
 
   const hasPermission = (permission: Permission | null) => {
     if (!permission) return true; // Always show items without a specific permission
@@ -53,36 +56,53 @@ const Sidebar: React.FC<SidebarProps> = ({ user, activeView, setActiveView }) =>
     return true;
   });
 
+  const handleNavClick = (view: string) => {
+      setActiveView(view);
+      setIsOpen(false); // Close sidebar on navigation
+  };
+
   return (
-    <aside className="w-64 bg-gray-800 text-white flex flex-col flex-shrink-0">
-      <div className="h-20 flex items-center justify-center text-2xl font-bold border-b border-gray-700 flex-shrink-0">
-        PHARMAYUSH HR
-      </div>
-      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto sidebar-nav">
-        {cleanedNavItems.map(item => (
-          item.isHeader ? (
-            <h3 key={item.id} className="px-2 pt-4 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">{item.label}</h3>
-          ) : (
-            <a
-              key={item.id}
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveView(item.id);
-              }}
-              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeView === item.id
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </a>
-          )
-        ))}
-      </nav>
-    </aside>
+    <>
+      {/* Overlay for mobile */}
+      <div 
+          className={`fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden sidebar-overlay ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          onClick={() => setIsOpen(false)}
+      ></div>
+      <aside className={`w-64 bg-gray-800 text-white flex flex-col flex-shrink-0 fixed lg:relative inset-y-0 left-0 z-40 transform lg:transform-none sidebar-container ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="h-20 flex items-center justify-between px-4 text-2xl font-bold border-b border-gray-700 flex-shrink-0">
+          <span>PHARMAYUSH HR</span>
+          <button onClick={() => setIsOpen(false)} className="lg:hidden text-gray-400 hover:text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+          </button>
+        </div>
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto sidebar-nav">
+          {cleanedNavItems.map(item => (
+            item.isHeader ? (
+              <h3 key={item.id} className="px-2 pt-4 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">{item.label}</h3>
+            ) : (
+              <a
+                key={item.id}
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNavClick(item.id);
+                }}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeView === item.id
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </a>
+            )
+          ))}
+        </nav>
+      </aside>
+    </>
   );
 };
 

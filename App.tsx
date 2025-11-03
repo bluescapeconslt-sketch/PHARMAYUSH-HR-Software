@@ -16,6 +16,7 @@ import UserManagement from './components/UserManagement.tsx';
 import RoleManagement from './components/RoleManagement.tsx';
 import ManageNotices from './components/ManageNotices.tsx';
 import ManageDepartments from './components/ManageDepartments.tsx';
+import ManageShifts from './components/ManageShifts.tsx';
 import MeetingScheduler from './components/MeetingScheduler.tsx';
 import OrganizationChart from './components/OrganizationChart.tsx';
 import AttendanceReport from './components/AttendanceReport.tsx';
@@ -28,6 +29,7 @@ const App: React.FC = () => {
     // FIX: Explicitly type the user state with AuthenticatedUser for better type safety.
     const [user, setUser] = useState<AuthenticatedUser | null>(null);
     const [activeView, setActiveView] = useState('dashboard');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
         // Run startup tasks
@@ -91,6 +93,8 @@ const App: React.FC = () => {
                 return <ManageNotices />;
             case 'manage-departments':
                 return <ManageDepartments />;
+            case 'manage-shifts':
+                return <ManageShifts />;
             case 'meetings':
                 return <MeetingScheduler />;
             case 'attendance-report':
@@ -106,10 +110,20 @@ const App: React.FC = () => {
 
     return (
         <div className="flex h-screen bg-gray-100 font-sans">
-            <Sidebar user={user} activeView={activeView} setActiveView={setActiveView} />
+            <Sidebar 
+                user={user} 
+                activeView={activeView} 
+                setActiveView={setActiveView}
+                isOpen={isSidebarOpen}
+                setIsOpen={setIsSidebarOpen}
+            />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <Header user={user} onLogout={handleLogout} />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
+                <Header 
+                    user={user} 
+                    onLogout={handleLogout} 
+                    onMenuClick={() => setIsSidebarOpen(true)}
+                />
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 sm:p-8">
                     {renderContent()}
                 </main>
             </div>

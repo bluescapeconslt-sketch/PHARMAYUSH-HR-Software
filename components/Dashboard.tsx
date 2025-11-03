@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 // FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
@@ -25,6 +24,7 @@ const TimeClock: React.FC = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [status, setStatus] = useState<'in' | 'out'>('out');
     const [lastPunchIn, setLastPunchIn] = useState<Date | null>(null);
+    const [workDuration, setWorkDuration] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [isLocating, setIsLocating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -46,6 +46,32 @@ const TimeClock: React.FC = () => {
         }
         setIsLoading(false);
     }, [currentUser]);
+    
+    const formatDuration = (milliseconds: number): string => {
+        if (milliseconds < 0) return '00:00:00';
+        const totalSeconds = Math.floor(milliseconds / 1000);
+        const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+        const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+        const seconds = String(totalSeconds % 60).padStart(2, '0');
+        return `${hours}:${minutes}:${seconds}`;
+    };
+
+    useEffect(() => {
+        let timer: number | undefined;
+
+        if (status === 'in' && lastPunchIn) {
+            timer = window.setInterval(() => {
+                const diff = new Date().getTime() - lastPunchIn.getTime();
+                setWorkDuration(formatDuration(diff));
+            }, 1000);
+        } else {
+            setWorkDuration('');
+        }
+
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [status, lastPunchIn]);
 
     const handlePunchIn = async () => {
         if (!currentUser) return;
@@ -76,7 +102,7 @@ const TimeClock: React.FC = () => {
     return (
         <Card title="Time Clock">
             <div className="flex flex-col items-center justify-center gap-4 text-center">
-                <div className="text-5xl font-bold text-gray-800 tracking-wider">
+                <div className="text-4xl sm:text-5xl font-bold text-gray-800 tracking-wider">
                     {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
                 <div className="text-gray-500">
@@ -89,7 +115,11 @@ const TimeClock: React.FC = () => {
                         status === 'out' ? (
                             <p className="text-lg text-gray-600">You are <span className="font-bold text-red-600">Punched Out</span>.</p>
                         ) : (
-                            <p className="text-lg text-gray-600">You are <span className="font-bold text-green-600">Punched In</span> since {lastPunchIn?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.</p>
+                             <div className="text-center">
+                                <p className="text-lg text-gray-600">You are <span className="font-bold text-green-600">Punched In</span>.</p>
+                                <p className="text-2xl font-mono font-bold text-gray-800 mt-2">{workDuration}</p>
+                                <p className="text-xs text-gray-500">Current Session Duration</p>
+                            </div>
                         )
                     )}
                     {error && <p className="text-sm text-red-600 mt-2 px-2">{error}</p>}

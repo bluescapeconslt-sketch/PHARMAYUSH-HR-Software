@@ -29,7 +29,8 @@ export type Permission =
   // Settings & Management
   | 'manage:settings'
   | 'manage:users'
-  | 'manage:roles';
+  | 'manage:roles'
+  | 'manage:shifts';
 
 export interface Role {
   id: number;
@@ -40,6 +41,13 @@ export interface Role {
 export interface Department {
     id: number;
     name:string;
+}
+
+export interface Shift {
+    id: number;
+    name: string;
+    startTime: string; // HH:MM
+    endTime: string; // HH:MM
 }
 
 export type Position = 'Intern' | 'Employee' | 'Dept. Head' | 'Manager' | 'CEO';
@@ -61,6 +69,7 @@ export interface Employee {
     personal: number;
   };
   roleId: number; // Links to Role interface
+  shiftId?: number; // Links to Shift interface
   lastLeaveAllocation: string; // YYYY-MM
   workLocation?: {
     latitude: number;
