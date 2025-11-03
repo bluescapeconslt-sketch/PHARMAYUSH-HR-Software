@@ -154,12 +154,12 @@ const PharmayushBuddy: React.FC = () => {
     // FIX: Corrected a syntax error where the useState call was split across two lines.
     const [tip, setTip] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [buddyImage, setBuddyImage] = useState('');
+    const [buddyImage, setBuddyImage] = useState('https://i.pravatar.cc/150?img=68');
 
     const fetchTip = async (forceNew = false) => {
         setIsLoading(true);
         const today = new Date().toISOString().split('T')[0];
-        
+
         if (!forceNew) {
             try {
                 const storedData = localStorage.getItem(HEALTH_TIP_KEY);
@@ -191,7 +191,9 @@ const PharmayushBuddy: React.FC = () => {
     useEffect(() => {
         fetchTip(false);
         const settings = getBuddySettings();
-        setBuddyImage(settings.avatarImage);
+        if (settings.avatarImage) {
+            setBuddyImage(settings.avatarImage);
+        }
     }, []);
 
     return (

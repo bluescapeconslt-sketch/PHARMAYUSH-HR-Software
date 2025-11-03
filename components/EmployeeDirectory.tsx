@@ -87,7 +87,7 @@ const EmployeeDirectory: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filteredEmployees.map(employee => (
                         <div key={employee.id} className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center text-center border hover:shadow-lg transition-shadow">
-                            <img src={employee.avatar} alt={employee.name} className="h-24 w-24 rounded-full object-cover mb-3" />
+                            <img src={employee.avatar || 'https://i.pravatar.cc/96'} alt={employee.name} className="h-24 w-24 rounded-full object-cover mb-3" />
                             <h4 className="text-lg font-semibold text-gray-900">{employee.name}</h4>
                              <div className="my-1">
                                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPositionBadgeColor(employee.position)}`}>

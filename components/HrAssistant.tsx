@@ -10,11 +10,11 @@ import { getBuddySettings } from '../services/buddyService.ts';
 const HrAssistant: React.FC = () => {
   const currentUser = getCurrentUser();
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { sender: 'ai', text: `Hello ${currentUser?.name.split(' ')[0] || ''}! I'm Gem, your AI HR Assistant. How can I help you today?` }
+    { sender: 'ai', text: `Hello ${currentUser?.name?.split(' ')[0] || 'there'}! I'm Gem, your AI HR Assistant. How can I help you today?` }
   ]);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [avatar, setAvatar] = useState('');
+  const [avatar, setAvatar] = useState('https://i.pravatar.cc/150?img=68');
   const chat = useRef(getHrAssistantChat());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -24,7 +24,9 @@ const HrAssistant: React.FC = () => {
 
   useEffect(() => {
     const settings = getBuddySettings();
-    setAvatar(settings.avatarImage);
+    if (settings.avatarImage) {
+      setAvatar(settings.avatarImage);
+    }
   }, []);
 
   useEffect(scrollToBottom, [messages, isLoading]);
