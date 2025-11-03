@@ -18,7 +18,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
     useEffect(() => {
         const fetchRoleAndSettings = async () => {
             const roles = await getRoles();
-            const role = roles.find(r => r.id === user.role_id);
+            const role = roles.find(r => r.uuid === user.role_id);
             if (role) {
                 setRoleName(role.name);
             }
