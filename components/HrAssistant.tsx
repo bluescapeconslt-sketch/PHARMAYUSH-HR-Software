@@ -37,7 +37,14 @@ const HrAssistant: React.FC = () => {
     setMessages(prev => [...prev, userMessage]);
     setUserInput('');
     setIsLoading(true);
-    
+
+    if (!chat.current) {
+      const errorMessage: ChatMessage = { sender: 'ai', text: "AI features are currently unavailable. Please configure the Gemini API key." };
+      setMessages(prev => [...prev, errorMessage]);
+      setIsLoading(false);
+      return;
+    }
+
     let finalPrompt = currentInput;
     const lowerCaseInput = currentInput.toLowerCase();
 
@@ -45,7 +52,7 @@ const HrAssistant: React.FC = () => {
     const policyKeywords = ['policy', 'policies', 'rule', 'guideline', 'bylaw', 'conduct', 'pto', 'leave', 'time off', 'vacation', 'sick'];
     if (policyKeywords.some(keyword => lowerCaseInput.includes(keyword))) {
         const policies = getPolicies();
-        
+
         if (policies.length > 0) {
             const policiesContext = policies.map(p => `
                 --- POLICY START ---
