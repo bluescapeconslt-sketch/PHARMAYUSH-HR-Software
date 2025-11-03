@@ -17,6 +17,7 @@ export interface EmployeeData {
   country: string | null;
   department_id: string | null;
   role_id: string | null;
+  position: string | null;
   job_title: string | null;
   hire_date: string | null;
   employment_status: string;
@@ -49,7 +50,7 @@ const transformToEmployee = (
     id: idNum,
     uuid: data.id,
     name: `${data.first_name} ${data.last_name}`,
-    position: 'Employee' as Position,
+    position: (data.position || 'Employee') as Position,
     jobTitle: data.job_title || 'Employee',
     department: department?.name || 'Unknown',
     departmentUuid: data.department_id,
@@ -156,6 +157,8 @@ export const updateEmployee = async (updatedEmployee: any): Promise<EmployeeData
 
     if (updatedEmployee.jobTitle !== undefined) dbUpdate.job_title = updatedEmployee.jobTitle;
     if (updatedEmployee.job_title !== undefined) dbUpdate.job_title = updatedEmployee.job_title;
+
+    if (updatedEmployee.position !== undefined) dbUpdate.position = updatedEmployee.position;
 
     if (updatedEmployee.hire_date !== undefined) dbUpdate.hire_date = updatedEmployee.hire_date;
 
