@@ -26,13 +26,15 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
   const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
 
   useEffect(() => {
-    if (employee) {
-        // Fetch all leave requests for this specific employee and sort by most recent
-        const history = getLeaveRequestsForEmployee(employee.id)
-            .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-        setLeaveHistory(history);
-    }
-  }, [employee, isOpen]); // Re-fetch if the employee prop changes or modal re-opens
+    const fetchLeaveHistory = async () => {
+      if (employee) {
+        const history = await getLeaveRequestsForEmployee(employee.id);
+        const sortedHistory = history.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+        setLeaveHistory(sortedHistory);
+      }
+    };
+    fetchLeaveHistory();
+  }, [employee, isOpen]);
 
   if (!employee) return null;
 

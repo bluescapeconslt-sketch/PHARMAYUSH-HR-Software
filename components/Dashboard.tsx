@@ -170,7 +170,8 @@ const Dashboard: React.FC = () => {
                 const employeeData = await getEmployees();
                 setEmployees(employeeData as any);
             }
-            setLeaveRequests(getLeaveRequests());
+            const leaveData = await getLeaveRequests();
+            setLeaveRequests(leaveData);
         };
         fetchData();
     }, [canViewAllEmployees]);
