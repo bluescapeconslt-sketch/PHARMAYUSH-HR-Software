@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal.tsx';
-import { updateEmployee } from '../../services/employeeService.ts';
-import { getRoles } from '../../services/roleService.ts';
+import { updateEmployee, EmployeeWithUUID } from '../../services/employeeService.ts';
+import { getRoles, RoleWithUUID } from '../../services/roleService.ts';
 import { getDepartments } from '../../services/departmentService.ts';
-import { Employee, Role, Department, Position } from '../../types.ts';
+import { Department, Position } from '../../types.ts';
 import { POSITIONS } from '../../constants.tsx';
 
 interface EditEmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  employee: Employee | null;
+  employee: EmployeeWithUUID | null;
   onSubmitted: () => void;
 }
 
 const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, employee, onSubmitted }) => {
-  const [formData, setFormData] = useState<Employee | null>(null);
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [formData, setFormData] = useState<EmployeeWithUUID | null>(null);
+  const [roles, setRoles] = useState<RoleWithUUID[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [error, setError] = useState('');
 
@@ -37,9 +37,18 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!formData) return;
     const { name, value } = e.target;
-    // Ensure roleId is a number
-    const finalValue = name === 'roleId' ? Number(value) : value;
-    setFormData(prev => prev ? { ...prev, [name]: finalValue } : null);
+
+    if (name === 'roleId') {
+      const roleId = Number(value);
+      const selectedRole = roles.find(r => r.id === roleId);
+      setFormData(prev => prev ? {
+        ...prev,
+        roleId: roleId,
+        roleUuid: selectedRole?.uuid || null
+      } : null);
+    } else {
+      setFormData(prev => prev ? { ...prev, [name]: value } : null);
+    }
   };
   
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,9 +73,9 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData) {
       setError('No employee data to submit.');
       return;
@@ -78,9 +87,14 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
     }
     setError('');
 
-    updateEmployee(formData);
-    onSubmitted();
-    handleClose();
+    try {
+      await updateEmployee(formData);
+      onSubmitted();
+      handleClose();
+    } catch (error) {
+      console.error('Error updating employee:', error);
+      setError('Failed to update employee. Please try again.');
+    }
   };
 
   if (!formData) return null;

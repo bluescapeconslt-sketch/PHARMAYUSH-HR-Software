@@ -1,24 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from './common/Card.tsx';
-import { getEmployees, deleteEmployee } from '../services/employeeService.ts';
-import { getRoles } from '../services/roleService.ts';
-import { Employee, Role } from '../types.ts';
+import { getEmployees, deleteEmployee, EmployeeWithUUID } from '../services/employeeService.ts';
+import { getRoles, RoleWithUUID } from '../services/roleService.ts';
 import AddEmployeeModal from './common/AddEmployeeModal.tsx';
 import EditEmployeeModal from './common/EditEmployeeModal.tsx';
 
 const UserManagement: React.FC = () => {
-    const [employees, setEmployees] = useState<Employee[]>([]);
-    const [roles, setRoles] = useState<Role[]>([]);
+    const [employees, setEmployees] = useState<EmployeeWithUUID[]>([]);
+    const [roles, setRoles] = useState<RoleWithUUID[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+    const [selectedEmployee, setSelectedEmployee] = useState<EmployeeWithUUID | null>(null);
 
     const fetchData = async () => {
         const employeesData = await getEmployees();
         const rolesData = await getRoles();
-        setEmployees(employeesData as any);
-        setRoles(rolesData as any);
+        setEmployees(employeesData);
+        setRoles(rolesData);
     };
 
     useEffect(() => {
@@ -34,8 +33,8 @@ const UserManagement: React.FC = () => {
             getRoleName(employee.roleId).toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [employees, roles, searchTerm]);
-    
-    const handleEdit = (employee: Employee) => {
+
+    const handleEdit = (employee: EmployeeWithUUID) => {
         setSelectedEmployee(employee);
         setIsEditModalOpen(true);
     };
