@@ -22,48 +22,43 @@ import OrganizationChart from './components/OrganizationChart.tsx';
 import AttendanceReport from './components/AttendanceReport.tsx';
 import EmployeeProfile from './components/EmployeeProfile.tsx';
 import Payroll from './components/Payroll.tsx';
+// FIX: Import AuthenticatedUser to correctly type the user state.
 import { getCurrentUser, logout, AuthenticatedUser } from './services/authService.ts';
-import { checkAndAllocateMonthlyLeaves, fetchEmployees } from './services/employeeService.ts';
-import { fetchRoles } from './services/roleService.ts';
-import { fetchDepartments } from './services/departmentService.ts';
-import { fetchShifts } from './services/shiftService.ts';
+import { checkAndAllocateMonthlyLeaves } from './services/employeeService.ts';
 
 const App: React.FC = () => {
+    // FIX: Explicitly type the user state with AuthenticatedUser for better type safety.
     const [user, setUser] = useState<AuthenticatedUser | null>(null);
     const [activeView, setActiveView] = useState('dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const initializeApp = async () => {
-            try {
-                const currentUser = getCurrentUser();
-                setUser(currentUser);
-                setIsLoading(false);
+        // Run startup tasks
+        checkAndAllocateMonthlyLeaves();
+        
+        const currentUser = getCurrentUser();
+        setUser(currentUser);
+        if (!currentUser) {
+            setActiveView('dashboard'); // Should be handled by main check but good practice
+        }
 
-                Promise.all([
-                    fetchEmployees(),
-                    fetchRoles(),
-                    fetchDepartments(),
-                    fetchShifts(),
-                ]).then(() => {
-                    checkAndAllocateMonthlyLeaves();
-                }).catch(error => {
-                    console.error('Error loading data:', error);
-                });
-            } catch (error) {
-                console.error('Error initializing app:', error);
-                setIsLoading(false);
-            }
+        // Listen for session updates to keep user state in sync
+        const handleSessionUpdate = () => {
+            setUser(getCurrentUser());
         };
 
-        initializeApp();
+        window.addEventListener('session-updated', handleSessionUpdate);
+
+        return () => {
+            window.removeEventListener('session-updated', handleSessionUpdate);
+        };
     }, []);
 
-    const handleLogin = async () => {
+    const handleLogin = () => {
         const currentUser = getCurrentUser();
+        // Run leave allocation again in case a month has passed while logged out
         if(currentUser){
-            await checkAndAllocateMonthlyLeaves();
+            checkAndAllocateMonthlyLeaves();
             setUser(getCurrentUser());
         }
         setActiveView('dashboard');
@@ -81,7 +76,7 @@ const App: React.FC = () => {
             case 'dashboard':
                 return <Dashboard />;
             case 'my-profile':
-                return <EmployeeProfile />;
+                return <EmployeeProfile user={user} />;
             case 'employees':
                 return <EmployeeDirectory />;
             case 'org-chart':
@@ -123,17 +118,6 @@ const App: React.FC = () => {
         }
     };
     
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                    <p className="mt-4 text-gray-600">Loading...</p>
-                </div>
-            </div>
-        );
-    }
-
     if (!user) {
         return <Login onLogin={handleLogin} />;
     }

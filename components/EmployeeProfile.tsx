@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import Card from './common/Card.tsx';
-import { getCurrentUser, AuthenticatedUser } from '../services/authService.ts';
+import { AuthenticatedUser } from '../services/authService.ts';
 import { getLeaveRequestsForEmployee } from '../services/leaveService.ts';
 import { getOnboardingTasks } from '../services/onboardingService.ts';
 import { getShifts } from '../services/shiftService.ts';
@@ -35,45 +34,41 @@ const getLeaveStatusBadgeColor = (status: LeaveRequest['status']) => {
     }
 };
 
-const EmployeeProfile: React.FC = () => {
-    const [user, setUser] = useState<AuthenticatedUser | null>(null);
+interface EmployeeProfileProps {
+    user: AuthenticatedUser;
+}
+
+const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
     const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
     const [onboardingTasks, setOnboardingTasks] = useState<(OnboardingTask & { employeeName: string })[]>([]);
     const [assignedShift, setAssignedShift] = useState<Shift | null>(null);
 
     useEffect(() => {
-        const loadProfile = async () => {
-            const currentUser = getCurrentUser();
-            if (currentUser) {
-                setUser(currentUser);
+        if (user) {
+            // Fetch recent 5 leave requests
+            const history = getLeaveRequestsForEmployee(user.id)
+                .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+                .slice(0, 5);
+            setLeaveHistory(history);
 
-                // Fetch recent 5 leave requests
-                const history = getLeaveRequestsForEmployee(currentUser.id)
-                    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-                    .slice(0, 5);
-                setLeaveHistory(history);
-
-                // Fetch pending onboarding tasks
-                const tasks = getOnboardingTasks().filter(task => task.employeeId === currentUser.id && !task.completed);
-                setOnboardingTasks(tasks);
-
-                // Fetch shift info
-                if(currentUser.shiftId){
-                    const shifts = getShifts();
-                    const shift = shifts.find(s => s.id === currentUser.shiftId);
-                    setAssignedShift(shift || null);
-                }
+            // Fetch pending onboarding tasks
+            const tasks = getOnboardingTasks().filter(task => task.employeeId === user.id && !task.completed);
+            setOnboardingTasks(tasks);
+            
+            // Fetch shift info
+            if(user.shiftId){
+                const shifts = getShifts();
+                const shift = shifts.find(s => s.id === user.shiftId);
+                setAssignedShift(shift || null);
+            } else {
+                setAssignedShift(null);
             }
-        };
-
-        loadProfile();
-    }, []);
+        }
+    }, [user]);
 
     if (!user) {
         return <Card title="My Profile"><p>Loading profile...</p></Card>;
     }
-
-    const leaveBalance = user.leaveBalance || { short: 0, sick: 0, personal: 0 };
 
     const formatInr = (amount: number) => {
         return new Intl.NumberFormat('en-IN', {
@@ -83,6 +78,10 @@ const EmployeeProfile: React.FC = () => {
             maximumFractionDigits: 0,
         }).format(amount);
     };
+
+    const displayLeaveBalance = user.status === 'Probation'
+        ? { short: 0, sick: 0, personal: 0 }
+        : user.leaveBalance;
 
     return (
         <div className="space-y-6">
@@ -143,15 +142,15 @@ const EmployeeProfile: React.FC = () => {
                          <div className="grid grid-cols-3 gap-4 text-center">
                             <div className="bg-blue-50 p-3 rounded-lg">
                                 <p className="text-sm text-blue-700 font-semibold">Short</p>
-                                <p className="text-2xl font-bold text-blue-800">{leaveBalance.short}</p>
+                                <p className="text-2xl font-bold text-blue-800">{displayLeaveBalance.short}</p>
                             </div>
                              <div className="bg-green-50 p-3 rounded-lg">
                                 <p className="text-sm text-green-700 font-semibold">Sick</p>
-                                <p className="text-2xl font-bold text-green-800">{leaveBalance.sick}</p>
+                                <p className="text-2xl font-bold text-green-800">{displayLeaveBalance.sick}</p>
                             </div>
                              <div className="bg-purple-50 p-3 rounded-lg">
                                 <p className="text-sm text-purple-700 font-semibold">Personal</p>
-                                <p className="text-2xl font-bold text-purple-800">{leaveBalance.personal}</p>
+                                <p className="text-2xl font-bold text-purple-800">{displayLeaveBalance.personal}</p>
                             </div>
                         </div>
                     </Card>

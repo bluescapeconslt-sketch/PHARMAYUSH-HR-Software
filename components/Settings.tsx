@@ -5,6 +5,7 @@ import { getBuddySettings, saveBuddySettings } from '../services/buddyService.ts
 import { getLeaveAllocationSettings, saveLeaveAllocationSettings } from '../services/leaveAllocationService.ts';
 import { CompanySettings, BuddySettings, LeaveAllocationSettings } from '../types.ts';
 import { GEM_AVATAR as defaultGemAvatar } from '../constants.tsx';
+import { reapplyLeaveSettingsToAllEmployees } from '../services/employeeService.ts';
 
 
 const Settings: React.FC = () => {
@@ -58,6 +59,11 @@ const Settings: React.FC = () => {
     saveSettings(settings);
     saveBuddySettings(buddySettings);
     saveLeaveAllocationSettings(leaveSettings);
+
+    // After saving settings, force an update on all employees to reflect
+    // the new leave allocation for the current month.
+    reapplyLeaveSettingsToAllEmployees();
+
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000); // Hide message after 3 seconds
   };

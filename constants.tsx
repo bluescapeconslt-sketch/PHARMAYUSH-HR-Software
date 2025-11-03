@@ -85,14 +85,14 @@ export const SHIFTS: Shift[] = [
 
 export const POSITIONS: Position[] = ['Intern', 'Employee', 'Dept. Head', 'Manager', 'CEO'];
 
-const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+const pastMonth = '2024-01'; // A date guaranteed to be in the past to trigger initial leave allocation
 
 export const EMPLOYEES: Employee[] = [
-  { id: 1, name: 'Alice Johnson', position: 'Dept. Head', jobTitle: 'Software Engineer', department: 'Technology', email: 'alice.j@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1027/200/200', status: 'Active', birthday: '1990-05-15', leaveBalance: { short: 12, sick: 5, personal: 2 }, baseSalary: 62500, lastLeaveAllocation: currentMonth },
-  { id: 2, name: 'Bob Smith', position: 'Manager', jobTitle: 'Product Manager', department: 'Product', email: 'bob.s@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1005/200/200', status: 'Active', birthday: '1988-08-22', leaveBalance: { short: 15, sick: 7, personal: 3 }, baseSalary: 75000, lastLeaveAllocation: currentMonth },
-  { id: 3, name: 'Charlie Brown', position: 'Employee', jobTitle: 'UX Designer', department: 'Design', email: 'charlie.b@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1011/200/200', status: 'Probation', birthday: '1992-11-30', leaveBalance: { short: 5, sick: 6, personal: 1 }, baseSalary: 50000, lastLeaveAllocation: currentMonth },
-  { id: 4, name: 'Diana Prince', position: 'CEO', jobTitle: 'System Administrator', department: 'Human Resources', email: 'admin@example.com', password: 'admin', roleId: 1, avatar: 'https://picsum.photos/id/1012/200/200', status: 'Active', birthday: '1985-03-10', leaveBalance: { short: 20, sick: 10, personal: 5 }, baseSalary: 150000, lastLeaveAllocation: currentMonth },
-  { id: 5, name: 'Ethan Hunt', position: 'Intern', jobTitle: 'QA Engineer', department: 'Technology', email: 'ethan.h@example.com', password: 'password', roleId: 2, shiftId: 2, avatar: 'https://picsum.photos/id/1013/200/200', status: 'Active', birthday: '1995-07-01', leaveBalance: { short: 8, sick: 4, personal: 0 }, baseSalary: 25000, lastLeaveAllocation: currentMonth },
+  { id: 1, name: 'Alice Johnson', position: 'Dept. Head', jobTitle: 'Software Engineer', department: 'Technology', email: 'alice.j@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1027/200/200', status: 'Active', birthday: '1990-05-15', leaveBalance: { short: 12, sick: 5, personal: 2 }, baseSalary: 62500, lastLeaveAllocation: pastMonth },
+  { id: 2, name: 'Bob Smith', position: 'Manager', jobTitle: 'Product Manager', department: 'Product', email: 'bob.s@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1005/200/200', status: 'Active', birthday: '1988-08-22', leaveBalance: { short: 15, sick: 7, personal: 3 }, baseSalary: 75000, lastLeaveAllocation: pastMonth },
+  { id: 3, name: 'Charlie Brown', position: 'Employee', jobTitle: 'UX Designer', department: 'Design', email: 'charlie.b@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1011/200/200', status: 'Probation', birthday: '1992-11-30', leaveBalance: { short: 5, sick: 6, personal: 1 }, baseSalary: 50000, lastLeaveAllocation: pastMonth },
+  { id: 4, name: 'Diana Prince', position: 'CEO', jobTitle: 'System Administrator', department: 'Human Resources', email: 'admin@example.com', password: 'admin', roleId: 1, avatar: 'https://picsum.photos/id/1012/200/200', status: 'Active', birthday: '1985-03-10', leaveBalance: { short: 20, sick: 10, personal: 5 }, baseSalary: 150000, lastLeaveAllocation: pastMonth },
+  { id: 5, name: 'Ethan Hunt', position: 'Intern', jobTitle: 'QA Engineer', department: 'Technology', email: 'ethan.h@example.com', password: 'password', roleId: 2, shiftId: 2, avatar: 'https://picsum.photos/id/1013/200/200', status: 'Active', birthday: '1995-07-01', leaveBalance: { short: 8, sick: 4, personal: 0 }, baseSalary: 25000, lastLeaveAllocation: pastMonth },
 ];
 
 export const LEAVE_REQUESTS: LeaveRequest[] = [

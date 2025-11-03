@@ -15,13 +15,17 @@ const OrganizationChart: React.FC = () => {
     return (
         <Card title="Organization Chart">
             <div className="p-4 overflow-x-auto">
-                {hierarchy.length > 0 ? (
-                    hierarchy.map(rootNode => (
-                        <EmployeeNode key={rootNode.id} node={rootNode} />
-                    ))
-                ) : (
-                    <p className="text-center text-gray-500">No employees found to build the chart.</p>
-                )}
+                <div className="org-chart-horizontal">
+                    {hierarchy.length > 0 ? (
+                        <ul>
+                            {hierarchy.map(rootNode => (
+                                <EmployeeNode key={rootNode.id} node={rootNode} />
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-center text-gray-500">No employees found to build the chart.</p>
+                    )}
+                </div>
             </div>
         </Card>
     );

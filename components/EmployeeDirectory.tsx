@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+// FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
-import { getEmployees, fetchEmployees as loadEmployees } from '../services/employeeService.ts';
+import { getEmployees } from '../services/employeeService.ts';
 import { Employee, Position } from '../types.ts';
 import AddEmployeeModal from './common/AddEmployeeModal.tsx';
 import EditEmployeeModal from './common/EditEmployeeModal.tsx';
@@ -26,13 +27,12 @@ const EmployeeDirectory: React.FC = () => {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-    const refreshEmployees = async () => {
-        const data = await loadEmployees();
-        setEmployees(data);
+    const fetchEmployees = () => {
+        setEmployees(getEmployees());
     };
 
     useEffect(() => {
-        setEmployees(getEmployees());
+        fetchEmployees();
     }, []);
 
     const filteredEmployees = useMemo(() => {
@@ -56,7 +56,7 @@ const EmployeeDirectory: React.FC = () => {
     };
 
     const handleModalSubmit = () => {
-        refreshEmployees();
+        fetchEmployees(); // Refresh data after add/edit
     };
 
     return (
@@ -87,7 +87,7 @@ const EmployeeDirectory: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filteredEmployees.map(employee => (
                         <div key={employee.id} className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center text-center border hover:shadow-lg transition-shadow">
-                            <img src={employee.avatar || 'https://i.pravatar.cc/96'} alt={employee.name} className="h-24 w-24 rounded-full object-cover mb-3" />
+                            <img src={employee.avatar} alt={employee.name} className="h-24 w-24 rounded-full object-cover mb-3" />
                             <h4 className="text-lg font-semibold text-gray-900">{employee.name}</h4>
                              <div className="my-1">
                                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPositionBadgeColor(employee.position)}`}>

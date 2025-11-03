@@ -22,46 +22,36 @@ const EmployeeNode: React.FC<EmployeeNodeProps> = ({ node }) => {
     const hasChildren = node.children && node.children.length > 0;
 
     return (
-        <div className="relative pl-8">
-            {/* Vertical connector line */}
-            <div className="absolute left-4 top-0 w-px h-full bg-gray-300"></div>
-
-            <div className="relative">
-                {/* Horizontal connector line */}
-                <div className="absolute left-[-16px] top-[26px] w-4 h-px bg-gray-300"></div>
-
-                {/* The employee card */}
-                <div className="flex items-center gap-3 mb-4">
-                    {hasChildren && (
-                        <button 
-                            onClick={() => setIsExpanded(!isExpanded)} 
-                            className="absolute left-[-26px] top-[16px] w-5 h-5 flex items-center justify-center bg-white border border-gray-400 rounded-full text-gray-600 hover:bg-gray-100 z-10"
-                        >
-                            {isExpanded ? '-' : '+'}
-                        </button>
-                    )}
-                    <div className="flex items-center gap-3 p-2 bg-white rounded-lg border shadow-sm min-w-[280px]">
-                        <img src={node.avatar} alt={node.name} className="h-12 w-12 rounded-full object-cover flex-shrink-0" />
-                        <div className="flex-grow">
-                            <p className="font-semibold text-gray-800">{node.name}</p>
-                            <p className="text-sm text-gray-500">{node.jobTitle}</p>
-                            <span className={`mt-1 inline-block px-2 py-0.5 text-xs font-semibold rounded-full border ${getPositionBadgeColor(node.position)}`}>
-                                {node.position}
-                            </span>
-                        </div>
+        <li>
+            <div className="inline-flex items-center">
+                <div className="node-card bg-white rounded-lg border shadow-sm p-2 flex items-center gap-3 min-w-[280px]">
+                    <img src={node.avatar} alt={node.name} className="h-12 w-12 rounded-full object-cover flex-shrink-0" />
+                    <div className="flex-grow">
+                        <p className="font-semibold text-gray-800">{node.name}</p>
+                        <p className="text-sm text-gray-500">{node.jobTitle}</p>
+                        <span className={`mt-1 inline-block px-2 py-0.5 text-xs font-semibold rounded-full border ${getPositionBadgeColor(node.position)}`}>
+                            {node.position}
+                        </span>
                     </div>
                 </div>
-
-                {/* Children nodes */}
-                {hasChildren && isExpanded && (
-                    <div className="space-y-4">
-                        {node.children.map(child => (
-                            <EmployeeNode key={child.id} node={child} />
-                        ))}
-                    </div>
+                {hasChildren && (
+                    <button 
+                        onClick={() => setIsExpanded(!isExpanded)} 
+                        className="ml-2 w-5 h-5 flex-shrink-0 flex items-center justify-center bg-white border border-gray-400 rounded-full text-gray-600 hover:bg-gray-100 z-10"
+                    >
+                        {isExpanded ? '-' : '+'}
+                    </button>
                 )}
             </div>
-        </div>
+
+            {hasChildren && isExpanded && (
+                <ul>
+                    {node.children.map(child => (
+                        <EmployeeNode key={child.id} node={child} />
+                    ))}
+                </ul>
+            )}
+        </li>
     );
 };
 

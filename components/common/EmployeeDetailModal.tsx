@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 // FIX: Add file extension to import paths
 import Modal from './Modal.tsx';
@@ -69,6 +68,10 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
     }).format(amount);
   };
 
+  const displayLeaveBalance = employee.status === 'Probation'
+    ? { short: 0, sick: 0, personal: 0 }
+    : employee.leaveBalance;
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Employee Details">
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -113,23 +116,23 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
       </div>
       {/* --- New Leave Balance & History Section --- */}
       <div className="mt-6 border-t pt-6">
-        <h4 className="text-lg font-semibold text-gray-700 mb-4">Leave Balance & History</h4>
+        <h4 className="text-lg font-semibold text-gray-700 mb-4">Monthly Leave Balance &amp; History</h4>
         
         {/* Balance Section */}
         <div className="grid grid-cols-3 gap-4 mb-6 text-center">
             <div className="bg-blue-50 p-3 rounded-lg">
                 <p className="text-sm text-blue-700 font-semibold">Short Leave</p>
-                <p className="text-2xl font-bold text-blue-800">{employee.leaveBalance.short}</p>
+                <p className="text-2xl font-bold text-blue-800">{displayLeaveBalance.short}</p>
                 <p className="text-xs text-blue-600">days left</p>
             </div>
              <div className="bg-green-50 p-3 rounded-lg">
                 <p className="text-sm text-green-700 font-semibold">Sick Leave</p>
-                <p className="text-2xl font-bold text-green-800">{employee.leaveBalance.sick}</p>
+                <p className="text-2xl font-bold text-green-800">{displayLeaveBalance.sick}</p>
                 <p className="text-xs text-green-600">days left</p>
             </div>
              <div className="bg-purple-50 p-3 rounded-lg">
                 <p className="text-sm text-purple-700 font-semibold">Personal</p>
-                <p className="text-2xl font-bold text-purple-800">{employee.leaveBalance.personal}</p>
+                <p className="text-2xl font-bold text-purple-800">{displayLeaveBalance.personal}</p>
                 <p className="text-xs text-purple-600">days left</p>
             </div>
         </div>
