@@ -5,8 +5,16 @@ import { getLeaveRequests, updateLeaveRequestStatus } from '../services/leaveSer
 import { LeaveRequest } from '../types.ts';
 import LeaveRequestModal from './common/LeaveRequestModal.tsx';
 import { hasPermission, getCurrentUser } from '../services/authService.ts';
+import { ICONS } from '../constants.tsx';
 
 type StatusFilter = 'Pending' | 'Approved' | 'Rejected' | 'All';
+
+// Since jspdf is loaded from a script tag in index.html, we need to declare it on the window object
+declare global {
+    interface Window {
+        jspdf: any;
+    }
+}
 
 const LeaveManagement: React.FC = () => {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
@@ -40,6 +48,82 @@ const LeaveManagement: React.FC = () => {
     return requests.filter(req => req.status === statusFilter);
   }, [requests, statusFilter]);
 
+  const summaryStats = useMemo(() => {
+    if (!canManage) return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const onLeaveToday = requests.filter(req => {
+        if (req.status !== 'Approved') return false;
+        const startDate = new Date(req.startDate);
+        const endDate = new Date(req.endDate);
+        startDate.setHours(0,0,0,0);
+        endDate.setHours(0,0,0,0);
+        return today >= startDate && today <= endDate;
+    });
+
+    const approvedThisMonth = requests.filter(req => {
+        if (req.status !== 'Approved') return false;
+        const reqDate = new Date(req.startDate);
+        return reqDate.getMonth() === today.getMonth() && reqDate.getFullYear() === today.getFullYear();
+    }).length;
+
+    return {
+        pending: requests.filter(req => req.status === 'Pending').length,
+        approvedThisMonth,
+        onLeaveToday
+    };
+  }, [requests, canManage]);
+
+  const handleExportCSV = () => {
+    const headers = ["Employee", "Leave Type", "Start Date", "End Date", "Time", "Status", "Reason"];
+    const rows = filteredRequests.map(req => [
+        `"${req.employeeName.replace(/"/g, '""')}"`,
+        req.leaveType,
+        req.startDate,
+        req.endDate,
+        req.startTime ? `${req.startTime} - ${req.endTime}` : "N/A",
+        req.status,
+        `"${req.reason.replace(/"/g, '""')}"`
+    ]);
+
+    let csvContent = "data:text/csv;charset=utf-8," 
+        + headers.join(",") + "\n" 
+        + rows.map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `leave_report_${statusFilter}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportPDF = () => {
+    const doc = new (window as any).jspdf.jsPDF();
+    const tableTitle = `Leave Requests Report (${statusFilter})`;
+    const tableHeaders = [['Employee', 'Leave Type', 'Dates', 'Status', 'Reason']];
+    const tableBody = filteredRequests.map(req => [
+        req.employeeName,
+        req.leaveType,
+        req.leaveType === 'Short Leave' && req.startTime ? `${req.startDate} (${req.startTime} - ${req.endTime})` : `${req.startDate} to ${req.endDate}`,
+        req.status,
+        req.reason
+    ]);
+    
+    doc.text(tableTitle, 14, 15);
+    (doc as any).autoTable({
+        head: tableHeaders,
+        body: tableBody,
+        startY: 20,
+        theme: 'striped',
+        headStyles: { fillColor: [74, 85, 104] } // bg-gray-700
+    });
+    doc.save(`leave_report_${statusFilter}.pdf`);
+  };
+
   const getStatusBadge = (status: LeaveRequest['status']) => {
     switch (status) {
       case 'Pending':
@@ -54,6 +138,29 @@ const LeaveManagement: React.FC = () => {
   return (
     <>
       <Card title="Leave Request Management">
+        {canManage && summaryStats && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 border-b pb-6">
+                <div className="bg-yellow-50 p-4 rounded-lg text-center">
+                    <p className="text-sm font-medium text-yellow-700">Pending Requests</p>
+                    <p className="text-3xl font-bold text-yellow-800">{summaryStats.pending}</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg text-center">
+                    <p className="text-sm font-medium text-green-700">Approved This Month</p>
+                    <p className="text-3xl font-bold text-green-800">{summaryStats.approvedThisMonth}</p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm font-medium text-blue-700 text-center mb-2">On Leave Today ({summaryStats.onLeaveToday.length})</p>
+                    <div className="text-xs space-y-1 max-h-20 overflow-y-auto">
+                        {summaryStats.onLeaveToday.length > 0 ? summaryStats.onLeaveToday.map(r => (
+                            <div key={r.id} className="flex justify-between items-center bg-white p-1 rounded">
+                                <span>{r.employeeName}</span>
+                                <span className="font-semibold">{r.leaveType}</span>
+                            </div>
+                        )) : <p className="text-center text-gray-500 pt-3">None</p>}
+                    </div>
+                </div>
+            </div>
+        )}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
             <div className="flex items-center gap-2 border rounded-lg p-1 bg-gray-50">
                 {(['Pending', 'Approved', 'Rejected', 'All'] as StatusFilter[]).map(status => (
@@ -70,17 +177,29 @@ const LeaveManagement: React.FC = () => {
                     </button>
                 ))}
             </div>
-            <button
-                onClick={() => setIsModalOpen(true)}
-                disabled={isLeaveDisabled}
-                title={isLeaveDisabled ? 'Interns and employees on probation cannot request leave.' : 'Request time off'}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed"
-            >
-                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-                New Request
-            </button>
+            <div className="w-full sm:w-auto flex items-center justify-center gap-2">
+                {canManage && (
+                    <>
+                        <button onClick={handleExportCSV} title="Export as Excel (CSV)" className="p-2 text-gray-600 bg-gray-100 rounded-md hover:bg-green-100 hover:text-green-700">
+                           {ICONS.download}
+                        </button>
+                        <button onClick={handleExportPDF} title="Export as PDF" className="p-2 text-gray-600 bg-gray-100 rounded-md hover:bg-red-100 hover:text-red-700">
+                           {ICONS.download}
+                        </button>
+                    </>
+                )}
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    disabled={isLeaveDisabled}
+                    title={isLeaveDisabled ? 'Interns and employees on probation cannot request leave.' : 'Request time off'}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed"
+                >
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
+                    New Request
+                </button>
+            </div>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
