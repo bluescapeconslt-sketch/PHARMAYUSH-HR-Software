@@ -18,9 +18,9 @@ const Onboarding: React.FC = () => {
     fetchTasks();
   }, []);
 
-  const handleToggleTask = (taskId: number, completed: boolean) => {
-    updateOnboardingTask(taskId, completed);
-    fetchTasks();
+  const handleToggleTask = async (taskId: number, completed: boolean) => {
+    await updateOnboardingTask(taskId, completed);
+    await fetchTasks();
   };
   
   const filteredTasks = tasks.filter(task => {

@@ -73,7 +73,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.employeeId || !formData.startDate || !formData.reason) {
@@ -119,7 +119,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
     }
 
 
-    addLeaveRequest(payload);
+    await addLeaveRequest(payload);
     onSubmitted();
     handleClose();
   };

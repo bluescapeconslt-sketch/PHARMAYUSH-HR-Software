@@ -36,7 +36,7 @@ const HrAssistant: React.FC = () => {
     // Check for policy-related keywords to provide context to the AI
     const policyKeywords = ['policy', 'policies', 'rule', 'guideline', 'bylaw', 'conduct', 'pto', 'leave', 'time off', 'vacation', 'sick'];
     if (policyKeywords.some(keyword => lowerCaseInput.includes(keyword))) {
-        const policies = getPolicies();
+        const policies = await getPolicies();
         
         if (policies.length > 0) {
             // We have policies, so let's use them as context for the AI.

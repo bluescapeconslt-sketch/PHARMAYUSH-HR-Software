@@ -47,7 +47,7 @@ const PolicyModal: React.FC<PolicyModalProps> = ({ isOpen, onClose, onSave, poli
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.content || !formData.category) {
       setError('Title, Category, and Content fields are required.');
@@ -55,9 +55,9 @@ const PolicyModal: React.FC<PolicyModalProps> = ({ isOpen, onClose, onSave, poli
     }
 
     if ('id' in formData) {
-      updatePolicy(formData);
+      await updatePolicy(formData);
     } else {
-      addPolicy(formData);
+      await addPolicy(formData);
     }
     onSave();
   };

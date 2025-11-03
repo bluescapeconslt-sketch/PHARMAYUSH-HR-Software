@@ -42,7 +42,7 @@ const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, onSave, me
     setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.date || !formData.time || !formData.departmentId) {
       setError('Title, Department, Date, and Time are required.');
@@ -50,9 +50,9 @@ const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, onSave, me
     }
 
     if (meeting) {
-      updateMeeting({ ...meeting, ...formData });
+      await updateMeeting({ ...meeting, ...formData });
     } else {
-      addMeeting(formData);
+      await addMeeting(formData);
     }
     onSave();
   };

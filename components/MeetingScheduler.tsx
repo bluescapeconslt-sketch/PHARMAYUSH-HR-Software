@@ -28,10 +28,10 @@ const MeetingScheduler: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if (window.confirm('Are you sure you want to cancel this meeting?')) {
-            const updatedMeetings = deleteMeeting(id);
-            setMeetings(updatedMeetings);
+            await deleteMeeting(id);
+            await fetchMeetings();
         }
     };
     

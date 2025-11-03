@@ -10,8 +10,9 @@ const CompanyPolicies: React.FC = () => {
     const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const fetchPolicies = () => {
-        setPolicies(getPolicies());
+    const fetchPolicies = async () => {
+        const data = await getPolicies();
+        setPolicies(data);
     };
 
     useEffect(() => {
@@ -34,11 +35,11 @@ const CompanyPolicies: React.FC = () => {
         fetchPolicies();
         setIsModalOpen(false);
     };
-    
-    const handleDelete = (id: number) => {
+
+    const handleDelete = async (id: number) => {
         if(window.confirm('Are you sure you want to delete this policy? This action cannot be undone.')) {
-            deletePolicy(id);
-            fetchPolicies();
+            await deletePolicy(id);
+            await fetchPolicies();
         }
     };
 

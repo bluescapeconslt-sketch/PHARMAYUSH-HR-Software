@@ -13,8 +13,9 @@ const LeaveManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Pending');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fetchRequests = () => {
-    setRequests(getLeaveRequests());
+  const fetchRequests = async () => {
+    const data = await getLeaveRequests();
+    setRequests(data);
   };
 
   useEffect(() => {
