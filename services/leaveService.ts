@@ -1,7 +1,7 @@
 import { LeaveRequest } from '../types.ts';
 import { supabase } from './supabaseClient.ts';
 import { getCurrentUser, hasPermission } from './authService.ts';
-import { getEmployees, updateEmployee } from './employeeService.ts';
+import { getEmployees, updateEmployee, EmployeeWithUUID } from './employeeService.ts';
 
 interface LeaveRequestData {
   id: string;
@@ -49,20 +49,16 @@ export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
     if (!currentUser) return [];
 
     const employees = await getEmployees();
-    const { data: allEmployees } = await supabase.from('employees').select('id, name, avatar');
-    const empMap = new Map(allEmployees?.map(e => [e.id, { name: e.name, avatar: e.avatar }]) || []);
 
     let allRequests = (data || []).map((request, index) => {
-      const empInfo = empMap.get(request.employee_id);
-      const empIndex = employees.findIndex(e => e.name === empInfo?.name);
-      const employeeId = empIndex >= 0 ? empIndex + 1 : 1;
+      const employee = employees.find(e => e.uuid === request.employee_id);
 
       return transformToLeaveRequest(
         request,
         index,
-        employeeId,
-        empInfo?.name || 'Unknown',
-        empInfo?.avatar || ''
+        employee?.id || 1,
+        employee?.name || 'Unknown',
+        employee?.avatar || 'https://ui-avatars.com/api/?name=Unknown&background=4f46e5&color=fff'
       );
     });
 
@@ -90,28 +86,17 @@ export const getLeaveRequestsForEmployee = async (employeeId: number): Promise<L
 export const addLeaveRequest = async (newRequestData: Omit<LeaveRequest, 'id' | 'status'>): Promise<boolean> => {
   try {
     const employees = await getEmployees();
-    const employee = employees.find(e => e.id === newRequestData.employeeId);
+    const employee = employees.find(e => e.id === newRequestData.employeeId) as EmployeeWithUUID | undefined;
 
-    if (!employee) {
-      console.error('Employee not found');
-      return false;
-    }
-
-    const { data: empData } = await supabase
-      .from('employees')
-      .select('id')
-      .eq('name', employee.name)
-      .single();
-
-    if (!empData) {
-      console.error('Employee UUID not found');
+    if (!employee || !employee.uuid) {
+      console.error('Employee not found or UUID missing');
       return false;
     }
 
     const { error } = await supabase
       .from('leave_requests')
       .insert([{
-        employee_id: empData.id,
+        employee_id: employee.uuid,
         leave_type: newRequestData.leaveType,
         start_date: newRequestData.startDate,
         end_date: newRequestData.endDate,
@@ -147,49 +132,42 @@ export const updateLeaveRequestStatus = async (id: number, status: 'Approved' | 
 
     if (status === 'Approved') {
       const employees = await getEmployees();
-      const { data: empData } = await supabase
-        .from('employees')
-        .select('*')
-        .eq('id', targetRequest.employee_id)
-        .single();
+      const employee = employees.find(e => e.uuid === targetRequest.employee_id) as EmployeeWithUUID | undefined;
 
-      if (empData) {
-        const employee = employees.find(e => e.name === empData.name);
-        if (employee) {
-          const startDate = new Date(targetRequest.start_date);
-          const endDate = new Date(targetRequest.end_date);
-          const duration = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      if (employee) {
+        const startDate = new Date(targetRequest.start_date);
+        const endDate = new Date(targetRequest.end_date);
+        const duration = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-          const newBalance = { ...employee.leaveBalance };
-          let balanceUpdated = false;
+        const newBalance = { ...employee.leaveBalance };
+        let balanceUpdated = false;
 
-          switch (targetRequest.leave_type) {
-            case 'Vacation':
-              if (newBalance.vacation >= duration) {
-                newBalance.vacation -= duration;
-                balanceUpdated = true;
-              }
-              break;
-            case 'Sick Leave':
-              if (newBalance.sick >= duration) {
-                newBalance.sick -= duration;
-                balanceUpdated = true;
-              }
-              break;
-            case 'Personal':
-              if (newBalance.personal >= duration) {
-                newBalance.personal -= duration;
-                balanceUpdated = true;
-              }
-              break;
-            default:
+        switch (targetRequest.leave_type) {
+          case 'Vacation':
+            if (newBalance.vacation >= duration) {
+              newBalance.vacation -= duration;
               balanceUpdated = true;
-              break;
-          }
+            }
+            break;
+          case 'Sick Leave':
+            if (newBalance.sick >= duration) {
+              newBalance.sick -= duration;
+              balanceUpdated = true;
+            }
+            break;
+          case 'Personal':
+            if (newBalance.personal >= duration) {
+              newBalance.personal -= duration;
+              balanceUpdated = true;
+            }
+            break;
+          default:
+            balanceUpdated = true;
+            break;
+        }
 
-          if (balanceUpdated) {
-            await updateEmployee({ ...employee, leaveBalance: newBalance });
-          }
+        if (balanceUpdated) {
+          await updateEmployee({ ...employee, leaveBalance: newBalance });
         }
       }
     }
