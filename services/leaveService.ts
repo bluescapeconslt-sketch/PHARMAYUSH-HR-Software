@@ -35,6 +35,9 @@ const transformToLeaveRequest = (data: LeaveRequestData, index: number, employee
 
 export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
   try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return [];
+
     const { data, error } = await supabase
       .from('leave_requests')
       .select('*')
@@ -45,10 +48,11 @@ export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
       return [];
     }
 
-    const currentUser = getCurrentUser();
-    if (!currentUser) return [];
-
     const employees = await getEmployees();
+
+    // Find current user's UUID
+    const currentEmployee = employees.find(e => e.email === currentUser.email);
+    const currentUserUUID = currentEmployee?.uuid;
 
     let allRequests = (data || []).map((request, index) => {
       const employee = employees.find(e => e.uuid === request.employee_id);
@@ -66,7 +70,12 @@ export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
       return allRequests;
     }
 
-    return allRequests.filter(req => req.employeeId === currentUser.id);
+    // Filter by UUID for regular users
+    if (!currentUserUUID) return [];
+    return allRequests.filter(req => {
+      const employee = employees.find(e => e.id === req.employeeId);
+      return employee?.uuid === currentUserUUID;
+    });
   } catch (error) {
     console.error('Failed to fetch leave requests:', error);
     return [];
