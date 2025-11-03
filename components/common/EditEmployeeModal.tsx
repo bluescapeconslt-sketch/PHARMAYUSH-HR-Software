@@ -20,13 +20,18 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isOpen) {
+    const fetchData = async () => {
+      if (isOpen) {
         if (employee) {
-            setFormData(employee);
+          setFormData(employee);
         }
-        setRoles(getRoles());
-        setDepartments(getDepartments());
-    }
+        const fetchedRoles = await getRoles();
+        const fetchedDepts = await getDepartments();
+        setRoles(fetchedRoles);
+        setDepartments(fetchedDepts);
+      }
+    };
+    fetchData();
   }, [isOpen, employee]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

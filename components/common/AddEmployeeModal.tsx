@@ -38,22 +38,23 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isOpen) {
-        const fetchedRoles = getRoles();
-        const fetchedDepts = getDepartments();
+    const fetchData = async () => {
+      if (isOpen) {
+        const fetchedRoles = await getRoles();
+        const fetchedDepts = await getDepartments();
         setRoles(fetchedRoles);
         setDepartments(fetchedDepts);
 
-        // Default to the first role, typically 'Employee'
         if (fetchedRoles.length > 0) {
-            const employeeRole = fetchedRoles.find(r => r.name === 'Employee');
-            setFormData(prev => ({ ...prev, roleId: employeeRole ? employeeRole.id : fetchedRoles[0].id }));
+          const employeeRole = fetchedRoles.find(r => r.name === 'Employee');
+          setFormData(prev => ({ ...prev, roleId: employeeRole ? employeeRole.id : fetchedRoles[0].id }));
         }
-        // Default to the first department
         if (fetchedDepts.length > 0) {
-            setFormData(prev => ({ ...prev, department: fetchedDepts[0].name }));
+          setFormData(prev => ({ ...prev, department: fetchedDepts[0].name }));
         }
-    }
+      }
+    };
+    fetchData();
   }, [isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

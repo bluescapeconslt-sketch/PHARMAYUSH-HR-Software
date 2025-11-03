@@ -17,23 +17,26 @@ const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, onSave, me
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isOpen) {
-        const fetchedDepts = getDepartments();
+    const fetchData = async () => {
+      if (isOpen) {
+        const fetchedDepts = await getDepartments();
         setDepartments(fetchedDepts);
 
         if (meeting) {
-            setFormData(meeting);
+          setFormData(meeting);
         } else {
-            setFormData({
-                title: '',
-                departmentId: fetchedDepts.length > 0 ? fetchedDepts[0].id : 0,
-                date: new Date().toISOString().split('T')[0],
-                time: '',
-                recurrence: 'None'
-            });
+          setFormData({
+            title: '',
+            departmentId: fetchedDepts.length > 0 ? fetchedDepts[0].id : 0,
+            date: new Date().toISOString().split('T')[0],
+            time: '',
+            recurrence: 'None'
+          });
         }
         setError('');
-    }
+      }
+    };
+    fetchData();
   }, [isOpen, meeting]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
