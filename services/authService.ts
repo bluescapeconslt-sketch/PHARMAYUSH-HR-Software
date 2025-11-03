@@ -1,37 +1,50 @@
 
 import { Employee, Permission } from '../types.ts';
-import { getEmployees } from './employeeService.ts';
-import { getRoles } from './roleService.ts';
+import { supabase } from '../lib/supabaseClient.ts';
 
 const USER_KEY = 'pharmayush_hr_user';
 
-// FIX: Update AuthenticatedUser to omit the password for security. The user object stored in the session should not contain the password.
-// FIX: Export the AuthenticatedUser interface to be used across the application.
 export interface AuthenticatedUser extends Omit<Employee, 'password'> {
     permissions: Permission[];
 }
 
-export const login = (email: string, password: string): boolean => {
-  const employees = getEmployees();
-  const user = employees.find(emp => emp.email.toLowerCase() === email.toLowerCase());
+export const login = async (email: string, password: string): Promise<boolean> => {
+  try {
+    const { data: employee, error } = await supabase
+      .from('employees')
+      .select(`
+        *,
+        role:roles(id, name, description, permissions)
+      `)
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
 
-  if (user && user.password === password) {
-    const roles = getRoles();
-    const userRole = roles.find(r => r.id === user.roleId);
-    
-    // Don't store password in session
-    const { password: _, ...userProfile } = user;
+    if (error || !employee) {
+      console.error('Login error:', error);
+      return false;
+    }
+
+    if (employee.password !== password) {
+      return false;
+    }
+
+    const { password: _, role_id, department_id, shift_id, ...userProfile } = employee;
 
     const authenticatedUser: AuthenticatedUser = {
-        ...userProfile,
-        permissions: userRole ? userRole.permissions : [],
+      ...userProfile,
+      roleId: employee.role_id,
+      departmentId: employee.department_id,
+      shiftId: employee.shift_id,
+      name: `${employee.first_name} ${employee.last_name}`,
+      permissions: employee.role?.permissions || [],
     };
-    
+
     localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser));
     return true;
+  } catch (error) {
+    console.error('Login error:', error);
+    return false;
   }
-  
-  return false;
 };
 
 export const logout = (): void => {
