@@ -1,43 +1,90 @@
 import { Shift } from '../types.ts';
-import { SHIFTS as initialData } from '../constants.tsx';
+import { supabase } from '../lib/supabaseClient.ts';
 
-const STORAGE_KEY = 'pharmayush_hr_shifts';
+let shiftsCache: Shift[] | null = null;
 
 export const getShifts = (): Shift[] => {
+  if (shiftsCache) {
+    return shiftsCache;
+  }
+  return [];
+};
+
+export const fetchShifts = async (): Promise<Shift[]> => {
   try {
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    if (!storedData) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
-      return initialData;
-    }
-    return JSON.parse(storedData);
+    const { data, error } = await supabase
+      .from('shifts')
+      .select('*')
+      .order('name');
+
+    if (error) throw error;
+
+    const shifts: Shift[] = (data || []).map((shift: any) => ({
+      id: shift.id,
+      name: shift.name,
+      startTime: shift.start_time,
+      endTime: shift.end_time,
+    }));
+
+    shiftsCache = shifts;
+    return shifts;
   } catch (error) {
-    console.error("Failed to parse shifts from localStorage", error);
-    return initialData;
+    console.error('Error fetching shifts:', error);
+    return [];
   }
 };
 
-export const addShift = (newShiftData: Omit<Shift, 'id'>): Shift[] => {
-    const shifts = getShifts();
-    const newShift: Shift = {
-        ...newShiftData,
-        id: Date.now(),
-    };
-    const updatedShifts = [...shifts, newShift];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedShifts));
-    return updatedShifts;
+export const addShift = async (newShiftData: Omit<Shift, 'id'>): Promise<Shift[]> => {
+  try {
+    const { error } = await supabase
+      .from('shifts')
+      .insert([{
+        name: newShiftData.name,
+        start_time: newShiftData.startTime,
+        end_time: newShiftData.endTime,
+      }]);
+
+    if (error) throw error;
+
+    return await fetchShifts();
+  } catch (error) {
+    console.error('Error adding shift:', error);
+    return getShifts();
+  }
 };
 
-export const updateShift = (updatedShift: Shift): Shift[] => {
-    let shifts = getShifts();
-    shifts = shifts.map(s => s.id === updatedShift.id ? updatedShift : s);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(shifts));
-    return shifts;
+export const updateShift = async (updatedShift: Shift): Promise<Shift[]> => {
+  try {
+    const { error } = await supabase
+      .from('shifts')
+      .update({
+        name: updatedShift.name,
+        start_time: updatedShift.startTime,
+        end_time: updatedShift.endTime,
+      })
+      .eq('id', updatedShift.id);
+
+    if (error) throw error;
+
+    return await fetchShifts();
+  } catch (error) {
+    console.error('Error updating shift:', error);
+    return getShifts();
+  }
 };
 
-export const deleteShift = (id: number): Shift[] => {
-    let shifts = getShifts();
-    shifts = shifts.filter(s => s.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(shifts));
-    return shifts;
+export const deleteShift = async (id: number | string): Promise<Shift[]> => {
+  try {
+    const { error } = await supabase
+      .from('shifts')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return await fetchShifts();
+  } catch (error) {
+    console.error('Error deleting shift:', error);
+    return getShifts();
+  }
 };

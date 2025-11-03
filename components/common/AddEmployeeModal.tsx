@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal.tsx';
 import { addEmployee } from '../../services/employeeService.ts';
-import { getRoles } from '../../services/roleService.ts';
-import { getDepartments } from '../../services/departmentService.ts';
-import { getShifts } from '../../services/shiftService.ts';
+import { fetchRoles } from '../../services/roleService.ts';
+import { fetchDepartments } from '../../services/departmentService.ts';
+import { fetchShifts } from '../../services/shiftService.ts';
 import { Employee, Role, Department, Position, Shift } from '../../types.ts';
 import { POSITIONS } from '../../constants.tsx';
 
@@ -44,23 +44,26 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
 
   useEffect(() => {
     if (isOpen) {
-        const fetchedRoles = getRoles();
-        const fetchedDepts = getDepartments();
-        const fetchedShifts = getShifts();
-        setRoles(fetchedRoles);
-        setDepartments(fetchedDepts);
-        setShifts(fetchedShifts);
+        const loadData = async () => {
+            const fetchedRoles = await fetchRoles();
+            const fetchedDepts = await fetchDepartments();
+            const fetchedShifts = await fetchShifts();
+            setRoles(fetchedRoles);
+            setDepartments(fetchedDepts);
+            setShifts(fetchedShifts);
 
-        if (fetchedRoles.length > 0) {
-            const employeeRole = fetchedRoles.find(r => r.name === 'Employee');
-            setFormData(prev => ({ ...prev, roleId: employeeRole ? employeeRole.id : fetchedRoles[0].id }));
-        }
-        if (fetchedDepts.length > 0) {
-            setFormData(prev => ({ ...prev, department: fetchedDepts[0].name }));
-        }
-        if (fetchedShifts.length > 0) {
-            setFormData(prev => ({ ...prev, shiftId: fetchedShifts[0].id }));
-        }
+            if (fetchedRoles.length > 0) {
+                const employeeRole = fetchedRoles.find(r => r.name === 'Employee');
+                setFormData(prev => ({ ...prev, roleId: employeeRole ? employeeRole.id : fetchedRoles[0].id }));
+            }
+            if (fetchedDepts.length > 0) {
+                setFormData(prev => ({ ...prev, department: fetchedDepts[0].name }));
+            }
+            if (fetchedShifts.length > 0) {
+                setFormData(prev => ({ ...prev, shiftId: fetchedShifts[0].id }));
+            }
+        };
+        loadData();
     }
   }, [isOpen]);
 
@@ -118,9 +121,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.position || !formData.jobTitle || !formData.email || !formData.password || !formData.birthday || !formData.roleId || !formData.department) {
       setError('Please fill out all required fields.');
       return;
@@ -140,25 +143,45 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
         }
         workLocation = { latitude: lat, longitude: lon, radius: rad };
     } else if (latitude || longitude || radius) {
-        // If some but not all fields are filled
         if (latitude || longitude || (radius && radius !== '50')) {
              setError('To set a work location, all three fields (Latitude, Longitude, Radius) are required.');
              return;
         }
     }
 
+    const selectedDept = departments.find(d => d.name === formData.department);
+
     const payload = {
       ...formData,
-      shiftId: formData.shiftId ? Number(formData.shiftId) : undefined,
+      departmentId: selectedDept?.id,
+      shiftId: formData.shiftId ? formData.shiftId : undefined,
       baseSalary: formData.baseSalary ? Number(formData.baseSalary) : undefined,
+      salary: formData.baseSalary ? Number(formData.baseSalary) : 0,
       avatar: formData.avatar || `https://picsum.photos/seed/${formData.name.replace(/\s/g, '')}/200/200`,
       workLocation,
-      lastLeaveAllocation: new Date().toISOString().slice(0, 7), // Set to current month
+      lastLeaveAllocation: new Date().toISOString().slice(0, 7),
+      dateOfBirth: formData.birthday,
+      phone: '',
+      address: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: '',
+      hireDate: new Date().toISOString().split('T')[0],
+      employmentStatus: 'active',
+      bankAccount: '',
+      bankName: '',
+      role: roles.find(r => r.id === formData.roleId)?.name || '',
+      shift: shifts.find(s => s.id === formData.shiftId)?.name || '',
     };
 
-    addEmployee(payload);
-    onSubmitted();
-    handleClose();
+    try {
+      await addEmployee(payload);
+      onSubmitted();
+      handleClose();
+    } catch (err) {
+      setError('Failed to add employee. Please try again.');
+    }
   };
 
   return (
