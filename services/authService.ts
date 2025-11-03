@@ -14,7 +14,9 @@ export const login = async (email: string, password: string): Promise<boolean> =
       .from('employees')
       .select(`
         *,
-        role:roles(id, name, description, permissions)
+        role:roles(id, name, description, permissions),
+        department:departments(id, name),
+        shift:shifts(id, name, start_time, end_time)
       `)
       .eq('email', email.toLowerCase())
       .maybeSingle();
@@ -28,14 +30,23 @@ export const login = async (email: string, password: string): Promise<boolean> =
       return false;
     }
 
-    const { password: _, role_id, department_id, shift_id, ...userProfile } = employee;
-
     const authenticatedUser: AuthenticatedUser = {
-      ...userProfile,
-      roleId: employee.role_id,
-      departmentId: employee.department_id,
-      shiftId: employee.shift_id,
+      id: employee.id,
       name: `${employee.first_name} ${employee.last_name}`,
+      email: employee.email,
+      avatar: employee.avatar || 'https://i.pravatar.cc/200',
+      position: employee.position,
+      jobTitle: employee.job_title,
+      department: employee.department?.name || '',
+      departmentId: employee.department_id,
+      status: 'Active',
+      birthday: employee.date_of_birth,
+      leaveBalance: employee.leave_balance || { short: 0, sick: 0, personal: 0 },
+      roleId: employee.role_id,
+      shiftId: employee.shift_id,
+      baseSalary: parseFloat(employee.salary) || 0,
+      workLocation: undefined,
+      lastLeaveAllocation: employee.last_leave_allocation,
       permissions: employee.role?.permissions || [],
     };
 
