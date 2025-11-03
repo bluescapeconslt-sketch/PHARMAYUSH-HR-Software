@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal.tsx';
 import { addEmployee } from '../../services/employeeService.ts';
-import { getRoles } from '../../services/roleService.ts';
-import { getDepartments } from '../../services/departmentService.ts';
-import { Employee, Role, Department, Position } from '../../types.ts';
+import { Employee, Position } from '../../types.ts';
 import { POSITIONS } from '../../constants.tsx';
+import { supabase } from '../../services/supabaseClient.ts';
 
 interface AddEmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmitted: () => void;
+}
+
+interface DBDepartment {
+  id: string;
+  name: string;
+}
+
+interface DBRole {
+  id: string;
+  name: string;
 }
 
 const initialFormState: Omit<Employee, 'id'> = {
@@ -22,7 +31,6 @@ const initialFormState: Omit<Employee, 'id'> = {
   avatar: '',
   status: 'Active',
   birthday: '',
-  // FIX: Added the required 'leaveBalance' property with default zero values for new employees.
   leaveBalance: {
     vacation: 0,
     sick: 0,
@@ -33,24 +41,34 @@ const initialFormState: Omit<Employee, 'id'> = {
 
 const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, onSubmitted }) => {
   const [formData, setFormData] = useState(initialFormState);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [roles, setRoles] = useState<DBRole[]>([]);
+  const [departments, setDepartments] = useState<DBDepartment[]>([]);
+  const [selectedDeptId, setSelectedDeptId] = useState<string>('');
+  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       if (isOpen) {
-        const fetchedRoles = await getRoles();
-        const fetchedDepts = await getDepartments();
-        setRoles(fetchedRoles);
-        setDepartments(fetchedDepts);
+        const { data: rolesData } = await supabase.from('roles').select('id, name').order('name');
+        const { data: deptsData } = await supabase.from('departments').select('id, name').order('name');
 
-        if (fetchedRoles.length > 0) {
-          const employeeRole = fetchedRoles.find(r => r.name === 'Employee');
-          setFormData(prev => ({ ...prev, roleId: employeeRole ? employeeRole.id : fetchedRoles[0].id }));
+        if (rolesData) {
+          setRoles(rolesData);
+          const employeeRole = rolesData.find(r => r.name === 'Employee');
+          if (employeeRole) {
+            setSelectedRoleId(employeeRole.id);
+          } else if (rolesData.length > 0) {
+            setSelectedRoleId(rolesData[0].id);
+          }
         }
-        if (fetchedDepts.length > 0) {
-          setFormData(prev => ({ ...prev, department: fetchedDepts[0].name }));
+
+        if (deptsData) {
+          setDepartments(deptsData);
+          if (deptsData.length > 0) {
+            setSelectedDeptId(deptsData[0].id);
+            setFormData(prev => ({ ...prev, department: deptsData[0].name }));
+          }
         }
       }
     };
@@ -59,9 +77,19 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    // Ensure roleId is a number
-    const finalValue = name === 'roleId' ? Number(value) : value;
-    setFormData(prev => ({ ...prev, [name]: finalValue }));
+
+    if (name === 'department') {
+      setSelectedDeptId(value);
+      const dept = departments.find(d => d.id === value);
+      if (dept) {
+        setFormData(prev => ({ ...prev, department: dept.name }));
+      }
+    } else if (name === 'roleId') {
+      setSelectedRoleId(value);
+      setFormData(prev => ({ ...prev, roleId: Number(value) }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
   
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,23 +113,48 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.position || !formData.jobTitle || !formData.email || !formData.password || !formData.birthday || !formData.roleId || !formData.department) {
+
+    if (!formData.name || !formData.position || !formData.jobTitle || !formData.email || !formData.password || !formData.birthday || !selectedRoleId || !selectedDeptId) {
       setError('Please fill out all required fields.');
       return;
     }
     setError('');
 
+    const nameParts = formData.name.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || nameParts[0];
+
     const payload = {
-      ...formData,
-      avatar: formData.avatar || `https://picsum.photos/seed/${formData.name.replace(/\s/g, '')}/200/200`,
+      email: formData.email,
+      password: formData.password,
+      first_name: firstName,
+      last_name: lastName,
+      phone: null,
+      date_of_birth: formData.birthday,
+      address: null,
+      city: null,
+      state: null,
+      postal_code: null,
+      country: null,
+      department_id: selectedDeptId,
+      role_id: selectedRoleId,
+      job_title: formData.jobTitle,
+      hire_date: new Date().toISOString().split('T')[0],
+      employment_status: 'active',
+      salary: null,
+      bank_account: null,
+      bank_name: null
     };
 
-    addEmployee(payload);
-    onSubmitted();
-    handleClose();
+    const result = await addEmployee(payload);
+    if (result) {
+      onSubmitted();
+      handleClose();
+    } else {
+      setError('Failed to add employee. Please try again.');
+    }
   };
 
   return (
@@ -166,15 +219,15 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label htmlFor="department" className="block text-sm font-medium text-gray-700">Department</label>
-                <select id="department" name="department" value={formData.department} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                <select id="department" name="department" value={selectedDeptId} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
                     <option value="" disabled>Select a department</option>
-                    {departments.map(dept => <option key={dept.id} value={dept.name}>{dept.name}</option>)}
+                    {departments.map(dept => <option key={dept.id} value={dept.id}>{dept.name}</option>)}
                 </select>
             </div>
             <div>
                 <label htmlFor="roleId" className="block text-sm font-medium text-gray-700">Role</label>
-                <select id="roleId" name="roleId" value={formData.roleId} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-                    <option value={0} disabled>Select a role</option>
+                <select id="roleId" name="roleId" value={selectedRoleId} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                    <option value="" disabled>Select a role</option>
                     {roles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}
                 </select>
             </div>
