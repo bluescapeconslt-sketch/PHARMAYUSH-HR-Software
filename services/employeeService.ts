@@ -131,30 +131,45 @@ export const updateEmployee = async (updatedEmployee: any): Promise<EmployeeData
       return null;
     }
 
-    const { id, uuid, roleId, departmentId, roleUuid, departmentUuid, ...updateData } = updatedEmployee;
-
     const dbUpdate: any = {};
 
-    if (updateData.first_name !== undefined) dbUpdate.first_name = updateData.first_name;
-    if (updateData.last_name !== undefined) dbUpdate.last_name = updateData.last_name;
-    if (updateData.email !== undefined) dbUpdate.email = updateData.email;
-    if (updateData.password !== undefined) dbUpdate.password = updateData.password;
-    if (updateData.phone !== undefined) dbUpdate.phone = updateData.phone;
-    if (updateData.date_of_birth !== undefined) dbUpdate.date_of_birth = updateData.date_of_birth;
-    if (updateData.address !== undefined) dbUpdate.address = updateData.address;
-    if (updateData.city !== undefined) dbUpdate.city = updateData.city;
-    if (updateData.state !== undefined) dbUpdate.state = updateData.state;
-    if (updateData.postal_code !== undefined) dbUpdate.postal_code = updateData.postal_code;
-    if (updateData.country !== undefined) dbUpdate.country = updateData.country;
-    if (updateData.job_title !== undefined) dbUpdate.job_title = updateData.job_title;
-    if (updateData.hire_date !== undefined) dbUpdate.hire_date = updateData.hire_date;
-    if (updateData.employment_status !== undefined) dbUpdate.employment_status = updateData.employment_status;
-    if (updateData.salary !== undefined) dbUpdate.salary = updateData.salary;
-    if (updateData.bank_account !== undefined) dbUpdate.bank_account = updateData.bank_account;
-    if (updateData.bank_name !== undefined) dbUpdate.bank_name = updateData.bank_name;
+    if (updatedEmployee.name !== undefined) {
+      const nameParts = updatedEmployee.name.trim().split(' ');
+      dbUpdate.first_name = nameParts[0] || '';
+      dbUpdate.last_name = nameParts.slice(1).join(' ') || '';
+    }
 
-    if (roleUuid !== undefined) dbUpdate.role_id = roleUuid;
-    if (departmentUuid !== undefined) dbUpdate.department_id = departmentUuid;
+    if (updatedEmployee.first_name !== undefined) dbUpdate.first_name = updatedEmployee.first_name;
+    if (updatedEmployee.last_name !== undefined) dbUpdate.last_name = updatedEmployee.last_name;
+    if (updatedEmployee.email !== undefined) dbUpdate.email = updatedEmployee.email;
+    if (updatedEmployee.password !== undefined) dbUpdate.password = updatedEmployee.password;
+    if (updatedEmployee.phone !== undefined) dbUpdate.phone = updatedEmployee.phone;
+
+    if (updatedEmployee.birthday !== undefined) dbUpdate.date_of_birth = updatedEmployee.birthday;
+    if (updatedEmployee.date_of_birth !== undefined) dbUpdate.date_of_birth = updatedEmployee.date_of_birth;
+
+    if (updatedEmployee.address !== undefined) dbUpdate.address = updatedEmployee.address;
+    if (updatedEmployee.city !== undefined) dbUpdate.city = updatedEmployee.city;
+    if (updatedEmployee.state !== undefined) dbUpdate.state = updatedEmployee.state;
+    if (updatedEmployee.postal_code !== undefined) dbUpdate.postal_code = updatedEmployee.postal_code;
+    if (updatedEmployee.country !== undefined) dbUpdate.country = updatedEmployee.country;
+
+    if (updatedEmployee.jobTitle !== undefined) dbUpdate.job_title = updatedEmployee.jobTitle;
+    if (updatedEmployee.job_title !== undefined) dbUpdate.job_title = updatedEmployee.job_title;
+
+    if (updatedEmployee.hire_date !== undefined) dbUpdate.hire_date = updatedEmployee.hire_date;
+
+    if (updatedEmployee.status !== undefined) {
+      dbUpdate.employment_status = updatedEmployee.status === 'Active' ? 'active' : 'on_leave';
+    }
+    if (updatedEmployee.employment_status !== undefined) dbUpdate.employment_status = updatedEmployee.employment_status;
+
+    if (updatedEmployee.salary !== undefined) dbUpdate.salary = updatedEmployee.salary;
+    if (updatedEmployee.bank_account !== undefined) dbUpdate.bank_account = updatedEmployee.bank_account;
+    if (updatedEmployee.bank_name !== undefined) dbUpdate.bank_name = updatedEmployee.bank_name;
+
+    if (updatedEmployee.roleUuid !== undefined) dbUpdate.role_id = updatedEmployee.roleUuid;
+    if (updatedEmployee.departmentUuid !== undefined) dbUpdate.department_id = updatedEmployee.departmentUuid;
 
     const { data, error } = await supabase
       .from('employees')

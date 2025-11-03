@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Modal from './Modal.tsx';
 import { updateEmployee, EmployeeWithUUID } from '../../services/employeeService.ts';
 import { getRoles, RoleWithUUID } from '../../services/roleService.ts';
-import { getDepartments } from '../../services/departmentService.ts';
-import { Department, Position } from '../../types.ts';
+import { getDepartments, DepartmentWithUUID } from '../../services/departmentService.ts';
+import { Position } from '../../types.ts';
 import { POSITIONS } from '../../constants.tsx';
 
 interface EditEmployeeModalProps {
@@ -16,7 +16,7 @@ interface EditEmployeeModalProps {
 const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, employee, onSubmitted }) => {
   const [formData, setFormData] = useState<EmployeeWithUUID | null>(null);
   const [roles, setRoles] = useState<RoleWithUUID[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departments, setDepartments] = useState<DepartmentWithUUID[]>([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -45,6 +45,13 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
         ...prev,
         roleId: roleId,
         roleUuid: selectedRole?.uuid || null
+      } : null);
+    } else if (name === 'department') {
+      const selectedDept = departments.find(d => d.name === value);
+      setFormData(prev => prev ? {
+        ...prev,
+        department: value,
+        departmentUuid: selectedDept?.uuid || null
       } : null);
     } else {
       setFormData(prev => prev ? { ...prev, [name]: value } : null);

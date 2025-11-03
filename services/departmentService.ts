@@ -10,14 +10,23 @@ export interface DepartmentData {
   updated_at: string;
 }
 
-const transformToDepartment = (data: DepartmentData, index: number): Department => {
-  return {
+export interface DepartmentWithUUID extends Department {
+  uuid: string;
+}
+
+const departmentCache = new Map<number, string>();
+
+const transformToDepartment = (data: DepartmentData, index: number): DepartmentWithUUID => {
+  const dept: DepartmentWithUUID = {
     id: index + 1,
-    name: data.name
+    name: data.name,
+    uuid: data.id
   };
+  departmentCache.set(dept.id, dept.uuid);
+  return dept;
 };
 
-export const getDepartments = async (): Promise<Department[]> => {
+export const getDepartments = async (): Promise<DepartmentWithUUID[]> => {
   try {
     const { data, error } = await supabase
       .from('departments')
@@ -29,6 +38,7 @@ export const getDepartments = async (): Promise<Department[]> => {
       return [];
     }
 
+    departmentCache.clear();
     return (data || []).map((dept, index) => transformToDepartment(dept, index));
   } catch (error) {
     console.error('Failed to fetch departments:', error);
