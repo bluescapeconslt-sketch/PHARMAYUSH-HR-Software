@@ -1,61 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal.tsx';
-import { updateEmployee, EmployeeWithUUID } from '../../services/employeeService.ts';
-import { getRoles, RoleWithUUID } from '../../services/roleService.ts';
-import { getDepartments, DepartmentWithUUID } from '../../services/departmentService.ts';
-import { Position } from '../../types.ts';
+import { updateEmployee } from '../../services/employeeService.ts';
+import { getRoles } from '../../services/roleService.ts';
+import { getDepartments } from '../../services/departmentService.ts';
+import { Employee, Role, Department, Position } from '../../types.ts';
 import { POSITIONS } from '../../constants.tsx';
 
 interface EditEmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  employee: EmployeeWithUUID | null;
+  employee: Employee | null;
   onSubmitted: () => void;
 }
 
 const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, employee, onSubmitted }) => {
-  const [formData, setFormData] = useState<EmployeeWithUUID | null>(null);
-  const [roles, setRoles] = useState<RoleWithUUID[]>([]);
-  const [departments, setDepartments] = useState<DepartmentWithUUID[]>([]);
+  const [formData, setFormData] = useState<Employee | null>(null);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [locationData, setLocationData] = useState({ latitude: '', longitude: '', radius: '50' });
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (isOpen) {
+    if (isOpen) {
         if (employee) {
-          setFormData(employee);
+            setFormData(employee);
+            setLocationData({
+                latitude: employee.workLocation?.latitude.toString() || '',
+                longitude: employee.workLocation?.longitude.toString() || '',
+                radius: employee.workLocation?.radius.toString() || '50'
+            });
         }
-        const fetchedRoles = await getRoles();
-        const fetchedDepts = await getDepartments();
-        setRoles(fetchedRoles);
-        setDepartments(fetchedDepts);
-      }
-    };
-    fetchData();
+        setRoles(getRoles());
+        setDepartments(getDepartments());
+    }
   }, [isOpen, employee]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!formData) return;
     const { name, value } = e.target;
-
-    if (name === 'roleId') {
-      const roleId = Number(value);
-      const selectedRole = roles.find(r => r.id === roleId);
-      setFormData(prev => prev ? {
-        ...prev,
-        roleId: roleId,
-        roleUuid: selectedRole?.uuid || null
-      } : null);
-    } else if (name === 'department') {
-      const selectedDept = departments.find(d => d.name === value);
-      setFormData(prev => prev ? {
-        ...prev,
-        department: value,
-        departmentUuid: selectedDept?.uuid || null
-      } : null);
-    } else {
-      setFormData(prev => prev ? { ...prev, [name]: value } : null);
-    }
+    const finalValue = name === 'roleId' ? Number(value) : value;
+    setFormData(prev => prev ? { ...prev, [name]: finalValue } : null);
   };
   
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,15 +58,37 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
     }
   };
 
+  const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setLocationData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+            setLocationData(prev => ({
+                ...prev,
+                latitude: position.coords.latitude.toFixed(6),
+                longitude: position.coords.longitude.toFixed(6),
+            }));
+        }, () => {
+            setError("Could not get current location. Please check browser permissions.");
+        });
+    } else {
+        setError("Geolocation is not supported by this browser.");
+    }
+  };
+
   const handleClose = () => {
     setFormData(null);
+    setLocationData({ latitude: '', longitude: '', radius: '50' });
     setError('');
     onClose();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (!formData) {
       setError('No employee data to submit.');
       return;
@@ -94,14 +100,27 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
     }
     setError('');
 
-    try {
-      await updateEmployee(formData);
-      onSubmitted();
-      handleClose();
-    } catch (error) {
-      console.error('Error updating employee:', error);
-      setError('Failed to update employee. Please try again.');
+    let workLocation: Employee['workLocation'] = undefined;
+    const { latitude, longitude, radius } = locationData;
+
+    if (latitude && longitude && radius) {
+        const lat = parseFloat(latitude);
+        const lon = parseFloat(longitude);
+        const rad = parseInt(radius, 10);
+        if (isNaN(lat) || isNaN(lon) || isNaN(rad) || rad < 0) {
+            setError('Latitude, Longitude, and Radius must be valid numbers if provided. Radius must be positive.');
+            return;
+        }
+        workLocation = { latitude: lat, longitude: lon, radius: rad };
+    } else if (latitude || longitude || (radius && radius !== '50')) {
+        setError('To set a work location, all three fields (Latitude, Longitude, Radius) are required.');
+        return;
     }
+
+
+    updateEmployee({ ...formData, workLocation });
+    onSubmitted();
+    handleClose();
   };
 
   if (!formData) return null;
@@ -185,6 +204,28 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
             </div>
         </div>
         
+        <div className="pt-4 border-t">
+            <h4 className="text-md font-semibold text-gray-700">Work Location (for Geo-fenced Punch-In)</h4>
+            <p className="text-xs text-gray-500 mb-2">Leave all location fields blank to disable this feature for the user.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                <div>
+                    <label htmlFor="latitude-edit" className="block text-sm font-medium text-gray-700">Latitude</label>
+                    <input type="text" id="latitude-edit" name="latitude" value={locationData.latitude} onChange={handleLocationChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., 34.052235" />
+                </div>
+                <div>
+                    <label htmlFor="longitude-edit" className="block text-sm font-medium text-gray-700">Longitude</label>
+                    <input type="text" id="longitude-edit" name="longitude" value={locationData.longitude} onChange={handleLocationChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., -118.243683" />
+                </div>
+                <div className="md:col-span-2">
+                    <button type="button" onClick={handleGetCurrentLocation} className="text-sm font-medium text-indigo-600 hover:text-indigo-800">Use My Current Location</button>
+                </div>
+                <div>
+                    <label htmlFor="radius-edit" className="block text-sm font-medium text-gray-700">Radius (meters)</label>
+                    <input type="number" id="radius-edit" name="radius" min="0" value={locationData.radius} onChange={handleLocationChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+                </div>
+            </div>
+        </div>
+
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div className="flex justify-end gap-4 pt-4">

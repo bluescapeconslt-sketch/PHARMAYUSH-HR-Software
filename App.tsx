@@ -18,6 +18,7 @@ import ManageNotices from './components/ManageNotices.tsx';
 import ManageDepartments from './components/ManageDepartments.tsx';
 import MeetingScheduler from './components/MeetingScheduler.tsx';
 import OrganizationChart from './components/OrganizationChart.tsx';
+import AttendanceReport from './components/AttendanceReport.tsx';
 // FIX: Import AuthenticatedUser to correctly type the user state.
 import { getCurrentUser, logout, AuthenticatedUser } from './services/authService.ts';
 
@@ -79,6 +80,8 @@ const App: React.FC = () => {
                 return <ManageDepartments />;
             case 'meetings':
                 return <MeetingScheduler />;
+            case 'attendance-report':
+                return <AttendanceReport />;
             default:
                 return <Dashboard />;
         }

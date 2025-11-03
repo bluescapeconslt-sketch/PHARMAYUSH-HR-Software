@@ -1,78 +1,37 @@
-import { Permission } from '../types.ts';
-import { supabase } from './supabaseClient.ts';
+
+import { Employee, Permission } from '../types.ts';
+import { getEmployees } from './employeeService.ts';
+import { getRoles } from './roleService.ts';
 
 const USER_KEY = 'pharmayush_hr_user';
 
-export interface AuthenticatedUser {
-    id: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    phone: string | null;
-    date_of_birth: string | null;
-    address: string | null;
-    city: string | null;
-    state: string | null;
-    postal_code: string | null;
-    country: string | null;
-    department_id: string | null;
-    role_id: string | null;
-    job_title: string | null;
-    hire_date: string | null;
-    employment_status: string;
-    salary: number | null;
-    bank_account: string | null;
-    bank_name: string | null;
+// FIX: Update AuthenticatedUser to omit the password for security. The user object stored in the session should not contain the password.
+// FIX: Export the AuthenticatedUser interface to be used across the application.
+export interface AuthenticatedUser extends Omit<Employee, 'password'> {
     permissions: Permission[];
 }
 
-export const login = async (email: string, password: string): Promise<boolean> => {
-  try {
-    const { data: employee, error: employeeError } = await supabase
-      .from('employees')
-      .select('*')
-      .eq('email', email.toLowerCase())
-      .maybeSingle();
+export const login = (email: string, password: string): boolean => {
+  const employees = getEmployees();
+  const user = employees.find(emp => emp.email.toLowerCase() === email.toLowerCase());
 
-    if (employeeError || !employee || employee.password !== password) {
-      return false;
-    }
-
-    const { data: role, error: roleError } = await supabase
-      .from('roles')
-      .select('permissions')
-      .eq('id', employee.role_id)
-      .maybeSingle();
+  if (user && user.password === password) {
+    const roles = getRoles();
+    const userRole = roles.find(r => r.id === user.roleId);
+    
+    // Don't store password in session
+    const { password: _, ...userProfile } = user;
 
     const authenticatedUser: AuthenticatedUser = {
-      id: employee.id,
-      email: employee.email,
-      first_name: employee.first_name,
-      last_name: employee.last_name,
-      phone: employee.phone,
-      date_of_birth: employee.date_of_birth,
-      address: employee.address,
-      city: employee.city,
-      state: employee.state,
-      postal_code: employee.postal_code,
-      country: employee.country,
-      department_id: employee.department_id,
-      role_id: employee.role_id,
-      job_title: employee.job_title,
-      hire_date: employee.hire_date,
-      employment_status: employee.employment_status,
-      salary: employee.salary,
-      bank_account: employee.bank_account,
-      bank_name: employee.bank_name,
-      permissions: role?.permissions || [],
+        ...userProfile,
+        permissions: userRole ? userRole.permissions : [],
     };
-
+    
     localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser));
     return true;
-  } catch (error) {
-    console.error('Login error:', error);
-    return false;
   }
+  
+  return false;
 };
 
 export const logout = (): void => {

@@ -12,7 +12,7 @@ interface LeaveRequestModalProps {
 }
 
 const initialFormState: Omit<LeaveRequest, 'id' | 'status'> = {
-  employeeId: -1,
+  employeeId: 0,
   employeeName: '',
   employeeAvatar: '',
   leaveType: 'Vacation',
@@ -38,24 +38,16 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
   }); // 09:00 to 17:00
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (isOpen) {
-          const fetchedEmployees = await getEmployees();
-          setEmployees(fetchedEmployees as any);
+    if (isOpen) {
+        const fetchedEmployees = getEmployees();
+        setEmployees(fetchedEmployees);
 
-          if (currentUser) {
-              // Find the current user in the employee list
-              const currentEmployee = fetchedEmployees.find((emp: any) => emp.email === currentUser.email);
-              if (currentEmployee) {
-                  setFormData(prev => ({ ...prev, employeeId: currentEmployee.id }));
-              } else if (fetchedEmployees.length > 0) {
-                  // Fallback to first employee if current user not found
-                  setFormData(prev => ({ ...prev, employeeId: fetchedEmployees[0].id }));
-              }
-          }
-      }
-    };
-    fetchData();
+        if (currentUser && !canManage) {
+            setFormData(prev => ({ ...prev, employeeId: currentUser.id }));
+        } else if (fetchedEmployees.length > 0) {
+            setFormData(prev => ({ ...prev, employeeId: fetchedEmployees[0].id }));
+        }
+    }
   }, [isOpen, currentUser, canManage]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -78,7 +70,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
     onClose();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.employeeId || !formData.startDate || !formData.reason) {
@@ -124,7 +116,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
     }
 
 
-    await addLeaveRequest(payload);
+    addLeaveRequest(payload);
     onSubmitted();
     handleClose();
   };
@@ -134,15 +126,14 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
             <label htmlFor="employeeId" className="block text-sm font-medium text-gray-700">Employee</label>
-            <select
-                id="employeeId"
-                name="employeeId"
-                value={formData.employeeId}
-                onChange={handleChange}
+            <select 
+                id="employeeId" 
+                name="employeeId" 
+                value={formData.employeeId} 
+                onChange={handleChange} 
                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
                 disabled={!canManage}
             >
-                {formData.employeeId === -1 && <option value={-1}>Select an employee...</option>}
                 {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
             </select>
         </div>

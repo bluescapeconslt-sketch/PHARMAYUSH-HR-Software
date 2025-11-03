@@ -1,199 +1,126 @@
+
+// FIX: Add file extension to import paths
 import { LeaveRequest } from '../types.ts';
-import { supabase } from './supabaseClient.ts';
+import { LEAVE_REQUESTS as initialData } from '../constants.tsx';
 import { getCurrentUser, hasPermission } from './authService.ts';
-import { getEmployees, updateEmployee, EmployeeWithUUID } from './employeeService.ts';
+import { getEmployees, updateEmployee } from './employeeService.ts';
 
-interface LeaveRequestData {
-  id: string;
-  employee_id: string;
-  leave_type: string;
-  start_date: string;
-  end_date: string;
-  reason: string;
-  status: string;
-  start_time: string | null;
-  end_time: string | null;
-  created_at: string;
-  updated_at: string;
-}
+const STORAGE_KEY = 'pharmayush_hr_leave_requests';
 
-const transformToLeaveRequest = (data: LeaveRequestData, index: number, employeeId: number, employeeName: string, employeeAvatar: string): LeaveRequest => {
-  return {
-    id: index + 1,
-    employeeId: employeeId,
-    employeeName: employeeName,
-    employeeAvatar: employeeAvatar,
-    leaveType: data.leave_type as 'Vacation' | 'Sick Leave' | 'Personal' | 'Unpaid' | 'Short Leave',
-    startDate: data.start_date,
-    endDate: data.end_date,
-    reason: data.reason,
-    status: data.status as 'Pending' | 'Approved' | 'Rejected',
-    startTime: data.start_time || undefined,
-    endTime: data.end_time || undefined
+export const getLeaveRequests = (): LeaveRequest[] => {
+  let allRequests: LeaveRequest[] = [];
+  try {
+    const storedData = localStorage.getItem(STORAGE_KEY);
+    if (!storedData) {
+      // Seed initial data if nothing is in localStorage
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
+      allRequests = initialData;
+    } else {
+        allRequests = JSON.parse(storedData);
+    }
+  } catch (error) {
+    console.error("Failed to parse leave requests from localStorage", error);
+    allRequests = [];
+  }
+
+  const currentUser = getCurrentUser();
+  if (!currentUser) return [];
+
+  // Users with 'manage:leaves' permission (e.g., HR Manager, Admin) see all requests.
+  if (hasPermission('manage:leaves')) {
+    return allRequests;
+  }
+  
+  // Regular employees only see their own requests.
+  return allRequests.filter(req => req.employeeId === currentUser.id);
+};
+
+export const getLeaveRequestsForEmployee = (employeeId: number): LeaveRequest[] => {
+  let allRequests: LeaveRequest[] = [];
+  try {
+    const storedData = localStorage.getItem(STORAGE_KEY);
+    // Use initialData as fallback if nothing is in storage
+    allRequests = storedData ? JSON.parse(storedData) : initialData;
+  } catch (error) {
+    console.error("Failed to parse leave requests from localStorage", error);
+    allRequests = [];
+  }
+  return allRequests.filter(req => req.employeeId === employeeId);
+};
+
+export const addLeaveRequest = (newRequestData: Omit<LeaveRequest, 'id' | 'status'>): void => {
+  const allRequests: LeaveRequest[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+  const newRequest: LeaveRequest = {
+    ...newRequestData,
+    id: Date.now(), // Simple unique ID generation
+    status: 'Pending',
   };
+  const updatedRequests = [...allRequests, newRequest];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedRequests));
 };
 
-export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
-  try {
-    const currentUser = getCurrentUser();
-    if (!currentUser) return [];
+export const updateLeaveRequestStatus = (id: number, status: 'Approved' | 'Rejected'): LeaveRequest[] => {
+  const allRequests: LeaveRequest[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+  const requestToUpdate = allRequests.find(req => req.id === id);
 
-    const { data, error } = await supabase
-      .from('leave_requests')
-      .select('*')
-      .order('created_at', { ascending: false });
+  if (requestToUpdate && status === 'Approved') {
+    const employees = getEmployees();
+    const employee = employees.find(e => e.id === requestToUpdate.employeeId);
 
-    if (error) {
-      console.error('Error fetching leave requests:', error);
-      return [];
-    }
-
-    const employees = await getEmployees();
-
-    // Find current user's UUID
-    const currentEmployee = employees.find(e => e.email === currentUser.email);
-    const currentUserUUID = currentEmployee?.uuid;
-
-    let allRequests = (data || []).map((request, index) => {
-      const employee = employees.find(e => e.uuid === request.employee_id);
-
-      return transformToLeaveRequest(
-        request,
-        index,
-        employee?.id || 1,
-        employee?.name || 'Unknown',
-        employee?.avatar || 'https://ui-avatars.com/api/?name=Unknown&background=4f46e5&color=fff'
-      );
-    });
-
-    if (hasPermission('manage:leaves')) {
-      return allRequests;
-    }
-
-    // Filter by UUID for regular users
-    if (!currentUserUUID) return [];
-    return allRequests.filter(req => {
-      const employee = employees.find(e => e.id === req.employeeId);
-      return employee?.uuid === currentUserUUID;
-    });
-  } catch (error) {
-    console.error('Failed to fetch leave requests:', error);
-    return [];
-  }
-};
-
-export const getLeaveRequestsForEmployee = async (employeeId: number): Promise<LeaveRequest[]> => {
-  try {
-    const allRequests = await getLeaveRequests();
-    return allRequests.filter(req => req.employeeId === employeeId);
-  } catch (error) {
-    console.error('Failed to fetch leave requests for employee:', error);
-    return [];
-  }
-};
-
-export const addLeaveRequest = async (newRequestData: Omit<LeaveRequest, 'id' | 'status'>): Promise<boolean> => {
-  try {
-    const employees = await getEmployees();
-    const employee = employees.find(e => e.id === newRequestData.employeeId) as EmployeeWithUUID | undefined;
-
-    if (!employee || !employee.uuid) {
-      console.error('Employee not found or UUID missing');
-      return false;
-    }
-
-    const { error } = await supabase
-      .from('leave_requests')
-      .insert([{
-        employee_id: employee.uuid,
-        leave_type: newRequestData.leaveType,
-        start_date: newRequestData.startDate,
-        end_date: newRequestData.endDate,
-        reason: newRequestData.reason,
-        status: 'Pending',
-        start_time: newRequestData.startTime || null,
-        end_time: newRequestData.endTime || null
-      }]);
-
-    if (error) {
-      console.error('Error adding leave request:', error);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Failed to add leave request:', error);
-    return false;
-  }
-};
-
-export const updateLeaveRequestStatus = async (id: number, status: 'Approved' | 'Rejected'): Promise<LeaveRequest[]> => {
-  try {
-    const { data: requests } = await supabase
-      .from('leave_requests')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (!requests || requests.length === 0) return [];
-
-    const targetRequest = requests[id - 1];
-    if (!targetRequest) return [];
-
-    if (status === 'Approved') {
-      const employees = await getEmployees();
-      const employee = employees.find(e => e.uuid === targetRequest.employee_id) as EmployeeWithUUID | undefined;
-
-      if (employee) {
-        const startDate = new Date(targetRequest.start_date);
-        const endDate = new Date(targetRequest.end_date);
-        const duration = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    if (employee) {
+        // Calculate leave duration in days (inclusive)
+        const startDate = new Date(requestToUpdate.startDate);
+        const endDate = new Date(requestToUpdate.endDate);
+        const duration = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 24)) + 1;
 
         const newBalance = { ...employee.leaveBalance };
         let balanceUpdated = false;
 
-        switch (targetRequest.leave_type) {
-          case 'Vacation':
-            if (newBalance.vacation >= duration) {
-              newBalance.vacation -= duration;
-              balanceUpdated = true;
-            }
-            break;
-          case 'Sick Leave':
-            if (newBalance.sick >= duration) {
-              newBalance.sick -= duration;
-              balanceUpdated = true;
-            }
-            break;
-          case 'Personal':
-            if (newBalance.personal >= duration) {
-              newBalance.personal -= duration;
-              balanceUpdated = true;
-            }
-            break;
-          default:
-            balanceUpdated = true;
-            break;
+        switch (requestToUpdate.leaveType) {
+            case 'Vacation':
+                if (newBalance.vacation >= duration) {
+                    newBalance.vacation -= duration;
+                    balanceUpdated = true;
+                }
+                break;
+            case 'Sick Leave':
+                if (newBalance.sick >= duration) {
+                    newBalance.sick -= duration;
+                    balanceUpdated = true;
+                }
+                break;
+            case 'Personal':
+                if (newBalance.personal >= duration) {
+                    newBalance.personal -= duration;
+                    balanceUpdated = true;
+                }
+                break;
+            // 'Unpaid' and 'Short Leave' do not affect balances
+            default:
+                balanceUpdated = true; // Still allow approval without balance change
+                break;
         }
-
+        
         if (balanceUpdated) {
-          await updateEmployee({ ...employee, leaveBalance: newBalance });
+            updateEmployee({ ...employee, leaveBalance: newBalance });
+        } else {
+            console.warn(`Insufficient leave balance for employee ${employee.name} to approve request ${id}.`);
         }
-      }
     }
-
-    const { error } = await supabase
-      .from('leave_requests')
-      .update({ status })
-      .eq('id', targetRequest.id);
-
-    if (error) {
-      console.error('Error updating leave request:', error);
-      return [];
-    }
-
-    return await getLeaveRequests();
-  } catch (error) {
-    console.error('Failed to update leave request status:', error);
-    return [];
   }
+
+  const updatedRequests = allRequests.map(req =>
+    req.id === id ? { ...req, status } : req
+  );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedRequests));
+  
+  // Re-filter and return the list for the current user to update the UI
+  const currentUser = getCurrentUser();
+  if (!currentUser) return [];
+
+  if (hasPermission('manage:leaves')) {
+    return updatedRequests;
+  }
+  
+  return updatedRequests.filter(req => req.employeeId === currentUser.id);
 };

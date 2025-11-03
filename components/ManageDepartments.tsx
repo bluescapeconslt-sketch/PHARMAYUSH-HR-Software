@@ -9,9 +9,8 @@ const ManageDepartments: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
 
-    const fetchDepartments = async () => {
-        const data = await getDepartments();
-        setDepartments(data);
+    const fetchDepartments = () => {
+        setDepartments(getDepartments());
     };
 
     useEffect(() => {
@@ -28,10 +27,10 @@ const ManageDepartments: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = (id: number) => {
         if (window.confirm('Are you sure you want to delete this department? This might affect existing employee records.')) {
-            await deleteDepartment(id);
-            await fetchDepartments();
+            const updatedDepartments = deleteDepartment(id);
+            setDepartments(updatedDepartments);
         }
     };
 

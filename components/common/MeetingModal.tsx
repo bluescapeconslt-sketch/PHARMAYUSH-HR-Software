@@ -17,26 +17,23 @@ const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, onSave, me
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (isOpen) {
-        const fetchedDepts = await getDepartments();
+    if (isOpen) {
+        const fetchedDepts = getDepartments();
         setDepartments(fetchedDepts);
 
         if (meeting) {
-          setFormData(meeting);
+            setFormData(meeting);
         } else {
-          setFormData({
-            title: '',
-            departmentId: fetchedDepts.length > 0 ? fetchedDepts[0].id : 0,
-            date: new Date().toISOString().split('T')[0],
-            time: '',
-            recurrence: 'None'
-          });
+            setFormData({
+                title: '',
+                departmentId: fetchedDepts.length > 0 ? fetchedDepts[0].id : 0,
+                date: new Date().toISOString().split('T')[0],
+                time: '',
+                recurrence: 'None'
+            });
         }
         setError('');
-      }
-    };
-    fetchData();
+    }
   }, [isOpen, meeting]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -45,7 +42,7 @@ const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, onSave, me
     setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.date || !formData.time || !formData.departmentId) {
       setError('Title, Department, Date, and Time are required.');
@@ -53,9 +50,9 @@ const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, onSave, me
     }
 
     if (meeting) {
-      await updateMeeting({ ...meeting, ...formData });
+      updateMeeting({ ...meeting, ...formData });
     } else {
-      await addMeeting(formData);
+      addMeeting(formData);
     }
     onSave();
   };

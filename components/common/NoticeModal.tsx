@@ -40,7 +40,7 @@ const NoticeModal: React.FC<NoticeModalProps> = ({ isOpen, onClose, onSave, noti
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.content) {
       setError('Title and Content are required.');
@@ -48,9 +48,9 @@ const NoticeModal: React.FC<NoticeModalProps> = ({ isOpen, onClose, onSave, noti
     }
 
     if (notice && 'id' in notice) {
-      await updateNotice({ ...notice, ...formData });
+      updateNotice({ ...notice, ...formData });
     } else {
-      await addNotice(formData);
+      addNotice(formData);
     }
     onSave();
   };

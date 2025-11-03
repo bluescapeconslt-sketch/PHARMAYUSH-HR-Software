@@ -16,14 +16,11 @@ const PerformanceReview: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const fetchedEmployees = await getEmployees();
-      setEmployees(fetchedEmployees as any);
-      if (fetchedEmployees.length > 0) {
-        setSelectedEmployee(fetchedEmployees[0].id.toString());
-      }
-    };
-    fetchData();
+    const fetchedEmployees = getEmployees();
+    setEmployees(fetchedEmployees);
+    if (fetchedEmployees.length > 0) {
+      setSelectedEmployee(fetchedEmployees[0].id.toString());
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

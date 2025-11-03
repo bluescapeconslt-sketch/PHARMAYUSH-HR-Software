@@ -7,29 +7,9 @@ import { BUDDY_AVATAR as defaultBuddyAvatar } from '../constants.tsx';
 
 
 const Settings: React.FC = () => {
-  const [settings, setSettings] = useState<CompanySettings>({
-    companyName: 'PHARMAYUSH HR',
-    companyAddress: '',
-    companyLogo: '',
-  });
-  const [buddySettings, setBuddySettings] = useState<BuddySettings>({
-    avatarImage: defaultBuddyAvatar,
-  });
+  const [settings, setSettings] = useState<CompanySettings>(getSettings);
+  const [buddySettings, setBuddySettings] = useState<BuddySettings>(getBuddySettings);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  React.useEffect(() => {
-    const loadSettings = async () => {
-      const [companySettings, buddyConfig] = await Promise.all([
-        getSettings(),
-        getBuddySettings(),
-      ]);
-      setSettings(companySettings);
-      setBuddySettings(buddyConfig);
-      setIsLoading(false);
-    };
-    loadSettings();
-  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -66,19 +46,12 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const [settingsSaved, buddySaved] = await Promise.all([
-      saveSettings(settings),
-      saveBuddySettings(buddySettings),
-    ]);
-
-    if (settingsSaved && buddySaved) {
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-    } else {
-      alert('Failed to save settings. Please try again.');
-    }
+    saveSettings(settings);
+    saveBuddySettings(buddySettings);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000); // Hide message after 3 seconds
   };
 
   return (

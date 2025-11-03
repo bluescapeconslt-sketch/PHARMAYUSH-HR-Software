@@ -6,18 +6,109 @@ import { getEmployees } from '../services/employeeService.ts';
 import { getLeaveRequests } from '../services/leaveService.ts';
 import { getHealthTip } from '../services/geminiService.ts';
 import { getBuddySettings } from '../services/buddyService.ts';
-import { Employee, LeaveRequest } from '../types.ts';
+import { Employee, LeaveRequest, AttendanceRecord } from '../types.ts';
 import BirthdayNotification from './common/BirthdayNotification.tsx';
 import DailyMotivation from './common/DailyMotivation.tsx';
 import NoticeBoard from './common/NoticeBoard.tsx';
-import { hasPermission } from '../services/authService.ts';
+import { getCurrentUser, hasPermission } from '../services/authService.ts';
 import { getMeetings, EnrichedMeeting } from '../services/meetingService.ts';
+import { punchIn, punchOut, getEmployeeStatus } from '../services/attendanceService.ts';
+
 
 const HEALTH_TIP_KEY = 'pharmayush_hr_health_tip';
 interface StoredTip {
     tip: string;
     date: string;
 }
+
+const TimeClock: React.FC = () => {
+    const [currentTime, setCurrentTime] = useState(new Date());
+    const [status, setStatus] = useState<'in' | 'out'>('out');
+    const [lastPunchIn, setLastPunchIn] = useState<Date | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isLocating, setIsLocating] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const currentUser = getCurrentUser();
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        if (currentUser) {
+            const currentStatus = getEmployeeStatus(currentUser.id);
+            setStatus(currentStatus.status);
+            if (currentStatus.record) {
+                setLastPunchIn(new Date(currentStatus.record.punchInTime));
+            }
+        }
+        setIsLoading(false);
+    }, [currentUser]);
+
+    const handlePunchIn = async () => {
+        if (!currentUser) return;
+        setIsLocating(true);
+        setError(null);
+        try {
+            const record = await punchIn(currentUser.id);
+            setStatus('in');
+            setLastPunchIn(new Date(record.punchInTime));
+        } catch (err: any) {
+            setError(err.message || 'An unknown error occurred while trying to punch in.');
+        } finally {
+            setIsLocating(false);
+        }
+    };
+
+    const handlePunchOut = () => {
+        if (!currentUser) return;
+        punchOut(currentUser.id);
+        setStatus('out');
+        setLastPunchIn(null);
+        setError(null); // Clear any previous errors on successful punch out
+    };
+    
+    const buttonDisabled = isLoading || !currentUser || isLocating;
+    const buttonBaseClasses = "w-full font-bold py-4 px-6 rounded-lg text-white shadow-lg transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100";
+    
+    return (
+        <Card title="Time Clock">
+            <div className="flex flex-col items-center justify-center gap-4 text-center">
+                <div className="text-5xl font-bold text-gray-800 tracking-wider">
+                    {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+                <div className="text-gray-500">
+                    {currentTime.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+                <div className="min-h-[48px] mt-4 flex flex-col justify-center items-center">
+                    {isLoading ? (
+                        <div className="h-6 bg-slate-200 rounded w-48 animate-pulse"></div>
+                    ) : (
+                        status === 'out' ? (
+                            <p className="text-lg text-gray-600">You are <span className="font-bold text-red-600">Punched Out</span>.</p>
+                        ) : (
+                            <p className="text-lg text-gray-600">You are <span className="font-bold text-green-600">Punched In</span> since {lastPunchIn?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.</p>
+                        )
+                    )}
+                    {error && <p className="text-sm text-red-600 mt-2 px-2">{error}</p>}
+                </div>
+                 <div className="w-full mt-6">
+                    {status === 'out' ? (
+                        <button onClick={handlePunchIn} disabled={buttonDisabled} className={`${buttonBaseClasses} bg-green-500 hover:bg-green-600`}>
+                            {isLocating ? 'Getting Location...' : 'Punch In'}
+                        </button>
+                    ) : (
+                        <button onClick={handlePunchOut} disabled={buttonDisabled} className={`${buttonBaseClasses} bg-red-500 hover:bg-red-600`}>
+                            Punch Out
+                        </button>
+                    )}
+                </div>
+            </div>
+        </Card>
+    );
+};
 
 const PharmayushBuddy: React.FC = () => {
     // FIX: Corrected a syntax error where the useState call was split across two lines.
@@ -58,26 +149,21 @@ const PharmayushBuddy: React.FC = () => {
     };
 
     useEffect(() => {
-        const initializeBuddy = async () => {
-            fetchTip(false);
-            const settings = await getBuddySettings();
-            setBuddyImage(settings.avatarImage);
-        };
-        initializeBuddy();
+        fetchTip(false);
+        const settings = getBuddySettings();
+        setBuddyImage(settings.avatarImage);
     }, []);
 
     return (
         <Card title="Pharmayush Buddy's Wellness Tip">
             <div className="flex flex-col items-center gap-4 text-center">
-                {buddyImage && (
-                    <img
-                        src={buddyImage}
-                        alt="Pharmayush Buddy"
-                        className="h-32 w-32 object-contain buddy-avatar"
-                        onClick={() => fetchTip(true)}
-                        title="Click me for a new tip!"
-                    />
-                )}
+                <img 
+                    src={buddyImage} 
+                    alt="Pharmayush Buddy" 
+                    className="h-32 w-32 object-contain buddy-avatar"
+                    onClick={() => fetchTip(true)}
+                    title="Click me for a new tip!"
+                />
                 <div className="flex-grow min-h-[60px]">
                     {isLoading ? (
                         <div className="space-y-2 pt-2">
@@ -100,36 +186,33 @@ const TodaysMeetings: React.FC = () => {
     const [meetings, setMeetings] = useState<EnrichedMeeting[]>([]);
 
     useEffect(() => {
-        const fetchMeetings = async () => {
-            const allMeetings = await getMeetings();
-            const today = new Date();
-            const todayStr = today.toISOString().split('T')[0];
-            const todayDay = today.getDay();
+        const allMeetings = getMeetings();
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        const todayDay = today.getDay(); // 0 for Sunday, 1 for Monday, etc.
 
-            const todaysMeetings = allMeetings.filter(m => {
-                const meetingDate = new Date(m.date + "T00:00:00");
+        const todaysMeetings = allMeetings.filter(m => {
+            const meetingDate = new Date(m.date + "T00:00:00");
+            
+            if (m.recurrence === 'None') {
+                return m.date === todayStr;
+            }
+            if (meetingDate > today) {
+                return false; // Recurring meeting hasn't started yet
+            }
+            if (m.recurrence === 'Daily') {
+                return true;
+            }
+            if (m.recurrence === 'Weekly') {
+                return meetingDate.getDay() === todayDay;
+            }
+            if (m.recurrence === 'Monthly') {
+                return meetingDate.getDate() === today.getDate();
+            }
+            return false;
+        }).sort((a,b) => a.time.localeCompare(b.time));
 
-                if (m.recurrence === 'None') {
-                    return m.date === todayStr;
-                }
-                if (meetingDate > today) {
-                    return false;
-                }
-                if (m.recurrence === 'Daily') {
-                    return true;
-                }
-                if (m.recurrence === 'Weekly') {
-                    return meetingDate.getDay() === todayDay;
-                }
-                if (m.recurrence === 'Monthly') {
-                    return meetingDate.getDate() === today.getDate();
-                }
-                return false;
-            }).sort((a,b) => a.time.localeCompare(b.time));
-
-            setMeetings(todaysMeetings);
-        };
-        fetchMeetings();
+        setMeetings(todaysMeetings);
     }, []);
 
     if (meetings.length === 0) {
@@ -168,15 +251,10 @@ const Dashboard: React.FC = () => {
     const canViewAllEmployees = useMemo(() => hasPermission('view:employees'), []);
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (canViewAllEmployees) {
-                const employeeData = await getEmployees();
-                setEmployees(employeeData as any);
-            }
-            const leaveData = await getLeaveRequests();
-            setLeaveRequests(leaveData);
-        };
-        fetchData();
+        if (canViewAllEmployees) {
+            setEmployees(getEmployees());
+        }
+        setLeaveRequests(getLeaveRequests());
     }, [canViewAllEmployees]);
 
     const pendingRequests = useMemo(() => leaveRequests.filter(r => r.status === 'Pending'), [leaveRequests]);
@@ -216,6 +294,10 @@ const Dashboard: React.FC = () => {
                     <DailyMotivation />
                 </Card>
                 <PharmayushBuddy />
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 mb-6">
+                <TimeClock />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

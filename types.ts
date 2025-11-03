@@ -19,6 +19,8 @@ export type Permission =
   | 'manage:departments'
   // Meeting Permissions
   | 'manage:meetings'
+  // Reporting Permissions
+  | 'view:attendance-report'
   // AI Tools Permissions
   | 'use:performance-review'
   | 'use:job-description'
@@ -59,6 +61,11 @@ export interface Employee {
     personal: number;
   };
   roleId: number; // Links to Role interface
+  workLocation?: {
+    latitude: number;
+    longitude: number;
+    radius: number; // in meters
+  };
 }
 
 export interface HierarchyNode extends Employee {
@@ -134,4 +141,12 @@ export interface Meeting {
   date: string; // YYYY-MM-DD (Start date for recurring meetings)
   time: string; // HH:MM
   recurrence: 'None' | 'Daily' | 'Weekly' | 'Monthly';
+}
+
+export interface AttendanceRecord {
+  id: number;
+  employeeId: number;
+  punchInTime: string; // ISO string
+  punchOutTime: string | null; // ISO string or null
+  date: string; // YYYY-MM-DD
 }

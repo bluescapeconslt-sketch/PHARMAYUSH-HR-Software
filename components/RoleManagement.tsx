@@ -1,25 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import Card from './common/Card.tsx';
 import Modal from './common/Modal.tsx';
-import { getRoles, addRole, updateRole, deleteRole, RoleWithUUID } from '../services/roleService.ts';
-import { Permission } from '../types.ts';
+import { getRoles, addRole, updateRole, deleteRole } from '../services/roleService.ts';
+import { Role, Permission } from '../types.ts';
 import { PERMISSIONS } from '../constants.tsx';
 
 const RoleManagement: React.FC = () => {
-    const [roles, setRoles] = useState<RoleWithUUID[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedRole, setSelectedRole] = useState<RoleWithUUID | null>(null);
+    const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
-    const fetchRoles = async () => {
-        const data = await getRoles();
-        setRoles(data);
+    const fetchRoles = () => {
+        setRoles(getRoles());
     };
 
     useEffect(() => {
         fetchRoles();
     }, []);
 
-    const handleOpenModal = (role: RoleWithUUID | null) => {
+    const handleOpenModal = (role: Role | null) => {
         setSelectedRole(role);
         setIsModalOpen(true);
     };
@@ -29,14 +28,14 @@ const RoleManagement: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = (id: number) => {
         if (id <= 3) { // Prevent deleting default roles
             alert("Default roles (Admin, Employee, HR Manager) cannot be deleted.");
             return;
         }
         if (window.confirm('Are you sure you want to delete this role?')) {
-            await deleteRole(id);
-            await fetchRoles();
+            deleteRole(id);
+            fetchRoles();
         }
     };
 
@@ -83,7 +82,7 @@ interface RoleModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: () => void;
-    role: RoleWithUUID | null;
+    role: Role | null;
 }
 
 const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, onSave, role }) => {
@@ -112,26 +111,22 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, onSave, role }) 
         setPermissions(newPermissions);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!name) {
             setError('Role name is required.');
             return;
         }
+        
+        // FIX: Explicitly type `roleData` to match the `addRole` function's expected parameter type, resolving a TypeScript inference issue.
+        const roleData: Omit<Role, 'id'> = { name, permissions: Array.from(permissions) };
 
-        const roleData = { name, permissions: Array.from(permissions) };
-
-        try {
-            if (role) {
-                await updateRole({ ...role, ...roleData });
-            } else {
-                await addRole(roleData);
-            }
-            onSave();
-        } catch (error) {
-            console.error('Error saving role:', error);
-            setError('Failed to save role. Please try again.');
+        if (role) {
+            updateRole({ ...role, ...roleData });
+        } else {
+            addRole(roleData);
         }
+        onSave();
     };
 
     const permissionGroups = PERMISSIONS.reduce((acc, p) => {

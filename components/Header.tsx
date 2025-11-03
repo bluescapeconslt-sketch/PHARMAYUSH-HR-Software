@@ -16,19 +16,13 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
     const [settings, setSettings] = useState<CompanySettings | null>(null);
 
     useEffect(() => {
-        const fetchRoleAndSettings = async () => {
-            const [roles, companySettings] = await Promise.all([
-                getRoles(),
-                getSettings(),
-            ]);
-            const role = roles.find(r => r.uuid === user.role_id);
-            if (role) {
-                setRoleName(role.name);
-            }
-            setSettings(companySettings);
-        };
-        fetchRoleAndSettings();
-    }, [user.role_id]);
+        const roles = getRoles();
+        const role = roles.find(r => r.id === user.roleId);
+        if (role) {
+            setRoleName(role.name);
+        }
+        setSettings(getSettings());
+    }, [user.roleId]);
 
     return (
         <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
@@ -38,15 +32,13 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
                 )}
             </div>
             <div className="flex items-center gap-4">
-                <div className="text-right">
-                    <p className="text-sm font-semibold text-gray-800">{user.first_name} {user.last_name}</p>
-                    <p className="text-xs text-gray-500">{roleName}</p>
+                <div title={`Logged in as ${user.name}`} className="bg-indigo-600 text-white rounded-lg shadow-md py-2 px-4 text-right cursor-default">
+                    <p className="font-bold text-xl leading-tight">{user.jobTitle}</p>
+                    <p className="text-xs opacity-80">{roleName}</p>
                 </div>
                 <div className="relative">
-                    <button className="h-12 w-12 rounded-full overflow-hidden border-2 border-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <div className="h-full w-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold text-lg">
-                            {user.first_name?.[0]}{user.last_name?.[0]}
-                        </div>
+                    <button className="h-12 w-12 rounded-full overflow-hidden border-2 border-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400">
+                        <img src={user.avatar} alt="User Avatar" className="h-full w-full object-cover" />
                     </button>
                 </div>
                 <button onClick={onLogout} title="Logout" className="text-gray-500 hover:text-indigo-600 focus:outline-none">

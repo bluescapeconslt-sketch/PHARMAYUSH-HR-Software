@@ -7,11 +7,9 @@ const NoticeBoard: React.FC = () => {
     const [notices, setNotices] = useState<Notice[]>([]);
 
     useEffect(() => {
-        const fetchNotices = async () => {
-            const allNotices = await getNotices();
-            setNotices(allNotices.slice(0, 3));
-        };
-        fetchNotices();
+        // Fetch latest 3 notices, sorted by date
+        const allNotices = getNotices().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setNotices(allNotices.slice(0, 3));
     }, []);
 
     const colorClasses = {

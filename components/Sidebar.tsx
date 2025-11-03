@@ -29,6 +29,7 @@ const navItems = [
   { id: 'manage-notices', label: 'Manage Notices', icon: ICONS.notices, permission: 'manage:notices' },
   { id: 'manage-departments', label: 'Manage Departments', icon: ICONS.departments, permission: 'manage:departments' },
   { id: 'meetings', label: 'Schedule Meetings', icon: ICONS.meetings, permission: 'manage:meetings' },
+  { id: 'attendance-report', label: 'Attendance Report', icon: ICONS.attendanceReport, permission: 'view:attendance-report' },
   { id: 'user-management', label: 'User Management', icon: ICONS.userManagement, permission: 'manage:users' },
   { id: 'role-management', label: 'Role Management', icon: ICONS.roleManagement, permission: 'manage:roles' },
   { id: 'settings', label: 'Settings', icon: ICONS.settings, permission: 'manage:settings' },
@@ -53,10 +54,10 @@ const Sidebar: React.FC<SidebarProps> = ({ user, activeView, setActiveView }) =>
 
   return (
     <aside className="w-64 bg-gray-800 text-white flex flex-col flex-shrink-0">
-      <div className="h-20 flex items-center justify-center text-2xl font-bold border-b border-gray-700">
+      <div className="h-20 flex items-center justify-center text-2xl font-bold border-b border-gray-700 flex-shrink-0">
         PHARMAYUSH HR
       </div>
-      <nav className="flex-1 px-4 py-6 space-y-2">
+      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto sidebar-nav">
         {cleanedNavItems.map(item => (
           item.isHeader ? (
             <h3 key={item.id} className="px-2 pt-4 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">{item.label}</h3>

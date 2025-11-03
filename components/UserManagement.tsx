@@ -1,23 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from './common/Card.tsx';
-import { getEmployees, deleteEmployee, EmployeeWithUUID } from '../services/employeeService.ts';
-import { getRoles, RoleWithUUID } from '../services/roleService.ts';
+import { getEmployees, deleteEmployee } from '../services/employeeService.ts';
+import { getRoles } from '../services/roleService.ts';
+import { Employee, Role } from '../types.ts';
 import AddEmployeeModal from './common/AddEmployeeModal.tsx';
 import EditEmployeeModal from './common/EditEmployeeModal.tsx';
 
 const UserManagement: React.FC = () => {
-    const [employees, setEmployees] = useState<EmployeeWithUUID[]>([]);
-    const [roles, setRoles] = useState<RoleWithUUID[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [selectedEmployee, setSelectedEmployee] = useState<EmployeeWithUUID | null>(null);
+    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-    const fetchData = async () => {
-        const employeesData = await getEmployees();
-        const rolesData = await getRoles();
-        setEmployees(employeesData);
-        setRoles(rolesData);
+    const fetchData = () => {
+        setEmployees(getEmployees());
+        setRoles(getRoles());
     };
 
     useEffect(() => {
@@ -33,16 +32,16 @@ const UserManagement: React.FC = () => {
             getRoleName(employee.roleId).toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [employees, roles, searchTerm]);
-
-    const handleEdit = (employee: EmployeeWithUUID) => {
+    
+    const handleEdit = (employee: Employee) => {
         setSelectedEmployee(employee);
         setIsEditModalOpen(true);
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = (id: number) => {
         if(window.confirm('Are you sure you want to delete this user? This action is permanent.')) {
-            await deleteEmployee(id);
-            await fetchData();
+            deleteEmployee(id);
+            fetchData();
         }
     };
     
