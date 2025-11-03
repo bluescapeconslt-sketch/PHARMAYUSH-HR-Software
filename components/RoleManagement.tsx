@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Card from './common/Card.tsx';
 import Modal from './common/Modal.tsx';
-import { getRoles, addRole, updateRole, deleteRole } from '../services/roleService.ts';
-import { Role, Permission } from '../types.ts';
+import { getRoles, addRole, updateRole, deleteRole, RoleWithUUID } from '../services/roleService.ts';
+import { Permission } from '../types.ts';
 import { PERMISSIONS } from '../constants.tsx';
 
 const RoleManagement: React.FC = () => {
-    const [roles, setRoles] = useState<Role[]>([]);
+    const [roles, setRoles] = useState<RoleWithUUID[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+    const [selectedRole, setSelectedRole] = useState<RoleWithUUID | null>(null);
 
     const fetchRoles = async () => {
         const data = await getRoles();
@@ -19,7 +19,7 @@ const RoleManagement: React.FC = () => {
         fetchRoles();
     }, []);
 
-    const handleOpenModal = (role: Role | null) => {
+    const handleOpenModal = (role: RoleWithUUID | null) => {
         setSelectedRole(role);
         setIsModalOpen(true);
     };
@@ -83,7 +83,7 @@ interface RoleModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: () => void;
-    role: Role | null;
+    role: RoleWithUUID | null;
 }
 
 const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, onSave, role }) => {
@@ -112,22 +112,26 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, onSave, role }) 
         setPermissions(newPermissions);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name) {
             setError('Role name is required.');
             return;
         }
-        
-        // FIX: Explicitly type `roleData` to match the `addRole` function's expected parameter type, resolving a TypeScript inference issue.
-        const roleData: Omit<Role, 'id'> = { name, permissions: Array.from(permissions) };
 
-        if (role) {
-            updateRole({ ...role, ...roleData });
-        } else {
-            addRole(roleData);
+        const roleData = { name, permissions: Array.from(permissions) };
+
+        try {
+            if (role) {
+                await updateRole({ ...role, ...roleData });
+            } else {
+                await addRole(roleData);
+            }
+            onSave();
+        } catch (error) {
+            console.error('Error saving role:', error);
+            setError('Failed to save role. Please try again.');
         }
-        onSave();
     };
 
     const permissionGroups = PERMISSIONS.reduce((acc, p) => {
