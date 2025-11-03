@@ -2,8 +2,8 @@ import { GoogleGenAI, Chat } from "@google/genai";
 import { ReviewTone, LetterType } from '../types.ts';
 import { getSettings } from "./settingsService.ts";
 
-// FIX: Removed 'as string' for API key
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export const generatePerformanceReview = async (
     employeeName: string,
@@ -11,15 +11,19 @@ export const generatePerformanceReview = async (
     improvements: string,
     tone: ReviewTone
 ): Promise<string> => {
+    if (!ai) {
+        return "Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your .env file.";
+    }
+
     const prompt = `Generate a performance review for ${employeeName}.
     The tone of the review should be ${tone}.
-    
+
     Key Strengths:
     ${strengths}
-    
+
     Areas for Improvement:
     ${improvements}
-    
+
     Format it as a professional performance review.`;
 
     try {
@@ -39,6 +43,10 @@ export const generateJobDescription = async (
     responsibilities: string,
     skills: string
 ): Promise<string> => {
+    if (!ai) {
+        return "Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your .env file.";
+    }
+
     const prompt = `Create a professional job description for the role of ${jobTitle}.
 
     Key Responsibilities:
@@ -48,7 +56,7 @@ export const generateJobDescription = async (
     ${skills}
 
     Include a brief, engaging company introduction at the beginning.`;
-    
+
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
@@ -61,7 +69,10 @@ export const generateJobDescription = async (
     }
 };
 
-export const getHrAssistantChat = (): Chat => {
+export const getHrAssistantChat = (): Chat | null => {
+    if (!ai) {
+        return null;
+    }
     return ai.chats.create({
         model: 'gemini-2.5-flash',
         config: {
