@@ -90,7 +90,7 @@ export const generateHrLetter = async (
         return "Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your .env file.";
     }
 
-    const settings = getSettings();
+    const settings = await getSettings();
     const prompt = `Generate a formal ${letterType} letter for an employee.
 
     Company Name: ${settings.companyName}
@@ -124,7 +124,7 @@ export const generatePolicyDocument = async (
         return "Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your .env file.";
     }
 
-    const settings = getSettings();
+    const settings = await getSettings();
     const prompt = `Draft a comprehensive and professional company policy document.
 
     Company Name: ${settings.companyName}

@@ -58,9 +58,12 @@ const PharmayushBuddy: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchTip(false);
-        const settings = getBuddySettings();
-        setBuddyImage(settings.avatarImage);
+        const initializeBuddy = async () => {
+            fetchTip(false);
+            const settings = await getBuddySettings();
+            setBuddyImage(settings.avatarImage);
+        };
+        initializeBuddy();
     }, []);
 
     return (
