@@ -1,37 +1,89 @@
-
-import { Employee, Permission } from '../types.ts';
-import { getEmployees } from './employeeService.ts';
-import { getRoles } from './roleService.ts';
+import { Permission } from '../types.ts';
+import { supabase } from '../lib/supabaseClient.ts';
 
 const USER_KEY = 'pharmayush_hr_user';
 
-// FIX: Update AuthenticatedUser to omit the password for security. The user object stored in the session should not contain the password.
-// FIX: Export the AuthenticatedUser interface to be used across the application.
-export interface AuthenticatedUser extends Omit<Employee, 'password'> {
-    permissions: Permission[];
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  department: string;
+  departmentId: string;
+  position: string;
+  jobTitle: string;
+  roleId: string;
+  shiftId: string | null;
+  avatar: string | null;
+  status: string;
+  birthday: string | null;
+  leaveBalance: { short: number; sick: number; personal: number };
+  lastLeaveAllocation: string | null;
+  permissions: Permission[];
 }
 
-export const login = (email: string, password: string): boolean => {
-  const employees = getEmployees();
-  const user = employees.find(emp => emp.email.toLowerCase() === email.toLowerCase());
+export const login = async (email: string, password: string): Promise<boolean> => {
+  try {
+    const { data: employee, error: empError } = await supabase
+      .from('employees')
+      .select(`
+        id,
+        email,
+        password,
+        first_name,
+        last_name,
+        department_id,
+        role_id,
+        position,
+        job_title,
+        shift_id,
+        avatar,
+        employment_status,
+        date_of_birth,
+        leave_balance,
+        last_leave_allocation,
+        departments:department_id(id, name),
+        roles:role_id(id, name, permissions)
+      `)
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
 
-  if (user && user.password === password) {
-    const roles = getRoles();
-    const userRole = roles.find(r => r.id === user.roleId);
-    
-    // Don't store password in session
-    const { password: _, ...userProfile } = user;
+    if (empError) {
+      console.error('Error fetching employee:', empError);
+      return false;
+    }
+
+    if (!employee || employee.password !== password) {
+      return false;
+    }
 
     const authenticatedUser: AuthenticatedUser = {
-        ...userProfile,
-        permissions: userRole ? userRole.permissions : [],
+      id: employee.id,
+      email: employee.email,
+      firstName: employee.first_name,
+      lastName: employee.last_name,
+      name: `${employee.first_name} ${employee.last_name}`,
+      department: employee.departments?.name || '',
+      departmentId: employee.department_id,
+      position: employee.position || 'Employee',
+      jobTitle: employee.job_title || '',
+      roleId: employee.role_id,
+      shiftId: employee.shift_id,
+      avatar: employee.avatar,
+      status: employee.employment_status || 'active',
+      birthday: employee.date_of_birth,
+      leaveBalance: employee.leave_balance || { short: 0, sick: 0, personal: 0 },
+      lastLeaveAllocation: employee.last_leave_allocation,
+      permissions: employee.roles?.permissions || [],
     };
-    
+
     localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser));
     return true;
+  } catch (error) {
+    console.error('Login error:', error);
+    return false;
   }
-  
-  return false;
 };
 
 export const logout = (): void => {
@@ -43,7 +95,7 @@ export const getCurrentUser = (): AuthenticatedUser | null => {
     const userJson = localStorage.getItem(USER_KEY);
     return userJson ? JSON.parse(userJson) : null;
   } catch (error) {
-    console.error("Failed to get current user from localStorage", error);
+    console.error('Failed to get current user from localStorage', error);
     return null;
   }
 };
@@ -53,6 +105,6 @@ export const checkAuth = (): boolean => {
 };
 
 export const hasPermission = (permission: Permission): boolean => {
-    const user = getCurrentUser();
-    return user?.permissions.includes(permission) ?? false;
+  const user = getCurrentUser();
+  return user?.permissions.includes(permission) ?? false;
 };
