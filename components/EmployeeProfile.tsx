@@ -42,31 +42,38 @@ const EmployeeProfile: React.FC = () => {
     const [assignedShift, setAssignedShift] = useState<Shift | null>(null);
 
     useEffect(() => {
-        const currentUser = getCurrentUser();
-        if (currentUser) {
-            setUser(currentUser);
-            // Fetch recent 5 leave requests
-            const history = getLeaveRequestsForEmployee(currentUser.id)
-                .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-                .slice(0, 5);
-            setLeaveHistory(history);
+        const loadProfile = async () => {
+            const currentUser = getCurrentUser();
+            if (currentUser) {
+                setUser(currentUser);
 
-            // Fetch pending onboarding tasks
-            const tasks = getOnboardingTasks().filter(task => task.employeeId === currentUser.id && !task.completed);
-            setOnboardingTasks(tasks);
-            
-            // Fetch shift info
-            if(currentUser.shiftId){
-                const shifts = getShifts();
-                const shift = shifts.find(s => s.id === currentUser.shiftId);
-                setAssignedShift(shift || null);
+                // Fetch recent 5 leave requests
+                const history = getLeaveRequestsForEmployee(currentUser.id)
+                    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+                    .slice(0, 5);
+                setLeaveHistory(history);
+
+                // Fetch pending onboarding tasks
+                const tasks = getOnboardingTasks().filter(task => task.employeeId === currentUser.id && !task.completed);
+                setOnboardingTasks(tasks);
+
+                // Fetch shift info
+                if(currentUser.shiftId){
+                    const shifts = getShifts();
+                    const shift = shifts.find(s => s.id === currentUser.shiftId);
+                    setAssignedShift(shift || null);
+                }
             }
-        }
+        };
+
+        loadProfile();
     }, []);
 
     if (!user) {
         return <Card title="My Profile"><p>Loading profile...</p></Card>;
     }
+
+    const leaveBalance = user.leaveBalance || { short: 0, sick: 0, personal: 0 };
 
     const formatInr = (amount: number) => {
         return new Intl.NumberFormat('en-IN', {
@@ -136,15 +143,15 @@ const EmployeeProfile: React.FC = () => {
                          <div className="grid grid-cols-3 gap-4 text-center">
                             <div className="bg-blue-50 p-3 rounded-lg">
                                 <p className="text-sm text-blue-700 font-semibold">Short</p>
-                                <p className="text-2xl font-bold text-blue-800">{user.leaveBalance.short}</p>
+                                <p className="text-2xl font-bold text-blue-800">{leaveBalance.short}</p>
                             </div>
                              <div className="bg-green-50 p-3 rounded-lg">
                                 <p className="text-sm text-green-700 font-semibold">Sick</p>
-                                <p className="text-2xl font-bold text-green-800">{user.leaveBalance.sick}</p>
+                                <p className="text-2xl font-bold text-green-800">{leaveBalance.sick}</p>
                             </div>
                              <div className="bg-purple-50 p-3 rounded-lg">
                                 <p className="text-sm text-purple-700 font-semibold">Personal</p>
-                                <p className="text-2xl font-bold text-purple-800">{user.leaveBalance.personal}</p>
+                                <p className="text-2xl font-bold text-purple-800">{leaveBalance.personal}</p>
                             </div>
                         </div>
                     </Card>
