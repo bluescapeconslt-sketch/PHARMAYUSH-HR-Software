@@ -37,23 +37,22 @@ const App: React.FC = () => {
     useEffect(() => {
         const initializeApp = async () => {
             try {
-                await Promise.all([
+                const currentUser = getCurrentUser();
+                setUser(currentUser);
+                setIsLoading(false);
+
+                Promise.all([
                     fetchEmployees(),
                     fetchRoles(),
                     fetchDepartments(),
                     fetchShifts(),
-                ]);
-
-                await checkAndAllocateMonthlyLeaves();
-
-                const currentUser = getCurrentUser();
-                setUser(currentUser);
-                if (!currentUser) {
-                    setActiveView('dashboard');
-                }
+                ]).then(() => {
+                    checkAndAllocateMonthlyLeaves();
+                }).catch(error => {
+                    console.error('Error loading data:', error);
+                });
             } catch (error) {
                 console.error('Error initializing app:', error);
-            } finally {
                 setIsLoading(false);
             }
         };
