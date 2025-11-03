@@ -35,18 +35,18 @@ export type Permission =
   | 'manage:payroll';
 
 export interface Role {
-  id: number;
+  id: number | string;
   name: string;
   permissions: Permission[];
 }
 
 export interface Department {
-    id: number;
+    id: number | string;
     name:string;
 }
 
 export interface Shift {
-    id: number;
+    id: number | string;
     name: string;
     startTime: string; // HH:MM
     endTime: string; // HH:MM
@@ -55,7 +55,7 @@ export interface Shift {
 export type Position = 'Intern' | 'Employee' | 'Dept. Head' | 'Manager' | 'CEO';
 
 export interface Employee {
-  id: number;
+  id: number | string;
   name: string;
   position: Position;
   jobTitle: string; // Renamed from 'role'
@@ -70,8 +70,8 @@ export interface Employee {
     sick: number;
     personal: number;
   };
-  roleId: number; // Links to Role interface
-  shiftId?: number; // Links to Shift interface
+  roleId: number | string; // Links to Role interface
+  shiftId?: number | string; // Links to Shift interface
   baseSalary?: number; // Monthly base salary
   lastLeaveAllocation: string; // YYYY-MM
   workLocation?: {
@@ -86,8 +86,8 @@ export interface HierarchyNode extends Employee {
 }
 
 export interface LeaveRequest {
-  id: number;
-  employeeId: number;
+  id: number | string;
+  employeeId: number | string;
   employeeName: string;
   employeeAvatar: string;
   leaveType: 'Short Leave' | 'Sick Leave' | 'Personal' | 'Unpaid';
@@ -112,8 +112,8 @@ export interface ChatMessage {
 }
 
 export interface OnboardingTask {
-    id: number;
-    employeeId: number;
+    id: number | string;
+    employeeId: number | string;
     task: string;
     dueDate: string; // YYYY-MM-DD
     completed: boolean;
@@ -138,14 +138,14 @@ export interface BuddySettings {
 }
 
 export interface Policy {
-  id: number;
+  id: number | string;
   title: string;
   category: string;
   content: string; // Markdown content
 }
 
 export interface Notice {
-    id: number;
+    id: number | string;
     title: string;
     content: string;
     authorName: string;
@@ -154,17 +154,17 @@ export interface Notice {
 }
 
 export interface Meeting {
-  id: number;
+  id: number | string;
   title: string;
-  departmentId: number;
+  departmentId: number | string;
   date: string; // YYYY-MM-DD (Start date for recurring meetings)
   time: string; // HH:MM
   recurrence: 'None' | 'Daily' | 'Weekly' | 'Monthly';
 }
 
 export interface AttendanceRecord {
-  id: number;
-  employeeId: number;
+  id: number | string;
+  employeeId: number | string;
   punchInTime: string; // ISO string
   punchOutTime: string | null; // ISO string or null
   date: string; // YYYY-MM-DD
