@@ -5,6 +5,7 @@ import Card from './common/Card.tsx';
 import { getLeaveRequests, updateLeaveRequestStatus } from '../services/leaveService.ts';
 import { LeaveRequest } from '../types.ts';
 import LeaveRequestModal from './common/LeaveRequestModal.tsx';
+import { hasPermission } from '../services/authService.ts';
 
 type StatusFilter = 'Pending' | 'Approved' | 'Rejected' | 'All';
 
@@ -12,6 +13,7 @@ const LeaveManagement: React.FC = () => {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Pending');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const canManageLeaves = hasPermission('manage:leaves');
 
   const fetchRequests = async () => {
     const data = await getLeaveRequests();
@@ -114,11 +116,14 @@ const LeaveManagement: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {req.status === 'Pending' && (
+                    {req.status === 'Pending' && canManageLeaves && (
                       <div className="flex justify-end gap-2">
                         <button onClick={() => handleUpdateStatus(req.id, 'Approved')} className="text-green-600 hover:text-green-900">Approve</button>
                         <button onClick={() => handleUpdateStatus(req.id, 'Rejected')} className="text-red-600 hover:text-red-900">Reject</button>
                       </div>
+                    )}
+                    {req.status === 'Pending' && !canManageLeaves && (
+                      <span className="text-gray-400 text-xs">Awaiting approval</span>
                     )}
                   </td>
                 </tr>
