@@ -25,6 +25,8 @@ export interface AuthenticatedUser {
 
 export const login = async (email: string, password: string): Promise<boolean> => {
   try {
+    console.log('Attempting login for:', email);
+
     const { data: employee, error: empError } = await supabase
       .from('employees')
       .select(`
@@ -49,12 +51,20 @@ export const login = async (email: string, password: string): Promise<boolean> =
       .eq('email', email.toLowerCase())
       .maybeSingle();
 
+    console.log('Query result:', { employee, empError });
+
     if (empError) {
       console.error('Error fetching employee:', empError);
       return false;
     }
 
-    if (!employee || employee.password !== password) {
+    if (!employee) {
+      console.error('No employee found with email:', email);
+      return false;
+    }
+
+    if (employee.password !== password) {
+      console.error('Password mismatch');
       return false;
     }
 
