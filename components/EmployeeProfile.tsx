@@ -143,14 +143,17 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
                             <div className="bg-blue-50 p-3 rounded-lg">
                                 <p className="text-sm text-blue-700 font-semibold">Short</p>
                                 <p className="text-2xl font-bold text-blue-800">{displayLeaveBalance.short}</p>
+                                <p className="text-xs text-blue-600">hours left</p>
                             </div>
                              <div className="bg-green-50 p-3 rounded-lg">
                                 <p className="text-sm text-green-700 font-semibold">Sick</p>
                                 <p className="text-2xl font-bold text-green-800">{displayLeaveBalance.sick}</p>
+                                <p className="text-xs text-green-600">days left</p>
                             </div>
                              <div className="bg-purple-50 p-3 rounded-lg">
                                 <p className="text-sm text-purple-700 font-semibold">Personal</p>
                                 <p className="text-2xl font-bold text-purple-800">{displayLeaveBalance.personal}</p>
+                                <p className="text-xs text-purple-600">days left</p>
                             </div>
                         </div>
                     </Card>

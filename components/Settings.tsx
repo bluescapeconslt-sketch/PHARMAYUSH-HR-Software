@@ -135,7 +135,7 @@ const Settings: React.FC = () => {
                 <p className="text-sm text-gray-500 mb-4">Set the number of leaves to be automatically credited to each employee at the start of every month.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     <div>
-                        <label htmlFor="short" className="block text-sm font-medium text-gray-700">Short Leaves</label>
+                        <label htmlFor="short" className="block text-sm font-medium text-gray-700">Short Leaves (in hours)</label>
                         <input
                         type="number"
                         id="short"

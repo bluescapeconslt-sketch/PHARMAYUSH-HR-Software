@@ -3,7 +3,7 @@ import { LeaveAllocationSettings } from '../types.ts';
 const STORAGE_KEY = 'pharmayush_hr_leave_allocation_settings';
 
 const DEFAULT_SETTINGS: LeaveAllocationSettings = {
-  short: 1,
+  short: 8, // Default to a standard 8-hour workday's worth of short leaves per month
   sick: 1,
   personal: 0,
 };

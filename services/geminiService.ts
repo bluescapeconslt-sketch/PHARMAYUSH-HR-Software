@@ -2,8 +2,8 @@ import { GoogleGenAI, Chat } from "@google/genai";
 import { ReviewTone, LetterType } from '../types.ts';
 import { getSettings } from "./settingsService.ts";
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+// FIX: Removed 'as string' for API key
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generatePerformanceReview = async (
     employeeName: string,
@@ -11,19 +11,15 @@ export const generatePerformanceReview = async (
     improvements: string,
     tone: ReviewTone
 ): Promise<string> => {
-    if (!ai) {
-        return "AI features are currently unavailable. Please configure the Gemini API key in your environment settings.";
-    }
-
     const prompt = `Generate a performance review for ${employeeName}.
     The tone of the review should be ${tone}.
-
+    
     Key Strengths:
     ${strengths}
-
+    
     Areas for Improvement:
     ${improvements}
-
+    
     Format it as a professional performance review.`;
 
     try {
@@ -43,10 +39,6 @@ export const generateJobDescription = async (
     responsibilities: string,
     skills: string
 ): Promise<string> => {
-    if (!ai) {
-        return "AI features are currently unavailable. Please configure the Gemini API key in your environment settings.";
-    }
-
     const prompt = `Create a professional job description for the role of ${jobTitle}.
 
     Key Responsibilities:
@@ -69,10 +61,7 @@ export const generateJobDescription = async (
     }
 };
 
-export const getHrAssistantChat = (): Chat | null => {
-    if (!ai) {
-        return null;
-    }
+export const getHrAssistantChat = (): Chat => {
     return ai.chats.create({
         model: 'gemini-2.5-flash',
         config: {
@@ -86,10 +75,6 @@ export const generateHrLetter = async (
     employeeName: string,
     details: string
 ): Promise<string> => {
-    if (!ai) {
-        return "AI features are currently unavailable. Please configure the Gemini API key in your environment settings.";
-    }
-
     const settings = getSettings();
     const prompt = `Generate a formal ${letterType} letter for an employee.
 
@@ -120,10 +105,6 @@ export const generatePolicyDocument = async (
     title: string,
     keyPoints: string
 ): Promise<string> => {
-    if (!ai) {
-        return "AI features are currently unavailable. Please configure the Gemini API key in your environment settings.";
-    }
-
     const settings = getSettings();
     const prompt = `Draft a comprehensive and professional company policy document.
 
@@ -150,10 +131,6 @@ export const generatePolicyDocument = async (
 };
 
 export const getMotivationalQuote = async (): Promise<string> => {
-    if (!ai) {
-        return `"Believe you can and you're halfway there." - Theodore Roosevelt`;
-    }
-
     const prompt = `Generate a short, inspiring motivational quote suitable for a professional workplace. The quote should be uplifting and concise. Format it as: "The quote itself." - Author`;
 
     try {
@@ -173,10 +150,6 @@ export const getMotivationalQuote = async (): Promise<string> => {
 };
 
 export const getHealthTip = async (): Promise<string> => {
-    if (!ai) {
-        return `Remember to take short breaks to stretch and rest your eyes. A 5-minute break every hour can make a big difference!`;
-    }
-
     const prompt = `Generate a short, practical health and wellness tip suitable for a professional workplace. The tip should be aimed at reducing stress and be easy to implement during a workday. Keep it concise and encouraging.`;
 
     try {

@@ -71,8 +71,9 @@ export const updateLeaveRequestStatus = (id: number, status: 'Approved' | 'Rejec
         let balanceUpdated = false;
 
         if (requestToUpdate.leaveType === 'Short Leave') {
-            if (newBalance.short >= 0.125) {
-                newBalance.short -= 0.125;
+            // Each short leave request is for 1 hour, and the balance is in hours
+            if (newBalance.short >= 1) {
+                newBalance.short -= 1;
                 balanceUpdated = true;
             }
         } else {

@@ -123,7 +123,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
             <div className="bg-blue-50 p-3 rounded-lg">
                 <p className="text-sm text-blue-700 font-semibold">Short Leave</p>
                 <p className="text-2xl font-bold text-blue-800">{displayLeaveBalance.short}</p>
-                <p className="text-xs text-blue-600">days left</p>
+                <p className="text-xs text-blue-600">hours left</p>
             </div>
              <div className="bg-green-50 p-3 rounded-lg">
                 <p className="text-sm text-green-700 font-semibold">Sick Leave</p>
