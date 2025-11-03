@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Card from './common/Card.tsx';
 import { getCurrentUser, AuthenticatedUser } from '../services/authService.ts';
@@ -67,6 +68,15 @@ const EmployeeProfile: React.FC = () => {
         return <Card title="My Profile"><p>Loading profile...</p></Card>;
     }
 
+    const formatInr = (amount: number) => {
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(amount);
+    };
+
     return (
         <div className="space-y-6">
             {/* Profile Header Card */}
@@ -112,6 +122,13 @@ const EmployeeProfile: React.FC = () => {
                                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clipRule="evenodd" />
                                 </svg>
                                 <span className="text-gray-700">Shift: {assignedShift ? `${assignedShift.name} (${assignedShift.startTime} - ${assignedShift.endTime})` : 'N/A'}</span>
+                            </div>
+                             <div className="flex items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.134 0v-1.43zM11.567 7.151c.22.07.412.164.567.267v1.43a2.5 2.5 0 00-1.134 0V7.15z" />
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.29.632l-1.5-1.5a1 1 0 10-1.414 1.414l1.5 1.5A4.495 4.495 0 005 10c0 .954.293 1.836.805 2.574l-1.5 1.5a1 1 0 001.414 1.414l1.5-1.5a4.495 4.495 0 002.574.805 4.5 4.5 0 004.5-4.5c0-.954-.293-1.836-.805-2.574l1.5-1.5a1 1 0 00-1.414-1.414l-1.5 1.5A4.495 4.495 0 0013 5.5a4.5 4.5 0 00-3-1z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-gray-700">Salary: {user.baseSalary ? `${formatInr(user.baseSalary)} / month` : 'Not Set'}</span>
                             </div>
                         </div>
                     </Card>

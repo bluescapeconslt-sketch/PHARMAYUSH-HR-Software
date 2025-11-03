@@ -22,6 +22,7 @@ export const PERMISSIONS: Permission[] = [
   'manage:users',
   'manage:roles',
   'manage:shifts',
+  'manage:payroll',
 ];
 
 export const ROLES: Role[] = [
@@ -62,6 +63,7 @@ export const ROLES: Role[] = [
             'use:hr-assistant',
             'manage:settings',
             'manage:shifts',
+            'manage:payroll',
         ]
     }
 ];
@@ -86,11 +88,11 @@ export const POSITIONS: Position[] = ['Intern', 'Employee', 'Dept. Head', 'Manag
 const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
 export const EMPLOYEES: Employee[] = [
-  { id: 1, name: 'Alice Johnson', position: 'Dept. Head', jobTitle: 'Software Engineer', department: 'Technology', email: 'alice.j@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1027/200/200', status: 'Active', birthday: '1990-05-15', leaveBalance: { short: 12, sick: 5, personal: 2 }, lastLeaveAllocation: currentMonth },
-  { id: 2, name: 'Bob Smith', position: 'Manager', jobTitle: 'Product Manager', department: 'Product', email: 'bob.s@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1005/200/200', status: 'Active', birthday: '1988-08-22', leaveBalance: { short: 15, sick: 7, personal: 3 }, lastLeaveAllocation: currentMonth },
-  { id: 3, name: 'Charlie Brown', position: 'Employee', jobTitle: 'UX Designer', department: 'Design', email: 'charlie.b@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1011/200/200', status: 'Probation', birthday: '1992-11-30', leaveBalance: { short: 5, sick: 6, personal: 1 }, lastLeaveAllocation: currentMonth },
-  { id: 4, name: 'Diana Prince', position: 'CEO', jobTitle: 'System Administrator', department: 'Human Resources', email: 'admin@example.com', password: 'admin', roleId: 1, avatar: 'https://picsum.photos/id/1012/200/200', status: 'Active', birthday: '1985-03-10', leaveBalance: { short: 20, sick: 10, personal: 5 }, lastLeaveAllocation: currentMonth },
-  { id: 5, name: 'Ethan Hunt', position: 'Intern', jobTitle: 'QA Engineer', department: 'Technology', email: 'ethan.h@example.com', password: 'password', roleId: 2, shiftId: 2, avatar: 'https://picsum.photos/id/1013/200/200', status: 'Active', birthday: '1995-07-01', leaveBalance: { short: 8, sick: 4, personal: 0 }, lastLeaveAllocation: currentMonth },
+  { id: 1, name: 'Alice Johnson', position: 'Dept. Head', jobTitle: 'Software Engineer', department: 'Technology', email: 'alice.j@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1027/200/200', status: 'Active', birthday: '1990-05-15', leaveBalance: { short: 12, sick: 5, personal: 2 }, baseSalary: 62500, lastLeaveAllocation: currentMonth },
+  { id: 2, name: 'Bob Smith', position: 'Manager', jobTitle: 'Product Manager', department: 'Product', email: 'bob.s@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1005/200/200', status: 'Active', birthday: '1988-08-22', leaveBalance: { short: 15, sick: 7, personal: 3 }, baseSalary: 75000, lastLeaveAllocation: currentMonth },
+  { id: 3, name: 'Charlie Brown', position: 'Employee', jobTitle: 'UX Designer', department: 'Design', email: 'charlie.b@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1011/200/200', status: 'Probation', birthday: '1992-11-30', leaveBalance: { short: 5, sick: 6, personal: 1 }, baseSalary: 50000, lastLeaveAllocation: currentMonth },
+  { id: 4, name: 'Diana Prince', position: 'CEO', jobTitle: 'System Administrator', department: 'Human Resources', email: 'admin@example.com', password: 'admin', roleId: 1, avatar: 'https://picsum.photos/id/1012/200/200', status: 'Active', birthday: '1985-03-10', leaveBalance: { short: 20, sick: 10, personal: 5 }, baseSalary: 150000, lastLeaveAllocation: currentMonth },
+  { id: 5, name: 'Ethan Hunt', position: 'Intern', jobTitle: 'QA Engineer', department: 'Technology', email: 'ethan.h@example.com', password: 'password', roleId: 2, shiftId: 2, avatar: 'https://picsum.photos/id/1013/200/200', status: 'Active', birthday: '1995-07-01', leaveBalance: { short: 8, sick: 4, personal: 0 }, baseSalary: 25000, lastLeaveAllocation: currentMonth },
 ];
 
 export const LEAVE_REQUESTS: LeaveRequest[] = [
@@ -143,10 +145,13 @@ export const ICONS = {
     shifts: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zM12 14v-2m0 0V8m0 4h.01" /></svg>,
     meetings: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
     attendanceReport: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    payroll: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
     userManagement: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
     roleManagement: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1v-2h2v-2h2v-2h2v-2h2l1.5-1.5M15 7h2a2 2 0 012 2v2a2 2 0 01-2 2h-2M15 7V5a2 2 0 012-2h2a2 2 0 012 2v2" /></svg>,
     settings: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
     send: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.428A1 1 0 009.172 15V4.828a1 1 0 00-1.172-.994l-5 1.428L9.106 2.553z" /></svg>,
+    download: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
 };
 
-export const GEM_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEwMCAyMCBMMjAgODAgTDEwMCAxODAgTDE4MCA4MCBMMTAwIDIwWiIgZmlsbD0idXJsKCNnZW1HcmFkaWVudCkiLz48cGF0aCBkPSJNMTAwIDIwIEwxMDAgMTgwIEwyMCA4MCIgZmlsbD0iI0E3OEJGQSIgZmlsbC1vcGFjaXR5PSIwLjUiLz48cGF0aCBkPSJNMTAwIDIwIEwxMDAgMTgwIEwxODAgODAiIGZpbGw9IiM2MzY2RjEiIGZpbGwtb3BhY2l0eT0iMC..'
+// FIX: Corrected a malformed base64 string.
+export const GEM_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEwMCAyMCBMMjAgODAgTDEwMCAxODAgTDE4MCA4MCBMMTAwIDIwWiIgZmlsbD0idXJsKCNnZW1HcmFkaWVudCkiLz48cGF0aCBkPSJNMTAwIDIwIEwxMDAgMTgwIEwyMCA4MCIgZmlsbD0iI0E3OEJGQSIgZmlsbC1vcGFjaXR5PSIwLjUiLz48cGF0aCBkPSJNMTAwIDIwIEwxMDAgMTgwIEwxODAgODAiIGZpbGw9IiM2MzY2RjEiIGZpbGwtb3BhY2l0eT0iMC41Ii8+PC9zdmc+';

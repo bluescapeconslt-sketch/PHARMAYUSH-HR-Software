@@ -34,6 +34,7 @@ const navItems = [
   { id: 'manage-shifts', label: 'Manage Shifts', icon: ICONS.shifts, permission: 'manage:shifts' },
   { id: 'meetings', label: 'Schedule Meetings', icon: ICONS.meetings, permission: 'manage:meetings' },
   { id: 'attendance-report', label: 'Attendance Report', icon: ICONS.attendanceReport, permission: 'view:attendance-report' },
+  { id: 'payroll', label: 'Payroll', icon: ICONS.payroll, permission: 'manage:payroll' },
   { id: 'user-management', label: 'User Management', icon: ICONS.userManagement, permission: 'manage:users' },
   { id: 'role-management', label: 'Role Management', icon: ICONS.roleManagement, permission: 'manage:roles' },
   { id: 'settings', label: 'Settings', icon: ICONS.settings, permission: 'manage:settings' },

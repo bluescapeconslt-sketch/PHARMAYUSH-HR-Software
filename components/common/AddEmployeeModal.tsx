@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal.tsx';
 import { addEmployee } from '../../services/employeeService.ts';
@@ -30,6 +31,7 @@ const initialFormState: Omit<Employee, 'id' | 'workLocation' | 'lastLeaveAllocat
   },
   roleId: 0,
   shiftId: undefined,
+  baseSalary: 0,
 };
 
 const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, onSubmitted }) => {
@@ -63,8 +65,13 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
   }, [isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    const finalValue = name === 'roleId' || name === 'shiftId' ? Number(value) : value;
+    const { name, value, type } = e.target;
+    let finalValue: string | number = value;
+
+    if (name === 'roleId' || name === 'shiftId' || name === 'baseSalary') {
+        finalValue = Number(value);
+    }
+    
     setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
   
@@ -143,6 +150,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
     const payload = {
       ...formData,
       shiftId: formData.shiftId ? Number(formData.shiftId) : undefined,
+      baseSalary: formData.baseSalary ? Number(formData.baseSalary) : undefined,
       avatar: formData.avatar || `https://picsum.photos/seed/${formData.name.replace(/\s/g, '')}/200/200`,
       workLocation,
       lastLeaveAllocation: new Date().toISOString().slice(0, 7), // Set to current month
@@ -245,9 +253,15 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
                 </select>
             </div>
         </div>
-        <div>
-            <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">Birthday</label>
-            <input type="date" id="birthday" name="birthday" value={formData.birthday} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" required />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">Birthday</label>
+                <input type="date" id="birthday" name="birthday" value={formData.birthday} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" required />
+            </div>
+            <div>
+                <label htmlFor="baseSalary" className="block text-sm font-medium text-gray-700">Monthly Salary</label>
+                <input type="number" id="baseSalary" name="baseSalary" min="0" value={formData.baseSalary} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., 5000" />
+            </div>
         </div>
         
         <div className="pt-4 border-t">

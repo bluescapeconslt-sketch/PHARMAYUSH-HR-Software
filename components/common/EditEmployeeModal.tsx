@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal.tsx';
 import { updateEmployee } from '../../services/employeeService.ts';
@@ -41,7 +42,12 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (!formData) return;
     const { name, value } = e.target;
-    const finalValue = name === 'roleId' || name === 'shiftId' ? Number(value) : value;
+    let finalValue: string | number = value;
+
+    if (name === 'roleId' || name === 'shiftId' || name === 'baseSalary') {
+        finalValue = Number(value);
+    }
+    
     setFormData(prev => prev ? { ...prev, [name]: finalValue } : null);
   };
   
@@ -124,6 +130,7 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
     updateEmployee({ 
         ...formData,
         shiftId: formData.shiftId ? Number(formData.shiftId) : undefined,
+        baseSalary: formData.baseSalary ? Number(formData.baseSalary) : undefined,
         workLocation
     });
     onSubmitted();
@@ -214,9 +221,15 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
                 </select>
             </div>
         </div>
-        <div>
-            <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">Birthday</label>
-            <input type="date" id="birthday" name="birthday" value={formData.birthday} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">Birthday</label>
+                <input type="date" id="birthday" name="birthday" value={formData.birthday} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+            </div>
+             <div>
+                <label htmlFor="baseSalary" className="block text-sm font-medium text-gray-700">Monthly Salary</label>
+                <input type="number" id="baseSalary" name="baseSalary" min="0" value={formData.baseSalary || ''} onChange={handleChange} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., 5000" />
+            </div>
         </div>
         
         <div className="pt-4 border-t">

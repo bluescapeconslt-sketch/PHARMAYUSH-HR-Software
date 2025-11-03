@@ -21,6 +21,7 @@ import MeetingScheduler from './components/MeetingScheduler.tsx';
 import OrganizationChart from './components/OrganizationChart.tsx';
 import AttendanceReport from './components/AttendanceReport.tsx';
 import EmployeeProfile from './components/EmployeeProfile.tsx';
+import Payroll from './components/Payroll.tsx';
 // FIX: Import AuthenticatedUser to correctly type the user state.
 import { getCurrentUser, logout, AuthenticatedUser } from './services/authService.ts';
 import { checkAndAllocateMonthlyLeaves } from './services/employeeService.ts';
@@ -99,6 +100,8 @@ const App: React.FC = () => {
                 return <MeetingScheduler />;
             case 'attendance-report':
                 return <AttendanceReport />;
+            case 'payroll':
+                return <Payroll />;
             default:
                 return <Dashboard />;
         }

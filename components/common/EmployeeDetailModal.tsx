@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 // FIX: Add file extension to import paths
 import Modal from './Modal.tsx';
 import { Employee, Position, LeaveRequest, Shift } from '../../types.ts';
 import { getLeaveRequestsForEmployee } from '../../services/leaveService.ts';
 import { getShifts } from '../../services/shiftService.ts';
+import { hasPermission } from '../../services/authService.ts';
 
 interface EmployeeDetailModalProps {
   isOpen: boolean;
@@ -25,6 +27,7 @@ const getPositionBadgeColor = (position: Position) => {
 const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClose, employee }) => {
   const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
+  const canManagePayroll = useMemo(() => hasPermission('manage:payroll'), []);
 
   useEffect(() => {
     if (employee) {
@@ -56,6 +59,15 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
   };
 
   const assignedShift = shifts.find(s => s.id === employee.shiftId);
+  
+  const formatInr = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Employee Details">
@@ -92,6 +104,12 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
           <span className="font-medium text-gray-500">Birthday</span>
           <span className="text-gray-800">{new Date(employee.birthday).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
         </div>
+         {canManagePayroll && (
+             <div className="flex justify-between">
+                <span className="font-medium text-gray-500">Monthly Salary</span>
+                <span className="text-gray-800 font-semibold">{employee.baseSalary ? formatInr(employee.baseSalary) : 'Not Set'}</span>
+            </div>
+         )}
       </div>
       {/* --- New Leave Balance & History Section --- */}
       <div className="mt-6 border-t pt-6">

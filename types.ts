@@ -1,4 +1,5 @@
-// FIX: Removed self-imports of 'Employee' and 'Position' which caused declaration conflicts.
+
+// FIX: Removed self-import which was causing a circular dependency and declaration conflict.
 
 export type Permission =
   // Employee Permissions
@@ -30,7 +31,8 @@ export type Permission =
   | 'manage:settings'
   | 'manage:users'
   | 'manage:roles'
-  | 'manage:shifts';
+  | 'manage:shifts'
+  | 'manage:payroll';
 
 export interface Role {
   id: number;
@@ -70,6 +72,7 @@ export interface Employee {
   };
   roleId: number; // Links to Role interface
   shiftId?: number; // Links to Shift interface
+  baseSalary?: number; // Monthly base salary
   lastLeaveAllocation: string; // YYYY-MM
   workLocation?: {
     latitude: number;
