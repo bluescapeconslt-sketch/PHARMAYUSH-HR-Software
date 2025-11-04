@@ -45,25 +45,28 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isOpen) {
-        const fetchedRoles = getRoles();
-        const fetchedDepts = getDepartments();
-        const fetchedShifts = getShifts();
-        setRoles(fetchedRoles);
-        setDepartments(fetchedDepts);
-        setShifts(fetchedShifts);
+    const loadData = async () => {
+        if (isOpen) {
+            const fetchedRoles = await getRoles();
+            const fetchedDepts = await getDepartments();
+            const fetchedShifts = await getShifts();
+            setRoles(fetchedRoles);
+            setDepartments(fetchedDepts);
+            setShifts(fetchedShifts);
 
-        if (fetchedRoles.length > 0) {
-            const employeeRole = fetchedRoles.find(r => r.name === 'Employee');
-            setFormData(prev => ({ ...prev, roleId: employeeRole ? employeeRole.id : fetchedRoles[0].id }));
+            if (fetchedRoles.length > 0) {
+                const employeeRole = fetchedRoles.find(r => r.name === 'Employee');
+                setFormData(prev => ({ ...prev, roleId: employeeRole ? employeeRole.id : fetchedRoles[0].id }));
+            }
+            if (fetchedDepts.length > 0) {
+                setFormData(prev => ({ ...prev, department: fetchedDepts[0].name }));
+            }
+            if (fetchedShifts.length > 0) {
+                setFormData(prev => ({ ...prev, shiftId: fetchedShifts[0].id }));
+            }
         }
-        if (fetchedDepts.length > 0) {
-            setFormData(prev => ({ ...prev, department: fetchedDepts[0].name }));
-        }
-        if (fetchedShifts.length > 0) {
-            setFormData(prev => ({ ...prev, shiftId: fetchedShifts[0].id }));
-        }
-    }
+    };
+    loadData();
   }, [isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -120,9 +123,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.position || !formData.jobTitle || !formData.email || !formData.password || !formData.birthday || !formData.roleId || !formData.department) {
       setError('Please fill out all required fields.');
       return;
@@ -142,7 +145,6 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
         }
         workLocation = { latitude: lat, longitude: lon, radius: rad };
     } else if (latitude || longitude || radius) {
-        // If some but not all fields are filled
         if (latitude || longitude || (radius && radius !== '50')) {
              setError('To set a work location, all three fields (Latitude, Longitude, Radius) are required.');
              return;
@@ -155,10 +157,10 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
       baseSalary: formData.baseSalary ? Number(formData.baseSalary) : undefined,
       avatar: formData.avatar || `https://picsum.photos/seed/${formData.name.replace(/\s/g, '')}/200/200`,
       workLocation,
-      lastLeaveAllocation: new Date().toISOString().slice(0, 7), // Set to current month
+      lastLeaveAllocation: new Date().toISOString().slice(0, 7),
     };
 
-    addEmployee(payload);
+    await addEmployee(payload);
     onSubmitted();
     handleClose();
   };

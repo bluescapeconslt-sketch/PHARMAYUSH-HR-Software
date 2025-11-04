@@ -29,13 +29,15 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
   const canManagePayroll = useMemo(() => hasPermission('manage:payroll'), []);
 
   useEffect(() => {
-    if (employee) {
-        // Fetch all leave requests for this specific employee and sort by most recent
-        const history = getLeaveRequestsForEmployee(employee.id)
-            .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-        setLeaveHistory(history);
-        setShifts(getShifts());
-    }
+    const loadData = async () => {
+        if (employee) {
+            const history = (await getLeaveRequestsForEmployee(employee.id))
+                .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+            setLeaveHistory(history);
+            setShifts(await getShifts());
+        }
+    };
+    loadData();
   }, [employee, isOpen]); // Re-fetch if the employee prop changes or modal re-opens
 
   if (!employee) return null;

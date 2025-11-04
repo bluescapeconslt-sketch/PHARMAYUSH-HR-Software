@@ -85,14 +85,14 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isEligibleForLeave) {
         setError('This employee is not eligible for leave requests.');
         return;
     }
-    
+
     if (isShortLeave) {
         if (!formData.employeeId || !formData.startDate || !formData.reason || !formData.startTime) {
             setError('Please fill out all required fields for a short leave.');
@@ -121,15 +121,15 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
       employeeName: selectedEmployee.name,
       employeeAvatar: selectedEmployee.avatar,
     };
-    
+
     if (isShortLeave) {
-        payload.endDate = payload.startDate; // For 1-hour leave, start and end date are the same
+        payload.endDate = payload.startDate;
     } else {
         delete payload.startTime;
         delete payload.endTime;
     }
 
-    addLeaveRequest(payload);
+    await addLeaveRequest(payload);
     onSubmitted();
     handleClose();
   };
