@@ -14,11 +14,9 @@ const UserManagement: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-    const fetchData = async () => {
-        const emps = await getEmployees();
-        setEmployees(emps);
-        const rolesData = await getRoles();
-        setRoles(rolesData);
+    const fetchData = () => {
+        setEmployees(getEmployees());
+        setRoles(getRoles());
     };
 
     useEffect(() => {
@@ -40,10 +38,10 @@ const UserManagement: React.FC = () => {
         setIsEditModalOpen(true);
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = (id: number) => {
         if(window.confirm('Are you sure you want to delete this user? This action is permanent.')) {
-            await deleteEmployee(id);
-            await fetchData();
+            deleteEmployee(id);
+            fetchData();
         }
     };
     

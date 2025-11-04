@@ -11,13 +11,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = async (e: React.FormEvent) => {
+    const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
 
         try {
-            const success = await login(email, password);
+            const success = login(email, password);
             if (success) {
                 onLogin();
             } else {

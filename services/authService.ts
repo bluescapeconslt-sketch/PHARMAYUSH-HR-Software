@@ -10,12 +10,12 @@ export interface AuthenticatedUser extends Omit<Employee, 'password'> {
     permissions: Permission[];
 }
 
-export const login = async (email: string, password: string): Promise<boolean> => {
-  const employees = await getEmployees();
+export const login = (email: string, password: string): boolean => {
+  const employees = getEmployees();
   const user = employees.find(emp => emp.email.toLowerCase() === email.toLowerCase());
 
   if (user && user.password === password) {
-    const roles = await getRoles();
+    const roles = getRoles();
     const userRole = roles.find(r => r.id === user.roleId);
 
     // Don't store password in session
