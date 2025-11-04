@@ -17,12 +17,15 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onMenuClick }) => {
     const [settings, setSettings] = useState<CompanySettings | null>(null);
 
     useEffect(() => {
-        const roles = getRoles();
-        const role = roles.find(r => r.id === user.roleId);
-        if (role) {
-            setRoleName(role.name);
-        }
-        setSettings(getSettings());
+        const fetchData = async () => {
+            const roles = await getRoles();
+            const role = roles.find(r => r.id === user.roleId);
+            if (role) {
+                setRoleName(role.name);
+            }
+            setSettings(getSettings());
+        };
+        fetchData();
     }, [user.roleId]);
 
     return (
