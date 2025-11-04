@@ -32,7 +32,9 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
   const canManage = hasPermission('manage:leaves');
 
   const selectedEmployee = useMemo(() => {
-    return employees.find(e => e.id === Number(formData.employeeId));
+    const empId = Number(formData.employeeId);
+    if (empId === 0) return null;
+    return employees.find(e => e.id === empId) || null;
   }, [employees, formData.employeeId]);
   
   const isEligibleForLeave = !selectedEmployee || (selectedEmployee.position !== 'Intern' && selectedEmployee.status !== 'Probation');
@@ -111,16 +113,22 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
     }
     setError('');
 
-    if (!selectedEmployee) {
+    let employeeData = selectedEmployee;
+
+    if (!employeeData && !canManage && currentUser) {
+        employeeData = currentUser;
+    }
+
+    if (!employeeData) {
         setError('Selected employee not found.');
         return;
     }
 
     const payload: Omit<LeaveRequest, 'id' | 'status'> = {
       ...formData,
-      employeeId: selectedEmployee.id,
-      employeeName: selectedEmployee.name,
-      employeeAvatar: selectedEmployee.avatar,
+      employeeId: employeeData.id,
+      employeeName: employeeData.name,
+      employeeAvatar: employeeData.avatar,
     };
 
     if (isShortLeave) {
