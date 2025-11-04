@@ -195,7 +195,8 @@ const PharmayushBuddy: React.FC = () => {
     }, []);
 
     return (
-        <Card title="Pharmayush Buddy's Wellness Tip">
+        <Card>
+            <h3 className="text-xl font-semibold text-gray-700 mb-4 text-center">Pharmayush Buddy's Wellness Tip</h3>
             <div className="flex flex-col items-center gap-4 text-center">
                 <img 
                     src={buddyImage} 
