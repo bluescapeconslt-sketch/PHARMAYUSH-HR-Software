@@ -19,6 +19,15 @@ const getPositionBadgeColor = (position: Position) => {
     }
 };
 
+const getStatusBadgeColor = (status: Employee['status']) => {
+    switch (status) {
+        case 'Active': return 'bg-green-100 text-green-800';
+        case 'On Leave': return 'bg-orange-100 text-orange-800';
+        case 'Probation': return 'bg-yellow-100 text-yellow-800';
+        default: return 'bg-gray-100 text-gray-800';
+    }
+};
+
 const EmployeeDirectory: React.FC = () => {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -90,9 +99,12 @@ const EmployeeDirectory: React.FC = () => {
                         <div key={employee.id} className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center text-center border hover:shadow-lg transition-shadow">
                             <img src={employee.avatar} alt={employee.name} className="h-24 w-24 rounded-full object-cover mb-3" />
                             <h4 className="text-lg font-semibold text-gray-900">{employee.name}</h4>
-                             <div className="my-1">
+                             <div className="my-1 flex gap-2 flex-wrap justify-center">
                                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPositionBadgeColor(employee.position)}`}>
                                     {employee.position}
+                                </span>
+                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(employee.status)}`}>
+                                    {employee.status}
                                 </span>
                             </div>
                             {/* FIX: The 'role' property on the Employee type was renamed to 'jobTitle'. */}
