@@ -82,67 +82,94 @@
         transition: transform 0.3s ease-in-out;
       }
 
-      /* Styles for horizontal organization chart */
-      .org-chart-horizontal, .org-chart-horizontal ul, .org-chart-horizontal li {
+      /* Styles for vertical organization chart */
+      .org-chart {
+        text-align: center;
+        overflow-x: auto;
+        padding: 1rem;
+      }
+      .org-chart ul {
+        display: inline-flex;
+        padding: 20px 0 0;
         margin: 0;
-        padding: 0;
         list-style: none;
         position: relative;
       }
-      .org-chart-horizontal {
-        display: inline-block;
-        min-width: 100%;
+      .org-chart li {
+        padding: 0 10px;
+        position: relative;
       }
-      .org-chart-horizontal ul {
-        padding-left: 40px;
+      /* Vertical line from node up to where horizontal line will be */
+      .org-chart li > .node-wrapper::before {
+        content: '';
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 20px;
+        border-left: 2px dashed #cbd5e1; /* slate-300 */
       }
-      .org-chart-horizontal li {
-        padding-top: 8px;
-        padding-bottom: 8px;
+      /* Horizontal line connecting siblings */
+      .org-chart li::before, .org-chart li::after {
+        content: '';
+        position: absolute;
+        top: -20px;
+        width: 50%;
+        height: 0;
+        border-top: 2px dashed #cbd5e1; /* slate-300 */
       }
-      .org-chart-horizontal .node-card {
+      .org-chart li::before {
+        left: 0;
+      }
+      .org-chart li::after {
+        right: 0;
+      }
+      /* Remove unnecessary lines */
+      .org-chart > ul > li > .node-wrapper::before { display: none; } /* No vertical line for root */
+      .org-chart li:only-child::before, .org-chart li:only-child::after { display: none; } /* No horizontal for only child */
+      .org-chart li:first-child::before, .org-chart li:last-child::after { border: 0 none; }
+
+      /* The vertical line from parent down to children's horizontal line */
+      .org-chart .node-wrapper + ul::before {
+        content: '';
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 20px;
+        border-left: 2px dashed #cbd5e1; /* slate-300 */
+      }
+
+      /* Styles for the node visuals */
+      .org-chart .avatar-wrapper {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        padding: 4px;
+        background-color: white;
+        margin: 0 auto;
+        border-width: 4px;
+        border-style: solid;
+      }
+      .org-chart .avatar-wrapper img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      .org-chart .label-wrapper {
+        margin-top: -12px;
+        padding: 4px 16px;
+        border-radius: 4px;
+        color: white;
+        font-weight: 600;
+        font-size: 0.75rem; /* 12px */
         display: inline-block;
         position: relative;
         z-index: 1;
-        background-color: white; /* Ensure node background is opaque */
-      }
-      /* Connector lines */
-      .org-chart-horizontal li::before, .org-chart-horizontal li::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        background-color: #cbd5e1; /* slate-300 */
-      }
-      /* Horizontal line from vertical bar to node */
-      .org-chart-horizontal li::before {
-        top: 50%;
-        width: 40px;
-        height: 2px;
-        margin-top: -1px;
-      }
-      /* Vertical line connecting siblings */
-      .org-chart-horizontal li::after {
-        top: 0;
-        width: 2px;
-        height: 100%;
-      }
-      /* Remove bottom part of vertical line for the last child */
-      .org-chart-horizontal li:last-child::after {
-        height: 50%;
-      }
-      /* Remove top part of vertical line for the first child */
-      .org-chart-horizontal li:first-child::after {
-        top: 50%;
-        height: 50%;
-      }
-      /* No vertical line needed if it's the only child */
-      .org-chart-horizontal li:only-child::after {
-        display: none;
-      }
-      /* Remove connectors for the root level items */
-      .org-chart-horizontal > ul > li::before,
-      .org-chart-horizontal > ul > li::after {
-        display: none;
+        text-transform: uppercase;
       }
     </style>
   <script type="importmap">

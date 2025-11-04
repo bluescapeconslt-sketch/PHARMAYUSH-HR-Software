@@ -15,9 +15,8 @@ const CompanyPolicies: React.FC = () => {
     
     const canManage = useMemo(() => hasPermission('manage:policies'), []);
 
-    const fetchPolicies = async () => {
-        const pols = await getPolicies();
-        setPolicies(pols);
+    const fetchPolicies = () => {
+        setPolicies(getPolicies());
     };
 
     useEffect(() => {

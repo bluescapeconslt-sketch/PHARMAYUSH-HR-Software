@@ -22,6 +22,8 @@ import OrganizationChart from './components/OrganizationChart.tsx';
 import AttendanceReport from './components/AttendanceReport.tsx';
 import EmployeeProfile from './components/EmployeeProfile.tsx';
 import Payroll from './components/Payroll.tsx';
+import RaiseComplaint from './components/RaiseComplaint.tsx';
+import ViewComplaints from './components/ViewComplaints.tsx';
 // FIX: Import AuthenticatedUser to correctly type the user state.
 import { getCurrentUser, logout, AuthenticatedUser } from './services/authService.ts';
 import { checkAndAllocateMonthlyLeaves } from './services/employeeService.ts';
@@ -113,6 +115,10 @@ const App: React.FC = () => {
                 return <AttendanceReport />;
             case 'payroll':
                 return <Payroll />;
+            case 'raise-complaint':
+                return <RaiseComplaint />;
+            case 'view-complaints':
+                return <ViewComplaints />;
             default:
                 return <Dashboard />;
         }

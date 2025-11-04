@@ -226,36 +226,33 @@ const TodaysMeetings: React.FC = () => {
     const [meetings, setMeetings] = useState<EnrichedMeeting[]>([]);
 
     useEffect(() => {
-        const loadMeetings = async () => {
-            const allMeetings = await getMeetings();
-            const today = new Date();
-            const todayStr = today.toISOString().split('T')[0];
-            const todayDay = today.getDay();
+        const allMeetings = getMeetings();
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        const todayDay = today.getDay(); // 0 for Sunday, 1 for Monday, etc.
 
-            const todaysMeetings = allMeetings.filter(m => {
-                const meetingDate = new Date(m.date + "T00:00:00");
+        const todaysMeetings = allMeetings.filter(m => {
+            const meetingDate = new Date(m.date + "T00:00:00");
+            
+            if (m.recurrence === 'None') {
+                return m.date === todayStr;
+            }
+            if (meetingDate > today) {
+                return false; // Recurring meeting hasn't started yet
+            }
+            if (m.recurrence === 'Daily') {
+                return true;
+            }
+            if (m.recurrence === 'Weekly') {
+                return meetingDate.getDay() === todayDay;
+            }
+            if (m.recurrence === 'Monthly') {
+                return meetingDate.getDate() === today.getDate();
+            }
+            return false;
+        }).sort((a,b) => a.time.localeCompare(b.time));
 
-                if (m.recurrence === 'None') {
-                    return m.date === todayStr;
-                }
-                if (meetingDate > today) {
-                    return false;
-                }
-                if (m.recurrence === 'Daily') {
-                    return true;
-                }
-                if (m.recurrence === 'Weekly') {
-                    return meetingDate.getDay() === todayDay;
-                }
-                if (m.recurrence === 'Monthly') {
-                    return meetingDate.getDate() === today.getDate();
-                }
-                return false;
-            }).sort((a,b) => a.time.localeCompare(b.time));
-
-            setMeetings(todaysMeetings);
-        };
-        loadMeetings();
+        setMeetings(todaysMeetings);
     }, []);
 
     if (meetings.length === 0) {
@@ -294,15 +291,10 @@ const Dashboard: React.FC = () => {
     const canViewAllEmployees = useMemo(() => hasPermission('view:employees'), []);
 
     useEffect(() => {
-        const loadData = async () => {
-            if (canViewAllEmployees) {
-                const emps = await getEmployees();
-                setEmployees(emps);
-            }
-            const reqs = await getLeaveRequests();
-            setLeaveRequests(reqs);
-        };
-        loadData();
+        if (canViewAllEmployees) {
+            setEmployees(getEmployees());
+        }
+        setLeaveRequests(getLeaveRequests());
     }, [canViewAllEmployees]);
 
     const pendingRequests = useMemo(() => leaveRequests.filter(r => r.status === 'Pending'), [leaveRequests]);
@@ -400,7 +392,7 @@ const Dashboard: React.FC = () => {
                                     <tr key={req.id}>
                                         <td className="px-4 py-2 whitespace-nowrap">
                                             <div className="flex items-center">
-                                                <img className="h-8 w-8 rounded-full" src={req.employeeAvatar || 'https://via.placeholder.com/150'} alt={req.employeeName} />
+                                                <img className="h-8 w-8 rounded-full" src={req.employeeAvatar} alt={req.employeeName} />
                                                 <span className="ml-2 text-sm font-medium text-gray-900">{req.employeeName}</span>
                                             </div>
                                         </td>

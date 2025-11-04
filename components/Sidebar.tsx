@@ -16,6 +16,7 @@ interface SidebarProps {
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: ICONS.dashboard, permission: null },
   { id: 'my-profile', label: 'My Profile', icon: ICONS.myProfile, permission: null },
+  { id: 'raise-complaint', label: 'Raise Complaint', icon: ICONS.raiseComplaint, permission: null },
   { id: 'employees', label: 'Employees', icon: ICONS.employees, permission: 'view:employees' },
   { id: 'org-chart', label: 'Org Chart', icon: ICONS.orgChart, permission: 'view:employees' },
   { id: 'leaves', label: 'Leave', icon: ICONS.leaves, permission: 'view:leaves' },
@@ -29,6 +30,7 @@ const navItems = [
   { id: 'hr-assistant', label: 'HR Assistant', icon: ICONS.hrAssistant, permission: 'use:hr-assistant' },
   
   { id: 'admin-tools', label: 'Administration', isHeader: true, permission: 'manage:users' }, // Header for admin section
+  { id: 'view-complaints', label: 'View Complaints', icon: ICONS.viewComplaints, permission: 'view:complaints' },
   { id: 'manage-notices', label: 'Manage Notices', icon: ICONS.notices, permission: 'manage:notices' },
   { id: 'manage-departments', label: 'Manage Departments', icon: ICONS.departments, permission: 'manage:departments' },
   { id: 'manage-shifts', label: 'Manage Shifts', icon: ICONS.shifts, permission: 'manage:shifts' },

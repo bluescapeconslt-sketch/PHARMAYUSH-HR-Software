@@ -6,12 +6,13 @@ import { getOnboardingTasks } from '../services/onboardingService.ts';
 import { getShifts } from '../services/shiftService.ts';
 import { LeaveRequest, OnboardingTask, Position, Employee, Shift } from '../types.ts';
 
+// FIX: Corrected position types to align with the 'Position' type definition.
 const getPositionBadgeColor = (position: Position) => {
     switch (position) {
         case 'CEO': return 'bg-yellow-100 text-yellow-800';
         case 'Manager': return 'bg-green-100 text-green-800';
-        case 'Dept. Head': return 'bg-purple-100 text-purple-800';
-        case 'Employee': return 'bg-blue-100 text-blue-800';
+        case 'TL': return 'bg-purple-100 text-purple-800';
+        case 'Worker': return 'bg-blue-100 text-blue-800';
         case 'Intern': return 'bg-gray-100 text-gray-800';
         default: return 'bg-gray-100 text-gray-800';
     }
@@ -44,30 +45,26 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
     const [assignedShift, setAssignedShift] = useState<Shift | null>(null);
 
     useEffect(() => {
-        const loadProfileData = async () => {
-            if (user) {
-                // Fetch recent 5 leave requests
-                const history = (await getLeaveRequestsForEmployee(user.id))
-                    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-                    .slice(0, 5);
-                setLeaveHistory(history);
+        if (user) {
+            // Fetch recent 5 leave requests
+            const history = getLeaveRequestsForEmployee(user.id)
+                .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+                .slice(0, 5);
+            setLeaveHistory(history);
 
-                // Fetch pending onboarding tasks
-                const allTasks = await getOnboardingTasks();
-                const tasks = allTasks.filter(task => task.employeeId === user.id && !task.completed);
-                setOnboardingTasks(tasks);
-
-                // Fetch shift info
-                if(user.shiftId){
-                    const shifts = await getShifts();
-                    const shift = shifts.find(s => s.id === user.shiftId);
-                    setAssignedShift(shift || null);
-                } else {
-                    setAssignedShift(null);
-                }
+            // Fetch pending onboarding tasks
+            const tasks = getOnboardingTasks().filter(task => task.employeeId === user.id && !task.completed);
+            setOnboardingTasks(tasks);
+            
+            // Fetch shift info
+            if(user.shiftId){
+                const shifts = getShifts();
+                const shift = shifts.find(s => s.id === user.shiftId);
+                setAssignedShift(shift || null);
+            } else {
+                setAssignedShift(null);
             }
-        };
-        loadProfileData();
+        }
     }, [user]);
 
     if (!user) {

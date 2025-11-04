@@ -14,15 +14,12 @@ const GenerateLetter: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
-      const fetchedEmployees = await getEmployees();
-      setEmployees(fetchedEmployees);
-      if (fetchedEmployees.length > 0) {
-        setSelectedEmployee(fetchedEmployees[0].id.toString());
-      }
-      setSettings(await getSettings());
-    };
-    loadData();
+    const fetchedEmployees = getEmployees();
+    setEmployees(fetchedEmployees);
+    if (fetchedEmployees.length > 0) {
+      setSelectedEmployee(fetchedEmployees[0].id.toString());
+    }
+    setSettings(getSettings());
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

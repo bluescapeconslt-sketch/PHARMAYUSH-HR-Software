@@ -59,7 +59,7 @@ export const getEmployeeStatus = (employeeId: number): { status: 'in' | 'out', r
 };
 
 export const punchIn = async (employeeId: number): Promise<AttendanceRecord> => {
-    const employees = await getEmployees();
+    const employees = getEmployees();
     const employee = employees.find(e => e.id === employeeId);
 
     // If employee has a work location defined, check their current position

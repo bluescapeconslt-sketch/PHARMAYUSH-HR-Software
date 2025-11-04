@@ -3,9 +3,9 @@ import { LeaveAllocationSettings } from '../types.ts';
 const STORAGE_KEY = 'pharmayush_hr_leave_allocation_settings';
 
 const DEFAULT_SETTINGS: LeaveAllocationSettings = {
-  short: 8, // Default to a standard 8-hour workday's worth of short leaves per month
+  short: 3,
   sick: 1,
-  personal: 0,
+  personal: 1,
 };
 
 export const getLeaveAllocationSettings = (): LeaveAllocationSettings => {

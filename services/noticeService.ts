@@ -1,91 +1,44 @@
+
 import { Notice } from '../types.ts';
-import { supabase } from '../lib/supabase.ts';
+import { NOTICES as initialData } from '../constants.tsx';
 
-export const getNotices = async (): Promise<Notice[]> => {
+const STORAGE_KEY = 'pharmayush_hr_notices';
+
+export const getNotices = (): Notice[] => {
   try {
-    const { data, error } = await supabase
-      .from('notices')
-      .select('*')
-      .order('notice_date', { ascending: false });
-
-    if (error) throw error;
-
-    return (data || []).map((notice: any) => ({
-      id: notice.id,
-      title: notice.title,
-      content: notice.content,
-      authorId: notice.author_id,
-      authorName: notice.author_name,
-      date: notice.notice_date,
-      expiryDate: notice.expiry_date,
-      color: notice.color || 'blue',
-    }));
+    const storedData = localStorage.getItem(STORAGE_KEY);
+    if (!storedData) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
+      return initialData;
+    }
+    return JSON.parse(storedData);
   } catch (error) {
-    console.error('Failed to fetch notices from database', error);
-    return [];
+    console.error("Failed to parse notices from localStorage", error);
+    return initialData;
   }
 };
 
-export const addNotice = async (newNoticeData: Omit<Notice, 'id'>): Promise<Notice[]> => {
-  try {
-    const { error } = await supabase
-      .from('notices')
-      .insert({
-        title: newNoticeData.title,
-        content: newNoticeData.content,
-        author_id: newNoticeData.authorId,
-        author_name: newNoticeData.authorName,
-        notice_date: newNoticeData.date,
-        expiry_date: newNoticeData.expiryDate,
-        color: newNoticeData.color || 'blue',
-      });
-
-    if (error) throw error;
-
-    return await getNotices();
-  } catch (error) {
-    console.error('Failed to add notice', error);
-    return await getNotices();
-  }
+export const addNotice = (newNoticeData: Omit<Notice, 'id'>): Notice[] => {
+    const notices = getNotices();
+    const newNotice: Notice = {
+        ...newNoticeData,
+        id: Date.now(),
+    };
+    const updatedNotices = [...notices, newNotice];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotices));
+    return updatedNotices;
 };
 
-export const updateNotice = async (updatedNotice: Notice): Promise<Notice[]> => {
-  try {
-    const { error } = await supabase
-      .from('notices')
-      .update({
-        title: updatedNotice.title,
-        content: updatedNotice.content,
-        author_id: updatedNotice.authorId,
-        author_name: updatedNotice.authorName,
-        notice_date: updatedNotice.date,
-        expiry_date: updatedNotice.expiryDate,
-        color: updatedNotice.color,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', updatedNotice.id);
-
-    if (error) throw error;
-
-    return await getNotices();
-  } catch (error) {
-    console.error('Failed to update notice', error);
-    return await getNotices();
-  }
+export const updateNotice = (updatedNotice: Notice): Notice[] => {
+    let notices = getNotices();
+    notices = notices.map(n => n.id === updatedNotice.id ? updatedNotice : n);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notices));
+    return notices;
 };
 
-export const deleteNotice = async (id: string | number): Promise<Notice[]> => {
-  try {
-    const { error } = await supabase
-      .from('notices')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-
-    return await getNotices();
-  } catch (error) {
-    console.error('Failed to delete notice', error);
-    return await getNotices();
-  }
+export const deleteNotice = (id: number): Notice[] => {
+    let notices = getNotices();
+    notices = notices.filter(n => n.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notices));
+    return notices;
 };

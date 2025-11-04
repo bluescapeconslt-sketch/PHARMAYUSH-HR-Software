@@ -16,8 +16,8 @@ const getPositionBadgeColor = (position: Position) => {
     switch (position) {
         case 'CEO': return 'bg-yellow-100 text-yellow-800';
         case 'Manager': return 'bg-green-100 text-green-800';
-        case 'Dept. Head': return 'bg-purple-100 text-purple-800';
-        case 'Employee': return 'bg-blue-100 text-blue-800';
+        case 'TL': return 'bg-purple-100 text-purple-800';
+        case 'Worker': return 'bg-blue-100 text-blue-800';
         case 'Intern': return 'bg-gray-100 text-gray-800';
         default: return 'bg-gray-100 text-gray-800';
     }
@@ -29,15 +29,13 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
   const canManagePayroll = useMemo(() => hasPermission('manage:payroll'), []);
 
   useEffect(() => {
-    const loadData = async () => {
-        if (employee) {
-            const history = (await getLeaveRequestsForEmployee(employee.id))
-                .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-            setLeaveHistory(history);
-            setShifts(await getShifts());
-        }
-    };
-    loadData();
+    if (employee) {
+        // Fetch all leave requests for this specific employee and sort by most recent
+        const history = getLeaveRequestsForEmployee(employee.id)
+            .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+        setLeaveHistory(history);
+        setShifts(getShifts());
+    }
   }, [employee, isOpen]); // Re-fetch if the employee prop changes or modal re-opens
 
   if (!employee) return null;

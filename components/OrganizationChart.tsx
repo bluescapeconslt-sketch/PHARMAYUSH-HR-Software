@@ -8,27 +8,22 @@ const OrganizationChart: React.FC = () => {
     const [hierarchy, setHierarchy] = useState<HierarchyNode[]>([]);
 
     useEffect(() => {
-        const loadHierarchy = async () => {
-            const tree = await buildHierarchy();
-            setHierarchy(tree);
-        };
-        loadHierarchy();
+        const tree = buildHierarchy();
+        setHierarchy(tree);
     }, []);
 
     return (
         <Card title="Organization Chart">
-            <div className="p-4 overflow-x-auto">
-                <div className="org-chart-horizontal">
-                    {hierarchy.length > 0 ? (
-                        <ul>
-                            {hierarchy.map(rootNode => (
-                                <EmployeeNode key={rootNode.id} node={rootNode} />
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-center text-gray-500">No employees found to build the chart.</p>
-                    )}
-                </div>
+            <div className="org-chart">
+                {hierarchy.length > 0 ? (
+                    <ul>
+                        {hierarchy.map(rootNode => (
+                            <EmployeeNode key={rootNode.id} node={rootNode} />
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="text-center text-gray-500">No employees found to build the chart.</p>
+                )}
             </div>
         </Card>
     );

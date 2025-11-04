@@ -32,9 +32,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
   const canManage = hasPermission('manage:leaves');
 
   const selectedEmployee = useMemo(() => {
-    const empId = Number(formData.employeeId);
-    if (empId === 0) return null;
-    return employees.find(e => e.id === empId) || null;
+    return employees.find(e => e.id === Number(formData.employeeId));
   }, [employees, formData.employeeId]);
   
   const isEligibleForLeave = !selectedEmployee || (selectedEmployee.position !== 'Intern' && selectedEmployee.status !== 'Probation');
@@ -43,30 +41,26 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
 
   useEffect(() => {
     if (isOpen) {
-        const loadEmployees = async () => {
-            const fetchedEmployees = await getEmployees();
-            setEmployees(fetchedEmployees);
+        const fetchedEmployees = getEmployees();
+        setEmployees(fetchedEmployees);
 
-            if (currentUser && !canManage) {
-                setFormData(prev => ({ ...prev, employeeId: currentUser.id }));
-            } else if (fetchedEmployees.length > 0) {
-                setFormData(prev => ({ ...prev, employeeId: fetchedEmployees[0].id }));
-            }
-        };
-        loadEmployees();
+        if (currentUser && !canManage) {
+            setFormData(prev => ({ ...prev, employeeId: currentUser.id }));
+        } else if (fetchedEmployees.length > 0) {
+            setFormData(prev => ({ ...prev, employeeId: fetchedEmployees[0].id }));
+        }
     }
   }, [isOpen, currentUser, canManage]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
      if (name === 'leaveType') {
+        // Reset date/time fields when type changes to avoid state conflicts
         setFormData(prev => ({
             ...initialFormState,
             employeeId: prev.employeeId,
             leaveType: value as LeaveRequest['leaveType'],
         }));
-    } else if (name === 'employeeId') {
-        setFormData(prev => ({ ...prev, employeeId: Number(value) }));
     } else {
         setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -88,14 +82,14 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
     onClose();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isEligibleForLeave) {
         setError('This employee is not eligible for leave requests.');
         return;
     }
-
+    
     if (isShortLeave) {
         if (!formData.employeeId || !formData.startDate || !formData.reason || !formData.startTime) {
             setError('Please fill out all required fields for a short leave.');
@@ -113,32 +107,26 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
     }
     setError('');
 
-    let employeeData = selectedEmployee;
-
-    if (!employeeData && !canManage && currentUser) {
-        employeeData = currentUser;
-    }
-
-    if (!employeeData) {
+    if (!selectedEmployee) {
         setError('Selected employee not found.');
         return;
     }
 
     const payload: Omit<LeaveRequest, 'id' | 'status'> = {
       ...formData,
-      employeeId: employeeData.id,
-      employeeName: employeeData.name,
-      employeeAvatar: employeeData.avatar,
+      employeeId: selectedEmployee.id,
+      employeeName: selectedEmployee.name,
+      employeeAvatar: selectedEmployee.avatar,
     };
-
+    
     if (isShortLeave) {
-        payload.endDate = payload.startDate;
+        payload.endDate = payload.startDate; // For 1-hour leave, start and end date are the same
     } else {
         delete payload.startTime;
         delete payload.endTime;
     }
 
-    await addLeaveRequest(payload);
+    addLeaveRequest(payload);
     onSubmitted();
     handleClose();
   };

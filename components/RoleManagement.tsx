@@ -10,9 +10,8 @@ const RoleManagement: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
-    const fetchRoles = async () => {
-        const rls = await getRoles();
-        setRoles(rls);
+    const fetchRoles = () => {
+        setRoles(getRoles());
     };
 
     useEffect(() => {
@@ -29,13 +28,13 @@ const RoleManagement: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = async (id: number) => {
-        if (id <= 3) {
+    const handleDelete = (id: number) => {
+        if (id <= 3) { // Prevent deleting default roles
             alert("Default roles (Admin, Employee, HR Manager) cannot be deleted.");
             return;
         }
         if (window.confirm('Are you sure you want to delete this role?')) {
-            await deleteRole(id);
+            deleteRole(id);
             fetchRoles();
         }
     };

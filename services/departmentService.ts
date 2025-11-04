@@ -1,79 +1,44 @@
+
 import { Department } from '../types.ts';
-import { supabase } from '../lib/supabase.ts';
+import { DEPARTMENTS as initialData } from '../constants.tsx';
 
-export const getDepartments = async (): Promise<Department[]> => {
+const STORAGE_KEY = 'pharmayush_hr_departments';
+
+export const getDepartments = (): Department[] => {
   try {
-    const { data, error } = await supabase
-      .from('departments')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    return (data || []).map((dept: any) => ({
-      id: dept.id,
-      name: dept.name,
-      description: dept.description || '',
-      headId: dept.head_id,
-    }));
+    const storedData = localStorage.getItem(STORAGE_KEY);
+    if (!storedData) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
+      return initialData;
+    }
+    return JSON.parse(storedData);
   } catch (error) {
-    console.error('Failed to fetch departments from database', error);
-    return [];
+    console.error("Failed to parse departments from localStorage", error);
+    return initialData;
   }
 };
 
-export const addDepartment = async (newDepartmentData: Omit<Department, 'id'>): Promise<Department[]> => {
-  try {
-    const { error } = await supabase
-      .from('departments')
-      .insert({
-        name: newDepartmentData.name,
-        description: newDepartmentData.description,
-        head_id: newDepartmentData.headId,
-      });
-
-    if (error) throw error;
-
-    return await getDepartments();
-  } catch (error) {
-    console.error('Failed to add department', error);
-    return await getDepartments();
-  }
+export const addDepartment = (newDepartmentData: Omit<Department, 'id'>): Department[] => {
+    const departments = getDepartments();
+    const newDepartment: Department = {
+        ...newDepartmentData,
+        id: Date.now(),
+    };
+    const updatedDepartments = [...departments, newDepartment];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDepartments));
+    return updatedDepartments;
 };
 
-export const updateDepartment = async (updatedDepartment: Department): Promise<Department[]> => {
-  try {
-    const { error } = await supabase
-      .from('departments')
-      .update({
-        name: updatedDepartment.name,
-        description: updatedDepartment.description,
-        head_id: updatedDepartment.headId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', updatedDepartment.id);
-
-    if (error) throw error;
-
-    return await getDepartments();
-  } catch (error) {
-    console.error('Failed to update department', error);
-    return await getDepartments();
-  }
+export const updateDepartment = (updatedDepartment: Department): Department[] => {
+    let departments = getDepartments();
+    departments = departments.map(d => d.id === updatedDepartment.id ? updatedDepartment : d);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(departments));
+    return departments;
 };
 
-export const deleteDepartment = async (id: string | number): Promise<Department[]> => {
-  try {
-    const { error } = await supabase
-      .from('departments')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-
-    return await getDepartments();
-  } catch (error) {
-    console.error('Failed to delete department', error);
-    return await getDepartments();
-  }
+export const deleteDepartment = (id: number): Department[] => {
+    let departments = getDepartments();
+    departments = departments.filter(d => d.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(departments));
+    return departments;
 };

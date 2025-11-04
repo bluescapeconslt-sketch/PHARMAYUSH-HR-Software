@@ -1,4 +1,3 @@
-
 // FIX: Removed self-import which was causing a circular dependency and declaration conflict.
 
 export type Permission =
@@ -32,7 +31,8 @@ export type Permission =
   | 'manage:users'
   | 'manage:roles'
   | 'manage:shifts'
-  | 'manage:payroll';
+  | 'manage:payroll'
+  | 'view:complaints';
 
 export interface Role {
   id: number;
@@ -52,7 +52,7 @@ export interface Shift {
     endTime: string; // HH:MM
 }
 
-export type Position = 'Intern' | 'Employee' | 'Dept. Head' | 'Manager' | 'CEO';
+export type Position = 'CEO' | 'Manager' | 'TL' | 'Worker' | 'Intern';
 
 export interface Employee {
   id: number;
@@ -74,6 +74,7 @@ export interface Employee {
   shiftId?: number; // Links to Shift interface
   baseSalary?: number; // Monthly base salary
   lastLeaveAllocation: string; // YYYY-MM
+  reportsTo?: number; // Employee ID of the manager
   workLocation?: {
     latitude: number;
     longitude: number;
@@ -168,4 +169,14 @@ export interface AttendanceRecord {
   punchInTime: string; // ISO string
   punchOutTime: string | null; // ISO string or null
   date: string; // YYYY-MM-DD
+}
+
+export interface Complaint {
+  id: number;
+  employeeId: number | 'anonymous';
+  employeeName: string;
+  subject: string;
+  details: string;
+  date: string; // YYYY-MM-DD
+  status: 'Submitted' | 'In Review' | 'Resolved';
 }

@@ -24,22 +24,19 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const loadData = async () => {
-        if (isOpen) {
-            if (employee) {
-                setFormData(employee);
-                setLocationData({
-                    latitude: employee.workLocation?.latitude.toString() || '',
-                    longitude: employee.workLocation?.longitude.toString() || '',
-                    radius: employee.workLocation?.radius.toString() || '50'
-                });
-            }
-            setRoles(await getRoles());
-            setDepartments(await getDepartments());
-            setShifts(await getShifts());
+    if (isOpen) {
+        if (employee) {
+            setFormData(employee);
+            setLocationData({
+                latitude: employee.workLocation?.latitude.toString() || '',
+                longitude: employee.workLocation?.longitude.toString() || '',
+                radius: employee.workLocation?.radius.toString() || '50'
+            });
         }
-    };
-    loadData();
+        setRoles(getRoles());
+        setDepartments(getDepartments());
+        setShifts(getShifts());
+    }
   }, [isOpen, employee]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -98,9 +95,9 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
     onClose();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (!formData) {
       setError('No employee data to submit.');
       return;
@@ -129,7 +126,8 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
         return;
     }
 
-    await updateEmployee({
+
+    updateEmployee({ 
         ...formData,
         shiftId: formData.shiftId ? Number(formData.shiftId) : undefined,
         baseSalary: formData.baseSalary ? Number(formData.baseSalary) : undefined,

@@ -23,6 +23,7 @@ export const PERMISSIONS: Permission[] = [
   'manage:roles',
   'manage:shifts',
   'manage:payroll',
+  'view:complaints',
 ];
 
 export const ROLES: Role[] = [
@@ -83,23 +84,40 @@ export const SHIFTS: Shift[] = [
     { id: 3, name: 'Night Shift', startTime: '22:00', endTime: '06:00' },
 ];
 
-export const POSITIONS: Position[] = ['Intern', 'Employee', 'Dept. Head', 'Manager', 'CEO'];
+export const POSITIONS: Position[] = ['CEO', 'Manager', 'TL', 'Worker', 'Intern'];
 
 const pastMonth = '2024-01'; // A date guaranteed to be in the past to trigger initial leave allocation
 
+// Reworked employee data to match the visual org chart structure
 export const EMPLOYEES: Employee[] = [
-  { id: 1, name: 'Alice Johnson', position: 'Dept. Head', jobTitle: 'Software Engineer', department: 'Technology', email: 'alice.j@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1027/200/200', status: 'Active', birthday: '1990-05-15', leaveBalance: { short: 12, sick: 5, personal: 2 }, baseSalary: 62500, lastLeaveAllocation: pastMonth },
-  { id: 2, name: 'Bob Smith', position: 'Manager', jobTitle: 'Product Manager', department: 'Product', email: 'bob.s@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1005/200/200', status: 'Active', birthday: '1988-08-22', leaveBalance: { short: 15, sick: 7, personal: 3 }, baseSalary: 75000, lastLeaveAllocation: pastMonth },
-  { id: 3, name: 'Charlie Brown', position: 'Employee', jobTitle: 'UX Designer', department: 'Design', email: 'charlie.b@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://picsum.photos/id/1011/200/200', status: 'Probation', birthday: '1992-11-30', leaveBalance: { short: 5, sick: 6, personal: 1 }, baseSalary: 50000, lastLeaveAllocation: pastMonth },
-  { id: 4, name: 'Diana Prince', position: 'CEO', jobTitle: 'System Administrator', department: 'Human Resources', email: 'admin@example.com', password: 'admin', roleId: 1, avatar: 'https://picsum.photos/id/1012/200/200', status: 'Active', birthday: '1985-03-10', leaveBalance: { short: 20, sick: 10, personal: 5 }, baseSalary: 150000, lastLeaveAllocation: pastMonth },
-  { id: 5, name: 'Ethan Hunt', position: 'Intern', jobTitle: 'QA Engineer', department: 'Technology', email: 'ethan.h@example.com', password: 'password', roleId: 2, shiftId: 2, avatar: 'https://picsum.photos/id/1013/200/200', status: 'Active', birthday: '1995-07-01', leaveBalance: { short: 8, sick: 4, personal: 0 }, baseSalary: 25000, lastLeaveAllocation: pastMonth },
+  // Level 0: CEO
+  { id: 4, name: 'Diana Prince', position: 'CEO', jobTitle: 'Chief Executive Officer', department: 'Executive', email: 'admin@example.com', password: 'admin', roleId: 1, avatar: 'https://i.pravatar.cc/150?u=4', status: 'Active', birthday: '1985-03-10', leaveBalance: { short: 20, sick: 10, personal: 5 }, baseSalary: 150000, lastLeaveAllocation: pastMonth },
+  
+  // Level 1: Managers reporting to CEO
+  { id: 2, name: 'Bob Smith', position: 'Manager', jobTitle: 'Engineering Manager', department: 'Technology', email: 'bob.s@example.com', password: 'password', roleId: 3, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=2', status: 'Active', birthday: '1988-08-22', leaveBalance: { short: 15, sick: 7, personal: 3 }, baseSalary: 75000, lastLeaveAllocation: pastMonth, reportsTo: 4 },
+  { id: 1, name: 'Alice Johnson', position: 'Manager', jobTitle: 'Product Manager', department: 'Product', email: 'alice.j@example.com', password: 'password', roleId: 3, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=1', status: 'Active', birthday: '1990-05-15', leaveBalance: { short: 12, sick: 5, personal: 2 }, baseSalary: 72000, lastLeaveAllocation: pastMonth, reportsTo: 4 },
+  
+  // Level 2: TLs reporting to Managers
+  { id: 3, name: 'Charlie Brown', position: 'TL', jobTitle: 'Frontend Team Lead', department: 'Technology', email: 'charlie.b@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=3', status: 'Probation', birthday: '1992-11-30', leaveBalance: { short: 5, sick: 6, personal: 1 }, baseSalary: 50000, lastLeaveAllocation: pastMonth, reportsTo: 2 },
+  { id: 5, name: 'Ethan Hunt', position: 'TL', jobTitle: 'Backend Team Lead', department: 'Technology', email: 'ethan.h@example.com', password: 'password', roleId: 2, shiftId: 2, avatar: 'https://i.pravatar.cc/150?u=5', status: 'Active', birthday: '1995-07-01', leaveBalance: { short: 8, sick: 4, personal: 0 }, baseSalary: 52000, lastLeaveAllocation: pastMonth, reportsTo: 2 },
+  { id: 6, name: 'Frank Moses', position: 'TL', jobTitle: 'Design Team Lead', department: 'Product', email: 'frank.m@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=6', status: 'Active', birthday: '1991-01-15', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 51000, lastLeaveAllocation: pastMonth, reportsTo: 1 },
+  { id: 7, name: 'Grace Hart', position: 'TL', jobTitle: 'Marketing Team Lead', department: 'Product', email: 'grace.h@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=7', status: 'Active', birthday: '1993-06-20', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 49000, lastLeaveAllocation: pastMonth, reportsTo: 1 },
+
+  // Level 3: Workers reporting to TLs
+  { id: 8, name: 'Heidi Turner', position: 'Worker', jobTitle: 'Software Engineer', department: 'Technology', email: 'heidi.t@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=8', status: 'Active', birthday: '1996-02-10', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 40000, lastLeaveAllocation: pastMonth, reportsTo: 3 },
+  { id: 9, name: 'Ivy Walker', position: 'Worker', jobTitle: 'Software Engineer', department: 'Technology', email: 'ivy.w@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=9', status: 'Active', birthday: '1997-03-12', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 40000, lastLeaveAllocation: pastMonth, reportsTo: 3 },
+  { id: 10, name: 'Jack Ryan', position: 'Worker', jobTitle: 'Database Admin', department: 'Technology', email: 'jack.r@example.com', password: 'password', roleId: 2, shiftId: 2, avatar: 'https://i.pravatar.cc/150?u=10', status: 'Active', birthday: '1995-09-09', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 42000, lastLeaveAllocation: pastMonth, reportsTo: 5 },
+  { id: 11, name: 'Kate Austen', position: 'Worker', jobTitle: 'UX Designer', department: 'Product', email: 'kate.a@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=11', status: 'Active', birthday: '1996-08-14', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 38000, lastLeaveAllocation: pastMonth, reportsTo: 6 },
+  { id: 12, name: 'Leo Fitz', position: 'Worker', jobTitle: 'UI Designer', department: 'Product', email: 'leo.f@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=12', status: 'Active', birthday: '1998-04-25', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 37000, lastLeaveAllocation: pastMonth, reportsTo: 6 },
+  { id: 13, name: 'Mia Smoak', position: 'Worker', jobTitle: 'Saler', department: 'Product', email: 'mia.s@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=13', status: 'Active', birthday: '1999-11-30', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 35000, lastLeaveAllocation: pastMonth, reportsTo: 7 },
+  { id: 14, name: 'Nate Heywood', position: 'Worker', jobTitle: 'Saler', department: 'Product', email: 'nate.h@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=14', status: 'Active', birthday: '1997-12-01', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 36000, lastLeaveAllocation: pastMonth, reportsTo: 7 },
 ];
 
 export const LEAVE_REQUESTS: LeaveRequest[] = [
-  { id: 1, employeeId: 3, employeeName: 'Charlie Brown', employeeAvatar: 'https://picsum.photos/id/1011/200/200', leaveType: 'Short Leave', startDate: '2024-08-01', endDate: '2024-08-01', startTime: '10:00', endTime: '11:00', reason: 'Doctor appointment.', status: 'Approved' },
-  { id: 2, employeeId: 1, employeeName: 'Alice Johnson', employeeAvatar: 'https://picsum.photos/id/1027/200/200', leaveType: 'Sick Leave', startDate: '2024-07-20', endDate: '2024-07-21', reason: 'Fever and cold.', status: 'Approved' },
-  { id: 3, employeeId: 5, employeeName: 'Ethan Hunt', employeeAvatar: 'https://picsum.photos/id/1013/200/200', leaveType: 'Personal', startDate: '2024-09-05', endDate: '2024-09-07', reason: 'Personal matters.', status: 'Pending' },
-  { id: 4, employeeId: 2, employeeName: 'Bob Smith', employeeAvatar: 'https://picsum.photos/id/1005/200/200', leaveType: 'Short Leave', startDate: '2024-10-10', endDate: '2024-10-10', startTime: '14:00', endTime: '15:00', reason: 'Bank appointment.', status: 'Pending' },
+  { id: 1, employeeId: 3, employeeName: 'Charlie Brown', employeeAvatar: 'https://i.pravatar.cc/150?u=3', leaveType: 'Short Leave', startDate: '2024-08-01', endDate: '2024-08-01', startTime: '10:00', endTime: '11:00', reason: 'Doctor appointment.', status: 'Approved' },
+  { id: 2, employeeId: 1, employeeName: 'Alice Johnson', employeeAvatar: 'https://i.pravatar.cc/150?u=1', leaveType: 'Sick Leave', startDate: '2024-07-20', endDate: '2024-07-21', reason: 'Fever and cold.', status: 'Approved' },
+  { id: 3, employeeId: 5, employeeName: 'Ethan Hunt', employeeAvatar: 'https://i.pravatar.cc/150?u=5', leaveType: 'Personal', startDate: '2024-09-05', endDate: '2024-09-07', reason: 'Personal matters.', status: 'Pending' },
+  { id: 4, employeeId: 2, employeeName: 'Bob Smith', employeeAvatar: 'https://i.pravatar.cc/150?u=2', leaveType: 'Short Leave', startDate: '2024-10-10', endDate: '2024-10-10', startTime: '14:00', endTime: '15:00', reason: 'Bank appointment.', status: 'Pending' },
 ];
 
 export const ONBOARDING_TASKS: OnboardingTask[] = [
@@ -151,7 +169,9 @@ export const ICONS = {
     settings: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
     send: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.428A1 1 0 009.172 15V4.828a1 1 0 00-1.172-.994l-5 1.428L9.106 2.553z" /></svg>,
     download: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
+    raiseComplaint: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L12 5.343 4.268 16.01c-.77 1.333.192 3 1.732 3z" /></svg>,
+    viewComplaints: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
 };
 
 // FIX: Corrected a malformed base64 string.
-export const GEM_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEwMCAyMCBMMjAgODAgTDEwMCAxODAgTDE4MCA4MCBMMTAwIDIwWiIgZmlsbD0idXJsKCNnZW1HcmFkaWVudCkiLz48cGF0aCBkPSJNMTAwIDIwIEwxMDAgMTgwIEwyMCA4MCIgZmlsbD0iI0E3OEJGQSIgZmlsbC1vcGFjaXR5PSIwLjUiLz48cGF0aCBkPSJNMTAwIDIwIEwxMDAgMTgwIEwxODAgODAiIGZpbGw9IiM2MzY2RjEiIGZpbGwtb3BhY2l0eT0iMC41Ii8+PC9zdmc+';
+export const GEM_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnZW1HcmFkaWVudCIgeDE9IjEwMCIgeTE9IjIwIiB4Mj0iMTAwIiB5Mj0iMTgwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzgxOENGOCIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzRGNDZFNSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0xMDAgMjAgTDIwIDgwIEwxMDAgMTgwIEwxODAgODAgTDEwMCAyMFoiIGZpbGw9InVybCgjZ2VtR3JhZGllbnQpIi8+PHBhdGggZD0iTTEwMCAyMCBMMTAwIDE4MCBMMjAgODAiIGZpbGw9IiNBNzhCRkEiIGZpbGwtb3BhY2l0eT0iMC4zIi8+PHBhdGggZD0iTTEwMCAyMCBMMTAwIDE4MCBMMTgwIDgwIiBmaWxsPSIjNjM2NkYxIiBmaWxsLW9wYWNpdHk9IjAuMyIvPjwvc3ZnPg==';

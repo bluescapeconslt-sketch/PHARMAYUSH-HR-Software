@@ -1,5 +1,8 @@
+
+// FIX: Add file extension to import paths
 import { CompanySettings } from '../types.ts';
-import { supabase } from '../lib/supabase.ts';
+
+const STORAGE_KEY = 'pharmayush_hr_settings';
 
 const DEFAULT_SETTINGS: CompanySettings = {
   companyName: 'PHARMAYUSH HR',
@@ -7,47 +10,24 @@ const DEFAULT_SETTINGS: CompanySettings = {
   companyLogo: '',
 };
 
-const SETTINGS_KEY = 'company_settings';
-
-export const getSettings = async (): Promise<CompanySettings> => {
+export const getSettings = (): CompanySettings => {
   try {
-    const { data, error } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('key', SETTINGS_KEY)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (data && data.value) {
-      return {
-        companyName: data.value.companyName || DEFAULT_SETTINGS.companyName,
-        companyAddress: data.value.companyAddress || DEFAULT_SETTINGS.companyAddress,
-        companyLogo: data.value.companyLogo || DEFAULT_SETTINGS.companyLogo,
-      };
+    const storedData = localStorage.getItem(STORAGE_KEY);
+    if (!storedData) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
+      return DEFAULT_SETTINGS;
     }
-
-    return DEFAULT_SETTINGS;
+    return JSON.parse(storedData);
   } catch (error) {
-    console.error('Failed to fetch settings from database', error);
+    console.error("Failed to parse settings from localStorage", error);
     return DEFAULT_SETTINGS;
   }
 };
 
-export const saveSettings = async (settings: CompanySettings): Promise<void> => {
+export const saveSettings = (settings: CompanySettings): void => {
   try {
-    const { error } = await supabase
-      .from('settings')
-      .upsert({
-        key: SETTINGS_KEY,
-        value: settings,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'key'
-      });
-
-    if (error) throw error;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch (error) {
-    console.error('Failed to save settings', error);
+    console.error("Failed to save settings to localStorage", error);
   }
 };
