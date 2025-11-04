@@ -58,12 +58,13 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
      if (name === 'leaveType') {
-        // Reset date/time fields when type changes to avoid state conflicts
         setFormData(prev => ({
             ...initialFormState,
             employeeId: prev.employeeId,
             leaveType: value as LeaveRequest['leaveType'],
         }));
+    } else if (name === 'employeeId') {
+        setFormData(prev => ({ ...prev, employeeId: Number(value) }));
     } else {
         setFormData(prev => ({ ...prev, [name]: value }));
     }
