@@ -4,32 +4,29 @@ import { getRoles } from './roleService.ts';
 
 const USER_KEY = 'pharmayush_hr_user';
 
-// FIX: Update AuthenticatedUser to omit the password for security. The user object stored in the session should not contain the password.
-// FIX: Export the AuthenticatedUser interface to be used across the application.
 export interface AuthenticatedUser extends Omit<Employee, 'password'> {
     permissions: Permission[];
 }
 
-export const login = (email: string, password: string): boolean => {
-  const employees = getEmployees();
+export const login = async (email: string, password: string): Promise<boolean> => {
+  const employees = await getEmployees();
   const user = employees.find(emp => emp.email.toLowerCase() === email.toLowerCase());
 
   if (user && user.password === password) {
-    const roles = getRoles();
+    const roles = await getRoles();
     const userRole = roles.find(r => r.id === user.roleId);
-    
-    // Don't store password in session
+
     const { password: _, ...userProfile } = user;
 
     const authenticatedUser: AuthenticatedUser = {
         ...userProfile,
         permissions: userRole ? userRole.permissions : [],
     };
-    
+
     localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser));
     return true;
   }
-  
+
   return false;
 };
 
@@ -49,15 +46,13 @@ export const getCurrentUser = (): AuthenticatedUser | null => {
 
 export const updateCurrentUserSession = (updatedEmployeeData: Omit<Employee, 'password'>): void => {
     const currentUser = getCurrentUser();
-    // Re-check for currentUser here as it might have been cleared
     if (currentUser && currentUser.id === updatedEmployeeData.id) {
         const updatedUser: AuthenticatedUser = {
-            ...currentUser, // Persist existing permissions and other session data
-            ...updatedEmployeeData, // Overwrite with fresh employee data
+            ...currentUser,
+            ...updatedEmployeeData,
         };
         try {
             localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-            // Dispatch a custom event to notify the application that session data has changed.
             window.dispatchEvent(new Event('session-updated'));
         } catch (error) {
             console.error("Failed to update current user in localStorage", error);

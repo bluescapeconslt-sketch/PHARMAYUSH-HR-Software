@@ -1,44 +1,79 @@
-
 import { Policy } from '../types.ts';
-import { POLICIES as initialData } from '../constants.tsx';
+import { supabase } from '../lib/supabase.ts';
 
-const STORAGE_KEY = 'pharmayush_hr_policies';
-
-export const getPolicies = (): Policy[] => {
+export const getPolicies = async (): Promise<Policy[]> => {
   try {
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    if (!storedData) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
-      return initialData;
-    }
-    return JSON.parse(storedData);
+    const { data, error } = await supabase
+      .from('policies')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map((policy: any) => ({
+      id: policy.id,
+      title: policy.title,
+      category: policy.category,
+      content: policy.content,
+    }));
   } catch (error) {
-    console.error("Failed to parse policies from localStorage", error);
-    return initialData;
+    console.error('Failed to fetch policies from database', error);
+    return [];
   }
 };
 
-export const addPolicy = (newPolicyData: Omit<Policy, 'id'>): Policy[] => {
-    const policies = getPolicies();
-    const newPolicy: Policy = {
-        ...newPolicyData,
-        id: Date.now(),
-    };
-    const updatedPolicies = [...policies, newPolicy];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPolicies));
-    return updatedPolicies;
+export const addPolicy = async (newPolicyData: Omit<Policy, 'id'>): Promise<Policy[]> => {
+  try {
+    const { error } = await supabase
+      .from('policies')
+      .insert({
+        title: newPolicyData.title,
+        category: newPolicyData.category,
+        content: newPolicyData.content,
+      });
+
+    if (error) throw error;
+
+    return await getPolicies();
+  } catch (error) {
+    console.error('Failed to add policy', error);
+    return await getPolicies();
+  }
 };
 
-export const updatePolicy = (updatedPolicy: Policy): Policy[] => {
-    let policies = getPolicies();
-    policies = policies.map(p => p.id === updatedPolicy.id ? updatedPolicy : p);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(policies));
-    return policies;
+export const updatePolicy = async (updatedPolicy: Policy): Promise<Policy[]> => {
+  try {
+    const { error } = await supabase
+      .from('policies')
+      .update({
+        title: updatedPolicy.title,
+        category: updatedPolicy.category,
+        content: updatedPolicy.content,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', updatedPolicy.id);
+
+    if (error) throw error;
+
+    return await getPolicies();
+  } catch (error) {
+    console.error('Failed to update policy', error);
+    return await getPolicies();
+  }
 };
 
-export const deletePolicy = (id: number): Policy[] => {
-    let policies = getPolicies();
-    policies = policies.filter(p => p.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(policies));
-    return policies;
+export const deletePolicy = async (id: string | number): Promise<Policy[]> => {
+  try {
+    const { error } = await supabase
+      .from('policies')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return await getPolicies();
+  } catch (error) {
+    console.error('Failed to delete policy', error);
+    return await getPolicies();
+  }
 };
