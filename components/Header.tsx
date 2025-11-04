@@ -17,12 +17,16 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onMenuClick }) => {
     const [settings, setSettings] = useState<CompanySettings | null>(null);
 
     useEffect(() => {
-        const roles = getRoles();
-        const role = roles.find(r => r.id === user.roleId);
-        if (role) {
-            setRoleName(role.name);
-        }
-        setSettings(getSettings());
+        const loadData = async () => {
+            const roles = await getRoles();
+            const role = roles.find(r => r.id === user.roleId);
+            if (role) {
+                setRoleName(role.name);
+            }
+            const settingsData = await getSettings();
+            setSettings(settingsData);
+        };
+        loadData();
     }, [user.roleId]);
 
     return (
@@ -44,7 +48,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onMenuClick }) => {
                 </div>
                 <div className="relative">
                     <button className="h-10 w-10 sm:h-12 sm:w-12 rounded-full overflow-hidden border-2 border-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400">
-                        <img src={user.avatar} alt="User Avatar" className="h-full w-full object-cover" />
+                        <img src={user.avatar || 'https://via.placeholder.com/150'} alt="User Avatar" className="h-full w-full object-cover" />
                     </button>
                 </div>
                 <button onClick={onLogout} title="Logout" className="text-gray-500 hover:text-indigo-600 focus:outline-none">
