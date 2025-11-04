@@ -2,8 +2,9 @@ import { GoogleGenAI, Chat } from "@google/genai";
 import { ReviewTone, LetterType } from '../types.ts';
 import { getSettings } from "./settingsService.ts";
 
-// FIX: Removed 'as string' for API key
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialize AI only if API key is available
+const apiKey = process.env.API_KEY || '';
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export const generatePerformanceReview = async (
     employeeName: string,
@@ -21,6 +22,10 @@ export const generatePerformanceReview = async (
     ${improvements}
     
     Format it as a professional performance review.`;
+
+    if (!ai) {
+        return "Gemini API key is not configured. Please add GEMINI_API_KEY to your environment variables.";
+    }
 
     try {
         const response = await ai.models.generateContent({
@@ -49,6 +54,10 @@ export const generateJobDescription = async (
 
     Include a brief, engaging company introduction at the beginning.`;
     
+    if (!ai) {
+        return "Gemini API key is not configured. Please add GEMINI_API_KEY to your environment variables.";
+    }
+
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
@@ -61,7 +70,10 @@ export const generateJobDescription = async (
     }
 };
 
-export const getHrAssistantChat = (): Chat => {
+export const getHrAssistantChat = (): Chat | null => {
+    if (!ai) {
+        return null;
+    }
     return ai.chats.create({
         model: 'gemini-2.5-flash',
         config: {
@@ -88,6 +100,10 @@ export const generateHrLetter = async (
 
     The letter should be professionally formatted as a traditional business letter. Use today's date and incorporate the company details provided. 
     Generate only the full letter content. Do not include any email-specific formatting like 'Subject:' lines or email headers.`;
+
+    if (!ai) {
+        return "Gemini API key is not configured. Please add GEMINI_API_KEY to your environment variables.";
+    }
 
     try {
         const response = await ai.models.generateContent({
@@ -118,6 +134,10 @@ export const generatePolicyDocument = async (
 
     "**Disclaimer:** This policy is a template and should be reviewed by a qualified legal professional to ensure compliance with all applicable local, state, and federal laws before implementation."`;
 
+    if (!ai) {
+        return "Gemini API key is not configured. Please add GEMINI_API_KEY to your environment variables.";
+    }
+
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-pro', // Using a more powerful model for complex document generation
@@ -132,6 +152,10 @@ export const generatePolicyDocument = async (
 
 export const getMotivationalQuote = async (): Promise<string> => {
     const prompt = `Generate a short, inspiring motivational quote suitable for a professional workplace. The quote should be uplifting and concise. Format it as: "The quote itself." - Author`;
+
+    if (!ai) {
+        return `"Believe you can and you're halfway there." - Theodore Roosevelt`;
+    }
 
     try {
         const response = await ai.models.generateContent({
@@ -151,6 +175,10 @@ export const getMotivationalQuote = async (): Promise<string> => {
 
 export const getHealthTip = async (): Promise<string> => {
     const prompt = `Generate a short, practical health and wellness tip suitable for a professional workplace. The tip should be aimed at reducing stress and be easy to implement during a workday. Keep it concise and encouraging.`;
+
+    if (!ai) {
+        return `Remember to take short breaks to stretch and rest your eyes. A 5-minute break every hour can make a big difference!`;
+    }
 
     try {
         const response = await ai.models.generateContent({

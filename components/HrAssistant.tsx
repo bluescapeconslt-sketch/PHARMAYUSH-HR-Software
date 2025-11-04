@@ -17,6 +17,7 @@ const HrAssistant: React.FC = () => {
   const [avatar, setAvatar] = useState('');
   const chat = useRef(getHrAssistantChat());
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [apiKeyMissing, setApiKeyMissing] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -25,6 +26,9 @@ const HrAssistant: React.FC = () => {
   useEffect(() => {
     const settings = getBuddySettings();
     setAvatar(settings.avatarImage);
+    if (!chat.current) {
+      setApiKeyMissing(true);
+    }
   }, []);
 
   useEffect(scrollToBottom, [messages, isLoading]);
@@ -72,6 +76,12 @@ const HrAssistant: React.FC = () => {
 
 
     try {
+      if (!chat.current) {
+        const errorMessage: ChatMessage = { sender: 'ai', text: "Gemini API key is not configured. Please add GEMINI_API_KEY to your environment variables to use this feature." };
+        setMessages(prev => [...prev, errorMessage]);
+        setIsLoading(false);
+        return;
+      }
       const response = await chat.current.sendMessage({ message: finalPrompt });
       const aiMessage: ChatMessage = { sender: 'ai', text: response.text };
       setMessages(prev => [...prev, aiMessage]);
