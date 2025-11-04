@@ -292,10 +292,14 @@ const Dashboard: React.FC = () => {
     const canViewAllEmployees = useMemo(() => hasPermission('view:employees'), []);
 
     useEffect(() => {
-        if (canViewAllEmployees) {
-            setEmployees(getEmployees());
-        }
-        setLeaveRequests(getLeaveRequests());
+        const fetchData = async () => {
+            if (canViewAllEmployees) {
+                const emps = await getEmployees();
+                setEmployees(emps);
+            }
+            setLeaveRequests(getLeaveRequests());
+        };
+        fetchData();
     }, [canViewAllEmployees]);
 
     const pendingRequests = useMemo(() => leaveRequests.filter(r => r.status === 'Pending'), [leaveRequests]);
