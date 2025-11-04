@@ -46,25 +46,28 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isOpen) {
-        const fetchedRoles = getRoles();
-        const fetchedDepts = getDepartments();
-        const fetchedShifts = getShifts();
-        setRoles(fetchedRoles);
-        setDepartments(fetchedDepts);
-        setShifts(fetchedShifts);
+    const fetchData = async () => {
+      if (isOpen) {
+          const fetchedRoles = await getRoles();
+          const fetchedDepts = getDepartments();
+          const fetchedShifts = getShifts();
+          setRoles(fetchedRoles);
+          setDepartments(fetchedDepts);
+          setShifts(fetchedShifts);
 
-        if (fetchedRoles.length > 0) {
-            const employeeRole = fetchedRoles.find(r => r.name === 'Employee');
-            setFormData(prev => ({ ...prev, roleId: employeeRole ? employeeRole.id : fetchedRoles[0].id }));
-        }
-        if (fetchedDepts.length > 0) {
-            setFormData(prev => ({ ...prev, department: fetchedDepts[0].name }));
-        }
-        if (fetchedShifts.length > 0) {
-            setFormData(prev => ({ ...prev, shiftId: fetchedShifts[0].id }));
-        }
-    }
+          if (fetchedRoles.length > 0) {
+              const employeeRole = fetchedRoles.find(r => r.name === 'Employee');
+              setFormData(prev => ({ ...prev, roleId: employeeRole ? employeeRole.id : fetchedRoles[0].id }));
+          }
+          if (fetchedDepts.length > 0) {
+              setFormData(prev => ({ ...prev, department: fetchedDepts[0].name }));
+          }
+          if (fetchedShifts.length > 0) {
+              setFormData(prev => ({ ...prev, shiftId: fetchedShifts[0].id }));
+          }
+      }
+    };
+    fetchData();
   }, [isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -121,9 +124,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.position || !formData.jobTitle || !formData.email || !formData.password || !formData.birthday || !formData.roleId || !formData.department) {
       setError('Please fill out all required fields.');
       return;
@@ -159,7 +162,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
       lastLeaveAllocation: new Date().toISOString().slice(0, 7), // Set to current month
     };
 
-    addEmployee(payload);
+    await addEmployee(payload);
     onSubmitted();
     handleClose();
   };
