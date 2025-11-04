@@ -1,54 +1,54 @@
-
-// FIX: Add file extension to import paths
 import { OnboardingTask } from '../types.ts';
-import { ONBOARDING_TASKS as initialData } from '../constants.tsx';
-import { getEmployees } from './employeeService.ts';
+import { supabase } from '../lib/supabase.ts';
 import { getCurrentUser, hasPermission } from './authService.ts';
 
-const STORAGE_KEY = 'pharmayush_hr_onboarding_tasks';
-
-export const getOnboardingTasks = (): (OnboardingTask & { employeeName: string })[] => {
-  let allTasks: OnboardingTask[] = [];
+export const getOnboardingTasks = async (): Promise<(OnboardingTask & { employeeName: string })[]> => {
   try {
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    if (!storedData) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
-      allTasks = initialData;
-    } else {
-      allTasks = JSON.parse(storedData);
+    const currentUser = getCurrentUser();
+    if (!currentUser) return [];
+
+    let query = supabase
+      .from('onboarding_tasks')
+      .select(`
+        *,
+        employee:employees(id, first_name, last_name)
+      `)
+      .order('due_date', { ascending: true });
+
+    if (!hasPermission('manage:onboarding')) {
+      query = query.eq('employee_id', currentUser.id);
     }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    return (data || []).map((task: any) => ({
+      id: task.id,
+      employeeId: task.employee_id,
+      employeeName: task.employee ? `${task.employee.first_name} ${task.employee.last_name}` : 'Unknown Employee',
+      task: task.task,
+      dueDate: task.due_date,
+      completed: task.completed,
+    }));
   } catch (error) {
-    console.error("Failed to parse onboarding tasks from localStorage", error);
-    allTasks = [];
+    console.error('Failed to fetch onboarding tasks from database', error);
+    return [];
   }
-
-  const currentUser = getCurrentUser();
-  if (!currentUser) return [];
-
-  // Filter tasks based on permissions before mapping employee names
-  const tasksToProcess = hasPermission('manage:onboarding')
-    ? allTasks
-    : allTasks.filter(task => task.employeeId === currentUser.id);
-    
-  const employees = getEmployees();
-  return tasksToProcess.map((task: OnboardingTask) => {
-      const employee = employees.find(e => e.id === task.employeeId);
-      return {
-          ...task,
-          employeeName: employee ? employee.name : 'Unknown Employee'
-      };
-  });
 };
 
-export const updateOnboardingTask = (taskId: number, completed: boolean): void => {
+export const updateOnboardingTask = async (taskId: string | number, completed: boolean): Promise<void> => {
   try {
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    const tasks = storedData ? JSON.parse(storedData) : initialData;
-    const updatedTasks = tasks.map((task: OnboardingTask) => 
-      task.id === taskId ? { ...task, completed } : task
-    );
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTasks));
+    const { error } = await supabase
+      .from('onboarding_tasks')
+      .update({
+        completed,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', taskId);
+
+    if (error) throw error;
   } catch (error) {
-    console.error("Failed to update onboarding task", error);
+    console.error('Failed to update onboarding task', error);
   }
 };

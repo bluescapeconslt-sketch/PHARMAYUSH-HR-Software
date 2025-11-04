@@ -25,9 +25,9 @@ const getWorkingDaysInMonth = (year: number, month: number): number => {
   return workingDays;
 };
 
-export const calculatePayrollForMonth = (year: number, month: number): PayrollData[] => {
-  const employees = getEmployees();
-  const attendanceRecords = getAttendanceRecords();
+export const calculatePayrollForMonth = async (year: number, month: number): Promise<PayrollData[]> => {
+  const employees = await getEmployees();
+  const attendanceRecords = await getAttendanceRecords();
   const workingDays = getWorkingDaysInMonth(year, month);
 
   const payrollResults: PayrollData[] = [];

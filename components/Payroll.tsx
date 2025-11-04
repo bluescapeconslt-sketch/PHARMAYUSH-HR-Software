@@ -11,10 +11,13 @@ const Payroll: React.FC = () => {
     const currentMonth = currentDate.getMonth();
 
     useEffect(() => {
-        setIsLoading(true);
-        const data = calculatePayrollForMonth(currentYear, currentMonth);
-        setPayrollData(data);
-        setIsLoading(false);
+        const loadPayroll = async () => {
+            setIsLoading(true);
+            const data = await calculatePayrollForMonth(currentYear, currentMonth);
+            setPayrollData(data);
+            setIsLoading(false);
+        };
+        loadPayroll();
     }, [currentYear, currentMonth]);
     
     const handleMonthChange = (offset: number) => {
