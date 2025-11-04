@@ -29,14 +29,17 @@ const AttendanceReport: React.FC = () => {
     const canViewAll = useMemo(() => hasPermission('manage:employees'), []);
 
     useEffect(() => {
-        const user = getCurrentUser();
-        setCurrentUser(user);
-        setAllRecords(getAttendanceRecords());
-        setEmployees(getEmployees());
+        const loadData = async () => {
+            const user = getCurrentUser();
+            setCurrentUser(user);
+            setAllRecords(await getAttendanceRecords());
+            setEmployees(await getEmployees());
 
-        if (user && !hasPermission('manage:employees')) {
-            setFilters(prev => ({ ...prev, employeeId: user.id.toString() }));
-        }
+            if (user && !hasPermission('manage:employees')) {
+                setFilters(prev => ({ ...prev, employeeId: user.id.toString() }));
+            }
+        };
+        loadData();
     }, []);
 
     const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
