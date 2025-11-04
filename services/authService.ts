@@ -10,14 +10,14 @@ export interface AuthenticatedUser extends Omit<Employee, 'password'> {
     permissions: Permission[];
 }
 
-export const login = (email: string, password: string): boolean => {
-  const employees = getEmployees();
+export const login = async (email: string, password: string): Promise<boolean> => {
+  const employees = await getEmployees();
   const user = employees.find(emp => emp.email.toLowerCase() === email.toLowerCase());
 
   if (user && user.password === password) {
-    const roles = getRoles();
+    const roles = await getRoles();
     const userRole = roles.find(r => r.id === user.roleId);
-    
+
     // Don't store password in session
     const { password: _, ...userProfile } = user;
 
@@ -25,11 +25,11 @@ export const login = (email: string, password: string): boolean => {
         ...userProfile,
         permissions: userRole ? userRole.permissions : [],
     };
-    
+
     localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser));
     return true;
   }
-  
+
   return false;
 };
 
