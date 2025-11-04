@@ -40,9 +40,8 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
   const formDisabled = !isEligibleForLeave;
 
   useEffect(() => {
-    const fetchData = async () => {
       if (isOpen) {
-          const fetchedEmployees = await getEmployees();
+          const fetchedEmployees = getEmployees();
           setEmployees(fetchedEmployees);
 
           if (currentUser && !canManage) {
@@ -51,8 +50,6 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
               setFormData(prev => ({ ...prev, employeeId: fetchedEmployees[0].id }));
           }
       }
-    };
-    fetchData();
   }, [isOpen, currentUser, canManage]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
