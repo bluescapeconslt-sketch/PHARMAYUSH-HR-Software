@@ -10,8 +10,9 @@ const RoleManagement: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
-    const fetchRoles = () => {
-        setRoles(getRoles());
+    const fetchRoles = async () => {
+        const rolesData = await getRoles();
+        setRoles(rolesData);
     };
 
     useEffect(() => {
@@ -28,14 +29,14 @@ const RoleManagement: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if (id <= 3) { // Prevent deleting default roles
             alert("Default roles (Admin, Employee, HR Manager) cannot be deleted.");
             return;
         }
         if (window.confirm('Are you sure you want to delete this role?')) {
-            deleteRole(id);
-            fetchRoles();
+            await deleteRole(id);
+            await fetchRoles();
         }
     };
 
@@ -111,20 +112,20 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, onSave, role }) 
         setPermissions(newPermissions);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name) {
             setError('Role name is required.');
             return;
         }
-        
+
         // FIX: Explicitly type `roleData` to match the `addRole` function's expected parameter type, resolving a TypeScript inference issue.
         const roleData: Omit<Role, 'id'> = { name, permissions: Array.from(permissions) };
 
         if (role) {
-            updateRole({ ...role, ...roleData });
+            await updateRole({ ...role, ...roleData });
         } else {
-            addRole(roleData);
+            await addRole(roleData);
         }
         onSave();
     };
