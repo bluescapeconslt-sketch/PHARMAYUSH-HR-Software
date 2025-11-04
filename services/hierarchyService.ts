@@ -1,8 +1,8 @@
 import { Employee, HierarchyNode } from '../types.ts';
 import { getEmployees } from './employeeService.ts';
 
-export const buildHierarchy = (): HierarchyNode[] => {
-    const employees = getEmployees();
+export const buildHierarchy = async (): Promise<HierarchyNode[]> => {
+    const employees = await getEmployees();
     if (employees.length === 0) {
         return [];
     }

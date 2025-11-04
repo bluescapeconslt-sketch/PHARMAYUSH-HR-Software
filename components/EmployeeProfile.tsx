@@ -45,26 +45,30 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
     const [assignedShift, setAssignedShift] = useState<Shift | null>(null);
 
     useEffect(() => {
-        if (user) {
-            // Fetch recent 5 leave requests
-            const history = getLeaveRequestsForEmployee(user.id)
-                .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-                .slice(0, 5);
-            setLeaveHistory(history);
+        const fetchData = async () => {
+            if (user) {
+                // Fetch recent 5 leave requests
+                const history = await getLeaveRequestsForEmployee(user.id);
+                const sortedHistory = history
+                    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+                    .slice(0, 5);
+                setLeaveHistory(sortedHistory);
 
-            // Fetch pending onboarding tasks
-            const tasks = getOnboardingTasks().filter(task => task.employeeId === user.id && !task.completed);
-            setOnboardingTasks(tasks);
-            
-            // Fetch shift info
-            if(user.shiftId){
-                const shifts = getShifts();
-                const shift = shifts.find(s => s.id === user.shiftId);
-                setAssignedShift(shift || null);
-            } else {
-                setAssignedShift(null);
+                // Fetch pending onboarding tasks
+                const tasks = getOnboardingTasks().filter(task => task.employeeId === user.id && !task.completed);
+                setOnboardingTasks(tasks);
+
+                // Fetch shift info
+                if(user.shiftId){
+                    const shifts = getShifts();
+                    const shift = shifts.find(s => s.id === user.shiftId);
+                    setAssignedShift(shift || null);
+                } else {
+                    setAssignedShift(null);
+                }
             }
-        }
+        };
+        fetchData();
     }, [user]);
 
     if (!user) {

@@ -25,17 +25,18 @@ const LeaveManagement: React.FC = () => {
   const currentUser = getCurrentUser();
   const isLeaveDisabled = currentUser?.position === 'Intern' || currentUser?.status === 'Probation';
 
-  const fetchRequests = () => {
-    setRequests(getLeaveRequests());
+  const fetchRequests = async () => {
+    const reqs = await getLeaveRequests();
+    setRequests(reqs);
   };
 
   useEffect(() => {
     fetchRequests();
   }, []);
   
-  const handleUpdateStatus = (id: number, status: 'Approved' | 'Rejected') => {
-    const updatedRequests = updateLeaveRequestStatus(id, status);
-    setRequests(updatedRequests);
+  const handleUpdateStatus = async (id: number, status: 'Approved' | 'Rejected') => {
+    await updateLeaveRequestStatus(id, status);
+    await fetchRequests();
   };
 
   const handleModalSubmit = () => {
