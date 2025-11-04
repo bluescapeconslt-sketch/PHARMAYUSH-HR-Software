@@ -9,8 +9,9 @@ const MeetingScheduler: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
 
-    const fetchMeetings = () => {
-        setMeetings(getMeetings());
+    const fetchMeetings = async () => {
+        const mtgs = await getMeetings();
+        setMeetings(mtgs);
     };
 
     useEffect(() => {
@@ -27,9 +28,9 @@ const MeetingScheduler: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if (window.confirm('Are you sure you want to cancel this meeting?')) {
-            const updatedMeetings = deleteMeeting(id);
+            const updatedMeetings = await deleteMeeting(id);
             setMeetings(updatedMeetings);
         }
     };

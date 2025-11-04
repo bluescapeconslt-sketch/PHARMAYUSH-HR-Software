@@ -9,8 +9,9 @@ const ManageShifts: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
 
-    const fetchShifts = () => {
-        setShifts(getShifts());
+    const fetchShifts = async () => {
+        const shfts = await getShifts();
+        setShifts(shfts);
     };
 
     useEffect(() => {
@@ -27,9 +28,9 @@ const ManageShifts: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if (window.confirm('Are you sure you want to delete this shift? This might affect assigned employees.')) {
-            const updatedShifts = deleteShift(id);
+            const updatedShifts = await deleteShift(id);
             setShifts(updatedShifts);
         }
     };

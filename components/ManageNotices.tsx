@@ -9,8 +9,9 @@ const ManageNotices: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
 
-    const fetchNotices = () => {
-        setNotices(getNotices().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    const fetchNotices = async () => {
+        const nots = await getNotices();
+        setNotices(nots.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     };
 
     useEffect(() => {
@@ -27,11 +28,9 @@ const ManageNotices: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if (window.confirm('Are you sure you want to delete this notice?')) {
-            // Directly update the state with the returned array from the service
-            const updatedNotices = deleteNotice(id);
-            // Re-apply the same sorting to maintain consistency
+            const updatedNotices = await deleteNotice(id);
             setNotices(updatedNotices.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         }
     };
