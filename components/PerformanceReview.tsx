@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 // FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
@@ -16,14 +17,15 @@ const PerformanceReview: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
+    // FIX: The getEmployees function is async and must be awaited.
+    const fetchAndSetEmployees = async () => {
       const fetchedEmployees = await getEmployees();
       setEmployees(fetchedEmployees);
       if (fetchedEmployees.length > 0) {
         setSelectedEmployee(fetchedEmployees[0].id.toString());
       }
     };
-    fetchData();
+    fetchAndSetEmployees();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

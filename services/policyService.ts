@@ -1,44 +1,48 @@
-
 import { Policy } from '../types.ts';
-import { POLICIES as initialData } from '../constants.tsx';
+import { DEFAULT_POLICIES } from './mockData.ts';
 
-const STORAGE_KEY = 'pharmayush_hr_policies';
+const POLICIES_KEY = 'pharmayush_hr_policies';
 
-export const getPolicies = (): Policy[] => {
-  try {
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    if (!storedData) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
-      return initialData;
+const getFromStorage = (): Policy[] => {
+    try {
+        const data = localStorage.getItem(POLICIES_KEY);
+        if (!data) {
+            localStorage.setItem(POLICIES_KEY, JSON.stringify(DEFAULT_POLICIES));
+            return DEFAULT_POLICIES;
+        }
+        const parsedData = JSON.parse(data);
+        return Array.isArray(parsedData) ? parsedData : [];
+    } catch (e) {
+        return DEFAULT_POLICIES;
     }
-    return JSON.parse(storedData);
-  } catch (error) {
-    console.error("Failed to parse policies from localStorage", error);
-    return initialData;
-  }
 };
 
-export const addPolicy = (newPolicyData: Omit<Policy, 'id'>): Policy[] => {
-    const policies = getPolicies();
-    const newPolicy: Policy = {
-        ...newPolicyData,
-        id: Date.now(),
-    };
-    const updatedPolicies = [...policies, newPolicy];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPolicies));
-    return updatedPolicies;
+const saveToStorage = (policies: Policy[]): void => {
+    localStorage.setItem(POLICIES_KEY, JSON.stringify(policies));
 };
 
-export const updatePolicy = (updatedPolicy: Policy): Policy[] => {
-    let policies = getPolicies();
+export const getPolicies = async (): Promise<Policy[]> => {
+  return Promise.resolve(getFromStorage());
+};
+
+export const addPolicy = async (newPolicyData: Omit<Policy, 'id'>): Promise<Policy> => {
+    const policies = getFromStorage();
+    const newId = policies.length > 0 ? Math.max(...policies.map(p => p.id)) + 1 : 1;
+    const newPolicy = { ...newPolicyData, id: newId };
+    saveToStorage([...policies, newPolicy]);
+    return Promise.resolve(newPolicy);
+};
+
+export const updatePolicy = async (updatedPolicy: Policy): Promise<Policy> => {
+    let policies = getFromStorage();
     policies = policies.map(p => p.id === updatedPolicy.id ? updatedPolicy : p);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(policies));
-    return policies;
+    saveToStorage(policies);
+    return Promise.resolve(updatedPolicy);
 };
 
-export const deletePolicy = (id: number): Policy[] => {
-    let policies = getPolicies();
+export const deletePolicy = async (id: number): Promise<void> => {
+    let policies = getFromStorage();
     policies = policies.filter(p => p.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(policies));
-    return policies;
+    saveToStorage(policies);
+    return Promise.resolve();
 };

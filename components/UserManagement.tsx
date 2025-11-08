@@ -9,14 +9,26 @@ import EditEmployeeModal from './common/EditEmployeeModal.tsx';
 const UserManagement: React.FC = () => {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-    const fetchData = () => {
-        setEmployees(getEmployees());
-        setRoles(getRoles());
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [employeesData, rolesData] = await Promise.all([
+                getEmployees(),
+                getRoles()
+            ]);
+            setEmployees(employeesData);
+            setRoles(rolesData);
+        } catch (error) {
+            console.error("Failed to fetch user management data", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -26,22 +38,28 @@ const UserManagement: React.FC = () => {
     const getRoleName = (roleId: number) => roles.find(r => r.id === roleId)?.name || 'Unknown Role';
 
     const filteredEmployees = useMemo(() => {
+        if (isLoading) return [];
         return employees.filter(employee =>
             employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
             getRoleName(employee.roleId).toLowerCase().includes(searchTerm.toLowerCase())
         );
-    }, [employees, roles, searchTerm]);
+    }, [employees, roles, searchTerm, isLoading]);
     
     const handleEdit = (employee: Employee) => {
         setSelectedEmployee(employee);
         setIsEditModalOpen(true);
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if(window.confirm('Are you sure you want to delete this user? This action is permanent.')) {
-            deleteEmployee(id);
-            fetchData();
+            try {
+                await deleteEmployee(id);
+                fetchData();
+            } catch (error) {
+                console.error("Failed to delete employee", error);
+                alert("Could not delete user. Please try again.");
+            }
         }
     };
     
@@ -54,8 +72,43 @@ const UserManagement: React.FC = () => {
             case 'Active': return 'bg-green-100 text-green-800';
             case 'On Leave': return 'bg-yellow-100 text-yellow-800';
             case 'Probation': return 'bg-orange-100 text-orange-800';
+            case 'Notice Period': return 'bg-pink-100 text-pink-800';
             default: return 'bg-gray-100 text-gray-800';
         }
+    };
+
+    const renderTableBody = () => {
+        if (isLoading) {
+            return <tr><td colSpan={4} className="text-center py-8">Loading users...</td></tr>;
+        }
+        if (filteredEmployees.length === 0) {
+            return <tr><td colSpan={4} className="text-center py-8">No users found.</td></tr>;
+        }
+        return filteredEmployees.map(employee => (
+            <tr key={employee.id}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                        <img className="h-10 w-10 rounded-full" src={employee.avatar} alt={employee.name} />
+                        <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{employee.name}</div>
+                            <div className="text-sm text-gray-500">{employee.email}</div>
+                        </div>
+                    </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{getRoleName(employee.roleId)}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(employee.status)}`}>
+                        {employee.status}
+                    </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end items-center gap-4">
+                        <button onClick={() => handleEdit(employee)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
+                        <button onClick={() => handleDelete(employee.id)} className="text-red-600 hover:text-red-900">Delete</button>
+                    </div>
+                </td>
+            </tr>
+        ));
     };
 
     return (
@@ -94,31 +147,7 @@ const UserManagement: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredEmployees.map(employee => (
-                                <tr key={employee.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center">
-                                            <img className="h-10 w-10 rounded-full" src={employee.avatar} alt={employee.name} />
-                                            <div className="ml-4">
-                                                <div className="text-sm font-medium text-gray-900">{employee.name}</div>
-                                                <div className="text-sm text-gray-500">{employee.email}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{getRoleName(employee.roleId)}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(employee.status)}`}>
-                                            {employee.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div className="flex justify-end items-center gap-4">
-                                            <button onClick={() => handleEdit(employee)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
-                                            <button onClick={() => handleDelete(employee.id)} className="text-red-600 hover:text-red-900">Delete</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            {renderTableBody()}
                         </tbody>
                     </table>
                 </div>

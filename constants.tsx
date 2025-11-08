@@ -1,5 +1,5 @@
 import React from 'react';
-import { Employee, LeaveRequest, OnboardingTask, Policy, Role, Permission, Notice, Department, Meeting, Position, Shift } from './types.ts';
+import { Permission, Position, PerformancePointCriteria, Badge } from './types.ts';
 
 export const PERMISSIONS: Permission[] = [
   'view:employees',
@@ -14,6 +14,8 @@ export const PERMISSIONS: Permission[] = [
   'manage:departments',
   'manage:meetings',
   'view:attendance-report',
+  'view:recognition',
+  'manage:recognition',
   'use:performance-review',
   'use:job-description',
   'use:generate-letter',
@@ -26,124 +28,21 @@ export const PERMISSIONS: Permission[] = [
   'view:complaints',
 ];
 
-export const ROLES: Role[] = [
-    {
-        id: 1,
-        name: 'Admin',
-        permissions: PERMISSIONS, // Admin gets all permissions
-    },
-    {
-        id: 2,
-        name: 'Employee',
-        permissions: [
-            'view:leaves',
-            'view:policies',
-            'use:hr-assistant',
-            'view:attendance-report',
-        ],
-    },
-    {
-        id: 3,
-        name: 'HR Manager',
-        permissions: [
-            'view:employees',
-            'manage:employees',
-            'view:leaves',
-            'manage:leaves',
-            'view:onboarding',
-            'manage:onboarding',
-            'view:policies',
-            'manage:policies',
-            'manage:notices',
-            'manage:departments',
-            'manage:meetings',
-            'view:attendance-report',
-            'use:performance-review',
-            'use:job-description',
-            'use:generate-letter',
-            'use:hr-assistant',
-            'manage:settings',
-            'manage:shifts',
-            'manage:payroll',
-        ]
-    }
-];
-
-export const DEPARTMENTS: Department[] = [
-    { id: 1, name: 'Technology' },
-    { id: 2, name: 'Product' },
-    { id: 3, name: 'Design' },
-    { id: 4, name: 'Human Resources' },
-    { id: 5, name: 'Marketing' },
-    { id: 6, name: 'Finance' },
-];
-
-export const SHIFTS: Shift[] = [
-    { id: 1, name: 'General Shift', startTime: '09:00', endTime: '17:00' },
-    { id: 2, name: 'Morning Shift', startTime: '06:00', endTime: '14:00' },
-    { id: 3, name: 'Night Shift', startTime: '22:00', endTime: '06:00' },
-];
-
 export const POSITIONS: Position[] = ['CEO', 'Manager', 'TL', 'Worker', 'Intern'];
 
-const pastMonth = '2024-01'; // A date guaranteed to be in the past to trigger initial leave allocation
-
-// Reworked employee data to match the visual org chart structure
-export const EMPLOYEES: Employee[] = [
-  // Level 0: CEO
-  { id: 4, name: 'Diana Prince', position: 'CEO', jobTitle: 'Chief Executive Officer', department: 'Executive', email: 'admin@example.com', password: 'admin', roleId: 1, avatar: 'https://i.pravatar.cc/150?u=4', status: 'Active', birthday: '1985-03-10', leaveBalance: { short: 20, sick: 10, personal: 5 }, baseSalary: 150000, lastLeaveAllocation: pastMonth },
-  
-  // Level 1: Managers reporting to CEO
-  { id: 2, name: 'Bob Smith', position: 'Manager', jobTitle: 'Engineering Manager', department: 'Technology', email: 'bob.s@example.com', password: 'password', roleId: 3, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=2', status: 'Active', birthday: '1988-08-22', leaveBalance: { short: 15, sick: 7, personal: 3 }, baseSalary: 75000, lastLeaveAllocation: pastMonth, reportsTo: 4 },
-  { id: 1, name: 'Alice Johnson', position: 'Manager', jobTitle: 'Product Manager', department: 'Product', email: 'alice.j@example.com', password: 'password', roleId: 3, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=1', status: 'Active', birthday: '1990-05-15', leaveBalance: { short: 12, sick: 5, personal: 2 }, baseSalary: 72000, lastLeaveAllocation: pastMonth, reportsTo: 4 },
-  
-  // Level 2: TLs reporting to Managers
-  { id: 3, name: 'Charlie Brown', position: 'TL', jobTitle: 'Frontend Team Lead', department: 'Technology', email: 'charlie.b@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=3', status: 'Probation', birthday: '1992-11-30', leaveBalance: { short: 5, sick: 6, personal: 1 }, baseSalary: 50000, lastLeaveAllocation: pastMonth, reportsTo: 2 },
-  { id: 5, name: 'Ethan Hunt', position: 'TL', jobTitle: 'Backend Team Lead', department: 'Technology', email: 'ethan.h@example.com', password: 'password', roleId: 2, shiftId: 2, avatar: 'https://i.pravatar.cc/150?u=5', status: 'Active', birthday: '1995-07-01', leaveBalance: { short: 8, sick: 4, personal: 0 }, baseSalary: 52000, lastLeaveAllocation: pastMonth, reportsTo: 2 },
-  { id: 6, name: 'Frank Moses', position: 'TL', jobTitle: 'Design Team Lead', department: 'Product', email: 'frank.m@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=6', status: 'Active', birthday: '1991-01-15', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 51000, lastLeaveAllocation: pastMonth, reportsTo: 1 },
-  { id: 7, name: 'Grace Hart', position: 'TL', jobTitle: 'Marketing Team Lead', department: 'Product', email: 'grace.h@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=7', status: 'Active', birthday: '1993-06-20', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 49000, lastLeaveAllocation: pastMonth, reportsTo: 1 },
-
-  // Level 3: Workers reporting to TLs
-  { id: 8, name: 'Heidi Turner', position: 'Worker', jobTitle: 'Software Engineer', department: 'Technology', email: 'heidi.t@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=8', status: 'Active', birthday: '1996-02-10', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 40000, lastLeaveAllocation: pastMonth, reportsTo: 3 },
-  { id: 9, name: 'Ivy Walker', position: 'Worker', jobTitle: 'Software Engineer', department: 'Technology', email: 'ivy.w@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=9', status: 'Active', birthday: '1997-03-12', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 40000, lastLeaveAllocation: pastMonth, reportsTo: 3 },
-  { id: 10, name: 'Jack Ryan', position: 'Worker', jobTitle: 'Database Admin', department: 'Technology', email: 'jack.r@example.com', password: 'password', roleId: 2, shiftId: 2, avatar: 'https://i.pravatar.cc/150?u=10', status: 'Active', birthday: '1995-09-09', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 42000, lastLeaveAllocation: pastMonth, reportsTo: 5 },
-  { id: 11, name: 'Kate Austen', position: 'Worker', jobTitle: 'UX Designer', department: 'Product', email: 'kate.a@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=11', status: 'Active', birthday: '1996-08-14', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 38000, lastLeaveAllocation: pastMonth, reportsTo: 6 },
-  { id: 12, name: 'Leo Fitz', position: 'Worker', jobTitle: 'UI Designer', department: 'Product', email: 'leo.f@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=12', status: 'Active', birthday: '1998-04-25', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 37000, lastLeaveAllocation: pastMonth, reportsTo: 6 },
-  { id: 13, name: 'Mia Smoak', position: 'Worker', jobTitle: 'Saler', department: 'Product', email: 'mia.s@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=13', status: 'Active', birthday: '1999-11-30', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 35000, lastLeaveAllocation: pastMonth, reportsTo: 7 },
-  { id: 14, name: 'Nate Heywood', position: 'Worker', jobTitle: 'Saler', department: 'Product', email: 'nate.h@example.com', password: 'password', roleId: 2, shiftId: 1, avatar: 'https://i.pravatar.cc/150?u=14', status: 'Active', birthday: '1997-12-01', leaveBalance: { short: 10, sick: 5, personal: 2 }, baseSalary: 36000, lastLeaveAllocation: pastMonth, reportsTo: 7 },
+export const PERFORMANCE_POINT_CRITERIA: PerformancePointCriteria[] = [
+    'Punctuality', 
+    'Task Completion', 
+    'Innovation', 
+    'Teamwork', 
+    'Leadership'
 ];
 
-export const LEAVE_REQUESTS: LeaveRequest[] = [
-  { id: 1, employeeId: 3, employeeName: 'Charlie Brown', employeeAvatar: 'https://i.pravatar.cc/150?u=3', leaveType: 'Short Leave', startDate: '2024-08-01', endDate: '2024-08-01', startTime: '10:00', endTime: '11:00', reason: 'Doctor appointment.', status: 'Approved' },
-  { id: 2, employeeId: 1, employeeName: 'Alice Johnson', employeeAvatar: 'https://i.pravatar.cc/150?u=1', leaveType: 'Sick Leave', startDate: '2024-07-20', endDate: '2024-07-21', reason: 'Fever and cold.', status: 'Approved' },
-  { id: 3, employeeId: 5, employeeName: 'Ethan Hunt', employeeAvatar: 'https://i.pravatar.cc/150?u=5', leaveType: 'Personal', startDate: '2024-09-05', endDate: '2024-09-07', reason: 'Personal matters.', status: 'Pending' },
-  { id: 4, employeeId: 2, employeeName: 'Bob Smith', employeeAvatar: 'https://i.pravatar.cc/150?u=2', leaveType: 'Short Leave', startDate: '2024-10-10', endDate: '2024-10-10', startTime: '14:00', endTime: '15:00', reason: 'Bank appointment.', status: 'Pending' },
-];
-
-export const ONBOARDING_TASKS: OnboardingTask[] = [
-    { id: 1, employeeId: 5, task: 'Complete HR paperwork', dueDate: '2024-08-01', completed: true },
-    { id: 2, employeeId: 5, task: 'Set up development environment', dueDate: '2024-08-03', completed: false },
-    { id: 3, employeeId: 5, task: 'Attend company orientation', dueDate: '2024-08-05', completed: false },
-    { id: 4, employeeId: 1, task: 'Complete security training', dueDate: '2024-08-10', completed: true },
-];
-
-export const POLICIES: Policy[] = [
-    { id: 1, title: 'Work From Home Policy', category: 'Workplace', content: 'Our Work From Home (WFH) policy outlines the guidelines for employees who work remotely. This includes expectations for work hours, communication, and equipment. All remote employees must maintain a secure and productive home office environment.' },
-    { id: 2, title: 'Paid Time Off (PTO)', category: 'Leave', content: 'This policy covers vacation, sick leave, and personal days for all full-time employees. Employees accrue PTO based on their years of service. All leave must be requested and approved through the HR portal.' },
-    { id: 3, title: 'Code of Conduct', category: 'Ethics', content: 'This Code of Conduct applies to all employees and affiliates. It outlines our commitment to a respectful, inclusive, and ethical workplace. Violations may result in disciplinary action, up to and including termination.' },
-    { id: 4, title: 'Expense Reimbursement', category: 'Finance', content: 'Employees can get reimbursed for pre-approved, work-related expenses. All reimbursement requests must be submitted with original receipts within 30 days of the expense being incurred. See the full policy for a list of eligible expenses.' },
-];
-
-export const NOTICES: Notice[] = [
-    { id: 1, title: 'System Maintenance', content: 'Please be advised that all company servers will be down for scheduled maintenance this Friday from 10 PM to 11 PM.', authorName: 'IT Department', date: '2024-07-28', color: 'blue' },
-    { id: 2, title: 'Welcome, New Hires!', content: 'A big welcome to our newest team members, Sarah and Tom! We are thrilled to have you join our company.', authorName: 'HR Department', date: '2024-07-27', color: 'green' },
-    { id: 3, title: 'Upcoming Holiday', content: 'Just a reminder that the office will be closed next Monday for the public holiday. Enjoy your long weekend!', authorName: 'HR Department', date: '2024-07-26', color: 'pink' },
-];
-
-export const MEETINGS: Meeting[] = [
-    { id: 1, title: 'Daily Standup', departmentId: 1, date: '2024-01-01', time: '10:00', recurrence: 'Daily' },
-    { id: 2, title: 'Weekly Sync', departmentId: 2, date: '2024-07-29', time: '14:30', recurrence: 'Weekly' },
-    { id: 3, title: 'Product Demo', departmentId: 2, date: '2024-08-15', time: '11:00', recurrence: 'None' },
+export const BADGES: Badge[] = [
+    { name: 'Rising Star', description: 'Awarded for reaching 50 performance points.', requiredPoints: 50, icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg> },
+    { name: 'Team Player', description: 'Awarded for reaching 150 performance points.', requiredPoints: 150, icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" /></svg> },
+    { name: 'Innovator', description: 'Awarded for reaching 300 performance points.', requiredPoints: 300, icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" /></svg> },
+    { name: 'Company Pillar', description: 'Awarded for reaching 500 performance points.', requiredPoints: 500, icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg> },
 ];
 
 // FIX: Added and exported the 'ICONS' object containing SVG icons, which was missing and caused import errors in multiple components.
@@ -155,6 +54,7 @@ export const ICONS = {
     leaves: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
     onboarding: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
     policies: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+    recognition: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
     performance: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
     jobDescription: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
     hrAssistant: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,

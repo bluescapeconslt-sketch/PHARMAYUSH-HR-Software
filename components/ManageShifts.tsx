@@ -6,11 +6,21 @@ import { Shift } from '../types.ts';
 
 const ManageShifts: React.FC = () => {
     const [shifts, setShifts] = useState<Shift[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
 
-    const fetchShifts = () => {
-        setShifts(getShifts());
+    const fetchShifts = async () => {
+        setIsLoading(true);
+        try {
+            const data = await getShifts();
+            setShifts(data || []);
+        } catch (error) {
+            console.error("Failed to fetch shifts", error);
+            setShifts([]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -27,10 +37,15 @@ const ManageShifts: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if (window.confirm('Are you sure you want to delete this shift? This might affect assigned employees.')) {
-            const updatedShifts = deleteShift(id);
-            setShifts(updatedShifts);
+            try {
+                await deleteShift(id);
+                fetchShifts();
+            } catch (error) {
+                console.error("Failed to delete shift", error);
+                alert("Could not delete shift. Please try again.");
+            }
         }
     };
 
@@ -46,21 +61,23 @@ const ManageShifts: React.FC = () => {
                         Add New Shift
                     </button>
                 </div>
-                <div className="space-y-4">
-                    {shifts.map(shift => (
-                        <div key={shift.id} className="bg-white p-4 rounded-lg border flex justify-between items-center">
-                            <div>
-                                <h3 className="font-semibold text-md text-gray-800">{shift.name}</h3>
-                                <p className="text-sm text-gray-500">{shift.startTime} - {shift.endTime}</p>
+                {isLoading ? <p className="text-center py-8">Loading shifts...</p> : (
+                    <div className="space-y-4">
+                        {shifts.map(shift => (
+                            <div key={shift.id} className="bg-white p-4 rounded-lg border flex justify-between items-center">
+                                <div>
+                                    <h3 className="font-semibold text-md text-gray-800">{shift.name}</h3>
+                                    <p className="text-sm text-gray-500">{shift.startTime} - {shift.endTime}</p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <button onClick={() => handleOpenModal(shift)} className="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</button>
+                                    <button onClick={() => handleDelete(shift.id)} className="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <button onClick={() => handleOpenModal(shift)} className="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</button>
-                                <button onClick={() => handleDelete(shift.id)} className="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>
-                            </div>
-                        </div>
-                    ))}
-                     {shifts.length === 0 && <p className="text-center text-gray-500 py-8">No shifts have been created yet.</p>}
-                </div>
+                        ))}
+                        {shifts.length === 0 && <p className="text-center text-gray-500 py-8">No shifts have been created yet.</p>}
+                    </div>
+                )}
             </Card>
             <ShiftModal
                 isOpen={isModalOpen}

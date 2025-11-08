@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { getNotices } from '../../services/noticeService.ts';
 import { Notice } from '../../types.ts';
@@ -7,9 +8,13 @@ const NoticeBoard: React.FC = () => {
     const [notices, setNotices] = useState<Notice[]>([]);
 
     useEffect(() => {
-        // Fetch latest 3 notices, sorted by date
-        const allNotices = getNotices().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setNotices(allNotices.slice(0, 3));
+        // FIX: The getNotices function is async and must be awaited.
+        const fetchAndSetNotices = async () => {
+            // Fetch latest 3 notices, sorted by date
+            const allNotices = (await getNotices()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            setNotices(allNotices.slice(0, 3));
+        };
+        fetchAndSetNotices();
     }, []);
 
     const colorClasses = {

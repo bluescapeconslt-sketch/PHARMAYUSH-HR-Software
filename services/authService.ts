@@ -1,72 +1,91 @@
-import { Employee, Permission } from '../types.ts';
+import { Employee, Permission, Role } from '../types.ts';
 import { getEmployees } from './employeeService.ts';
 import { getRoles } from './roleService.ts';
 
 const USER_KEY = 'pharmayush_hr_user';
 
-// FIX: Update AuthenticatedUser to omit the password for security. The user object stored in the session should not contain the password.
-// FIX: Export the AuthenticatedUser interface to be used across the application.
 export interface AuthenticatedUser extends Omit<Employee, 'password'> {
     permissions: Permission[];
+    token: string;
 }
 
-export const login = (email: string, password: string): boolean => {
-  const employees = getEmployees();
-  const user = employees.find(emp => emp.email.toLowerCase() === email.toLowerCase());
+// In-memory fallback for environments where localStorage is not available
+let sessionUser: AuthenticatedUser | null = null;
 
-  if (user && user.password === password) {
-    const roles = getRoles();
-    const userRole = roles.find(r => r.id === user.roleId);
+export const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+        const employees = await getEmployees();
+        const roles = await getRoles();
 
-    // Don't store password in session
-    const { password: _, ...userProfile } = user;
+        const employee = employees.find(e => e.email.toLowerCase() === email.toLowerCase() && e.password === password);
+        
+        if (!employee) {
+            return false;
+        }
 
-    const authenticatedUser: AuthenticatedUser = {
-        ...userProfile,
-        permissions: userRole ? userRole.permissions : [],
-    };
+        const role = roles.find(r => r.id === employee.roleId);
+        const { password: _, ...userProfile } = employee;
 
-    localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser));
-    return true;
-  }
-
-  return false;
+        const user: AuthenticatedUser = {
+            ...userProfile,
+            permissions: role?.permissions || [],
+            token: 'mock-token-for-local-dev',
+        };
+        
+        try {
+            localStorage.setItem(USER_KEY, JSON.stringify(user));
+        } catch (e) {
+            console.warn("localStorage is not available. Session will not persist.", e);
+            sessionUser = user;
+        }
+        window.dispatchEvent(new Event('session-updated'));
+        return true;
+    } catch (error) {
+        console.error('Login failed:', error);
+        return false;
+    }
 };
 
 export const logout = (): void => {
-  localStorage.removeItem(USER_KEY);
+  try {
+    localStorage.removeItem(USER_KEY);
+  } catch (e) {
+    console.warn('Could not remove user from localStorage.', e);
+  }
+  sessionUser = null;
+  window.dispatchEvent(new Event('session-updated'));
 };
 
 export const getCurrentUser = (): AuthenticatedUser | null => {
   try {
     const userJson = localStorage.getItem(USER_KEY);
-    return userJson ? JSON.parse(userJson) : null;
+    if (userJson) {
+        // Clear in-memory user if localStorage becomes available
+        if(sessionUser) sessionUser = null;
+        return JSON.parse(userJson);
+    }
+    // Return in-memory user if localStorage is not available
+    return sessionUser;
   } catch (error) {
-    console.error("Failed to get current user from localStorage", error);
-    return null;
+    console.error("Failed to get current user.", error);
+    return sessionUser;
   }
 };
 
 export const updateCurrentUserSession = (updatedEmployeeData: Omit<Employee, 'password'>): void => {
     const currentUser = getCurrentUser();
-    // Re-check for currentUser here as it might have been cleared
     if (currentUser && currentUser.id === updatedEmployeeData.id) {
         const updatedUser: AuthenticatedUser = {
-            ...currentUser, // Persist existing permissions and other session data
-            ...updatedEmployeeData, // Overwrite with fresh employee data
+            ...currentUser,
+            ...updatedEmployeeData,
         };
         try {
             localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-            // Dispatch a custom event to notify the application that session data has changed.
-            window.dispatchEvent(new Event('session-updated'));
         } catch (error) {
-            console.error("Failed to update current user in localStorage", error);
+            sessionUser = updatedUser;
         }
+        window.dispatchEvent(new Event('session-updated'));
     }
-};
-
-export const checkAuth = (): boolean => {
-  return getCurrentUser() !== null;
 };
 
 export const hasPermission = (permission: Permission): boolean => {

@@ -1,33 +1,34 @@
 import { GEM_AVATAR as defaultAvatar } from '../constants.tsx';
 
-const STORAGE_KEY = 'pharmayush_hr_buddy_settings';
+const BUDDY_SETTINGS_KEY = 'pharmayush_hr_buddy_settings';
 
 export interface BuddySettings {
   avatarImage: string;
 }
 
-const DEFAULT_SETTINGS: BuddySettings = {
-  avatarImage: defaultAvatar,
+const DEFAULT_BUDDY_SETTINGS: BuddySettings = {
+    avatarImage: defaultAvatar,
 };
 
-export const getBuddySettings = (): BuddySettings => {
-  try {
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    if (!storedData) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
-      return DEFAULT_SETTINGS;
+export const getBuddySettings = async (): Promise<BuddySettings> => {
+    try {
+        const data = localStorage.getItem(BUDDY_SETTINGS_KEY);
+        if (!data) {
+            localStorage.setItem(BUDDY_SETTINGS_KEY, JSON.stringify(DEFAULT_BUDDY_SETTINGS));
+            return Promise.resolve(DEFAULT_BUDDY_SETTINGS);
+        }
+        return Promise.resolve(JSON.parse(data));
+    } catch (e) {
+        return Promise.resolve(DEFAULT_BUDDY_SETTINGS);
     }
-    return JSON.parse(storedData);
-  } catch (error) {
-    console.error("Failed to parse buddy settings from localStorage", error);
-    return DEFAULT_SETTINGS;
-  }
 };
 
-export const saveBuddySettings = (settings: BuddySettings): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  } catch (error) {
-    console.error("Failed to save buddy settings to localStorage", error);
-  }
+export const saveBuddySettings = async (settings: BuddySettings): Promise<BuddySettings> => {
+    try {
+        localStorage.setItem(BUDDY_SETTINGS_KEY, JSON.stringify(settings));
+        return Promise.resolve(settings);
+    } catch (e) {
+        console.error("Failed to save buddy settings", e);
+        return Promise.reject(e);
+    }
 };

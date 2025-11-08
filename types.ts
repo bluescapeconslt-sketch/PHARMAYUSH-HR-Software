@@ -1,4 +1,6 @@
 // FIX: Removed self-import which was causing a circular dependency and declaration conflict.
+// FIX: Import React to make React-specific types like ReactElement available.
+import React from 'react';
 
 export type Permission =
   // Employee Permissions
@@ -21,6 +23,9 @@ export type Permission =
   | 'manage:meetings'
   // Reporting Permissions
   | 'view:attendance-report'
+  // Recognition Permissions
+  | 'view:recognition'
+  | 'manage:recognition'
   // AI Tools Permissions
   | 'use:performance-review'
   | 'use:job-description'
@@ -63,7 +68,7 @@ export interface Employee {
   email: string; // Used as login ID
   password: string;
   avatar: string;
-  status: 'Active' | 'On Leave' | 'Probation';
+  status: 'Active' | 'On Leave' | 'Probation' | 'Notice Period';
   birthday: string; // YYYY-MM-DD
   leaveBalance: {
     short: number;
@@ -80,6 +85,28 @@ export interface Employee {
     longitude: number;
     radius: number; // in meters
   };
+  performancePoints: number;
+  badges: string[]; // Names of earned badges
+}
+
+export type PerformancePointCriteria = 'Punctuality' | 'Task Completion' | 'Innovation' | 'Teamwork' | 'Leadership';
+
+export interface PerformancePointRecord {
+  id: number;
+  employeeId: number;
+  points: number; // Can be positive or negative
+  criteria: PerformancePointCriteria;
+  reason: string;
+  date: string; // YYYY-MM-DD
+  awardedBy: string; // Name of the manager/admin
+}
+
+export interface Badge {
+  name: string;
+  description: string;
+  // FIX: Changed JSX.Element to React.ReactElement to fix 'Cannot find namespace JSX' error.
+  icon: React.ReactElement;
+  requiredPoints: number;
 }
 
 export interface HierarchyNode extends Employee {

@@ -11,22 +11,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
 
-        try {
-            const success = login(email, password);
-            if (success) {
-                onLogin();
-            } else {
-                setError('Invalid credentials. Please try again.');
-                setIsLoading(false);
-            }
-        } catch (error) {
-            console.error('Login error:', error);
-            setError('An error occurred. Please try again.');
+        const success = await login(email, password);
+        
+        if (success) {
+            onLogin();
+        } else {
+            setError('Invalid credentials. Please try again.');
             setIsLoading(false);
         }
     };

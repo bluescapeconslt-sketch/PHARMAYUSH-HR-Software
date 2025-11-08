@@ -5,16 +5,25 @@ import { calculatePayrollForMonth, PayrollData } from '../services/payrollServic
 const Payroll: React.FC = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [payrollData, setPayrollData] = useState<PayrollData[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth();
 
     useEffect(() => {
-        setIsLoading(true);
-        const data = calculatePayrollForMonth(currentYear, currentMonth);
-        setPayrollData(data);
-        setIsLoading(false);
+        const generatePayroll = async () => {
+            setIsLoading(true);
+            try {
+                const data = await calculatePayrollForMonth(currentYear, currentMonth);
+                setPayrollData(data || []);
+            } catch (error) {
+                console.error("Failed to calculate payroll", error);
+                setPayrollData([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        generatePayroll();
     }, [currentYear, currentMonth]);
     
     const handleMonthChange = (offset: number) => {

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import Card from './common/Card.tsx';
 import { getHrAssistantChat } from '../services/geminiService.ts';
@@ -17,18 +18,18 @@ const HrAssistant: React.FC = () => {
   const [avatar, setAvatar] = useState('');
   const chat = useRef(getHrAssistantChat());
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [apiKeyMissing, setApiKeyMissing] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
-    const settings = getBuddySettings();
-    setAvatar(settings.avatarImage);
-    if (!chat.current) {
-      setApiKeyMissing(true);
-    }
+    // FIX: The getBuddySettings function is async and must be awaited.
+    const fetchAvatar = async () => {
+      const settings = await getBuddySettings();
+      setAvatar(settings.avatarImage);
+    };
+    fetchAvatar();
   }, []);
 
   useEffect(scrollToBottom, [messages, isLoading]);
@@ -48,7 +49,8 @@ const HrAssistant: React.FC = () => {
     // Check for policy-related keywords to provide context to the AI
     const policyKeywords = ['policy', 'policies', 'rule', 'guideline', 'bylaw', 'conduct', 'pto', 'leave', 'time off', 'vacation', 'sick'];
     if (policyKeywords.some(keyword => lowerCaseInput.includes(keyword))) {
-        const policies = getPolicies();
+        // FIX: The getPolicies function is async and must be awaited.
+        const policies = await getPolicies();
         
         if (policies.length > 0) {
             const policiesContext = policies.map(p => `
@@ -76,12 +78,6 @@ const HrAssistant: React.FC = () => {
 
 
     try {
-      if (!chat.current) {
-        const errorMessage: ChatMessage = { sender: 'ai', text: "Gemini API key is not configured. Please add GEMINI_API_KEY to your environment variables to use this feature." };
-        setMessages(prev => [...prev, errorMessage]);
-        setIsLoading(false);
-        return;
-      }
       const response = await chat.current.sendMessage({ message: finalPrompt });
       const aiMessage: ChatMessage = { sender: 'ai', text: response.text };
       setMessages(prev => [...prev, aiMessage]);

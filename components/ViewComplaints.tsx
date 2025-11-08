@@ -6,12 +6,23 @@ import { Complaint } from '../types.ts';
 
 const ViewComplaints: React.FC = () => {
     const [complaints, setComplaints] = useState<Complaint[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-    const fetchComplaints = () => {
-        const sortedComplaints = getComplaints().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setComplaints(sortedComplaints);
+    const fetchComplaints = async () => {
+        setIsLoading(true);
+        try {
+            const data = await getComplaints();
+            const complaintsList = data || [];
+            const sortedComplaints = complaintsList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            setComplaints(sortedComplaints);
+        } catch (error) {
+            console.error("Failed to fetch complaints", error);
+            setComplaints([]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -23,14 +34,14 @@ const ViewComplaints: React.FC = () => {
         setIsDetailModalOpen(true);
     };
 
-    const handleUpdateStatus = (id: number, status: Complaint['status']) => {
-        updateComplaintStatus(id, status);
+    const handleUpdateStatus = async (id: number, status: Complaint['status']) => {
+        await updateComplaintStatus(id, status);
         fetchComplaints(); // Refresh list
     };
     
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if(window.confirm('Are you sure you want to permanently delete this complaint?')) {
-            deleteComplaint(id);
+            await deleteComplaint(id);
             fetchComplaints();
         }
     };
@@ -59,7 +70,9 @@ const ViewComplaints: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {complaints.map(complaint => (
+                            {isLoading ? (
+                                <tr><td colSpan={5} className="text-center py-8">Loading complaints...</td></tr>
+                            ) : complaints.map(complaint => (
                                 <tr key={complaint.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{complaint.employeeName}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">{complaint.subject}</td>
@@ -77,7 +90,7 @@ const ViewComplaints: React.FC = () => {
                                     </td>
                                 </tr>
                             ))}
-                            {complaints.length === 0 && (
+                            {complaints.length === 0 && !isLoading && (
                                 <tr>
                                     <td colSpan={5} className="text-center py-8 text-gray-500">No complaints have been submitted.</td>
                                 </tr>

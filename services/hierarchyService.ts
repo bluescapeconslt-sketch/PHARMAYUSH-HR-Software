@@ -1,3 +1,4 @@
+
 import { Employee, HierarchyNode } from '../types.ts';
 import { getEmployees } from './employeeService.ts';
 
@@ -21,7 +22,6 @@ export const buildHierarchy = async (): Promise<HierarchyNode[]> => {
         }
     });
 
-    // Ensure children are sorted if needed, e.g., by name
     Object.values(nodes).forEach(node => {
         node.children.sort((a, b) => a.name.localeCompare(b.name));
     });

@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import Card from './common/Card.tsx';
 import { getSettings, saveSettings } from '../services/settingsService.ts';
 import { getBuddySettings, saveBuddySettings } from '../services/buddyService.ts';
 import { getLeaveAllocationSettings, saveLeaveAllocationSettings } from '../services/leaveAllocationService.ts';
 import { CompanySettings, BuddySettings, LeaveAllocationSettings } from '../types.ts';
 import { GEM_AVATAR as defaultGemAvatar } from '../constants.tsx';
-import { reapplyLeaveSettingsToAllEmployees } from '../services/employeeService.ts';
 
 
 const Settings: React.FC = () => {
-  const [settings, setSettings] = useState<CompanySettings>(getSettings);
-  const [buddySettings, setBuddySettings] = useState<BuddySettings>(getBuddySettings);
-  const [leaveSettings, setLeaveSettings] = useState<LeaveAllocationSettings>(getLeaveAllocationSettings);
+  // FIX: Initialize state with default values and fetch async data in useEffect.
+  const [settings, setSettings] = useState<CompanySettings>({ companyName: '', companyAddress: '', companyLogo: '' });
+  const [buddySettings, setBuddySettings] = useState<BuddySettings>({ avatarImage: '' });
+  const [leaveSettings, setLeaveSettings] = useState<LeaveAllocationSettings>({ short: 0, sick: 0, personal: 0 });
   const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+        setSettings(await getSettings());
+        setBuddySettings(await getBuddySettings());
+        setLeaveSettings(await getLeaveAllocationSettings());
+    };
+    fetchData();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -54,15 +64,11 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    saveSettings(settings);
-    saveBuddySettings(buddySettings);
-    saveLeaveAllocationSettings(leaveSettings);
-
-    // After saving settings, force an update on all employees to reflect
-    // the new leave allocation for the current month.
-    reapplyLeaveSettingsToAllEmployees();
+    await saveSettings(settings);
+    await saveBuddySettings(buddySettings);
+    await saveLeaveAllocationSettings(leaveSettings);
 
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000); // Hide message after 3 seconds

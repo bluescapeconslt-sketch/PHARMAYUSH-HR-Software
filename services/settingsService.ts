@@ -1,33 +1,32 @@
-
-// FIX: Add file extension to import paths
 import { CompanySettings } from '../types.ts';
 
-const STORAGE_KEY = 'pharmayush_hr_settings';
+const SETTINGS_KEY = 'pharmayush_hr_company_settings';
 
 const DEFAULT_SETTINGS: CompanySettings = {
-  companyName: 'PHARMAYUSH HR',
-  companyAddress: '',
-  companyLogo: '',
+    companyName: 'PHARMAYUSH HR',
+    companyAddress: '123 Cloud St, Suite 500, Web City, 10101',
+    companyLogo: '',
 };
 
-export const getSettings = (): CompanySettings => {
-  try {
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    if (!storedData) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
-      return DEFAULT_SETTINGS;
+export const getSettings = async (): Promise<CompanySettings> => {
+    try {
+        const data = localStorage.getItem(SETTINGS_KEY);
+        if (!data) {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(DEFAULT_SETTINGS));
+            return Promise.resolve(DEFAULT_SETTINGS);
+        }
+        return Promise.resolve(JSON.parse(data));
+    } catch (e) {
+        return Promise.resolve(DEFAULT_SETTINGS);
     }
-    return JSON.parse(storedData);
-  } catch (error) {
-    console.error("Failed to parse settings from localStorage", error);
-    return DEFAULT_SETTINGS;
-  }
 };
 
-export const saveSettings = (settings: CompanySettings): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  } catch (error) {
-    console.error("Failed to save settings to localStorage", error);
-  }
+export const saveSettings = async (settings: CompanySettings): Promise<CompanySettings> => {
+    try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        return Promise.resolve(settings);
+    } catch (e) {
+        console.error("Failed to save settings", e);
+        return Promise.reject(e);
+    }
 };

@@ -1,7 +1,8 @@
 import { AttendanceRecord } from '../types.ts';
+import { DEFAULT_ATTENDANCE_RECORDS } from './mockData.ts';
 import { getEmployees } from './employeeService.ts';
 
-const STORAGE_KEY = 'pharmayush_hr_attendance';
+const ATTENDANCE_KEY = 'pharmayush_hr_attendance';
 
 const haversineDistance = (
     lat1: number, lon1: number,
@@ -23,46 +24,52 @@ const haversineDistance = (
 
 const getCurrentPosition = (): Promise<GeolocationPosition> => {
     return new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject);
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+        });
     });
 };
 
-
-export const getAttendanceRecords = (): AttendanceRecord[] => {
+const getFromStorage = (): AttendanceRecord[] => {
     try {
-        const storedData = localStorage.getItem(STORAGE_KEY);
-        return storedData ? JSON.parse(storedData) : [];
-    } catch (error) {
-        console.error("Failed to parse attendance records from localStorage", error);
-        return [];
+        const data = localStorage.getItem(ATTENDANCE_KEY);
+        if (!data) {
+            localStorage.setItem(ATTENDANCE_KEY, JSON.stringify(DEFAULT_ATTENDANCE_RECORDS));
+            return DEFAULT_ATTENDANCE_RECORDS;
+        }
+        const parsedData = JSON.parse(data);
+        return Array.isArray(parsedData) ? parsedData : [];
+    } catch (e) {
+        return DEFAULT_ATTENDANCE_RECORDS;
     }
 };
 
-const saveAttendanceRecords = (records: AttendanceRecord[]): void => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+const saveToStorage = (records: AttendanceRecord[]): void => {
+    localStorage.setItem(ATTENDANCE_KEY, JSON.stringify(records));
 };
 
-export const getEmployeeStatus = (employeeId: number): { status: 'in' | 'out', record: AttendanceRecord | null } => {
-    const records = getAttendanceRecords();
-    const employeeRecords = records.filter(r => r.employeeId === employeeId);
-    
-    // Find the most recent record
-    const latestRecord = employeeRecords.sort((a, b) => new Date(b.punchInTime).getTime() - new Date(a.punchInTime).getTime())[0];
+export const getAttendanceRecords = async (): Promise<AttendanceRecord[]> => {
+    return Promise.resolve(getFromStorage());
+};
 
-    if (latestRecord && latestRecord.punchOutTime === null) {
-        // The latest record has no punch-out time, so they are punched in.
-        return { status: 'in', record: latestRecord };
+export const getEmployeeStatus = async (employeeId: number): Promise<{ status: 'in' | 'out', record: AttendanceRecord | null }> => {
+    const records = getFromStorage();
+    const lastRecord = records
+        .filter(r => r.employeeId === employeeId)
+        .sort((a, b) => new Date(b.punchInTime).getTime() - new Date(a.punchInTime).getTime())[0];
+
+    if (lastRecord && !lastRecord.punchOutTime) {
+        return Promise.resolve({ status: 'in', record: lastRecord });
     }
-
-    // Otherwise, they are punched out.
-    return { status: 'out', record: null };
+    return Promise.resolve({ status: 'out', record: null });
 };
 
 export const punchIn = async (employeeId: number): Promise<AttendanceRecord> => {
-    const employees = getEmployees();
+    const employees = await getEmployees();
     const employee = employees.find(e => e.id === employeeId);
 
-    // If employee has a work location defined, check their current position
     if (employee && employee.workLocation && employee.workLocation.radius > 0) {
         try {
             const position = await getCurrentPosition();
@@ -79,67 +86,55 @@ export const punchIn = async (employeeId: number): Promise<AttendanceRecord> => 
                 throw new Error(`You are ~${Math.round(distance)} meters away from your work location. Please move within the ${employee.workLocation.radius}m radius to punch in.`);
             }
         } catch (error: any) {
-            if (error.code === 1) { // PERMISSION_DENIED
-                 throw new Error("Location permission is required to punch in. Please enable it in your browser settings.");
-            }
-             if (error.code === 2) { // POSITION_UNAVAILABLE
-                 throw new Error("Could not determine your location. Please check your device's location services.");
-            }
-            // Re-throw custom error or other geolocation errors
-            throw error;
+            if (error.code === 1) { throw new Error("Location permission is required to punch in. Please enable it in your browser settings."); }
+            if (error.code === 2 || error.code === 3) { throw new Error("Could not determine your location. Please check your device's location services and try again."); }
+            throw error; // Rethrow custom messages
         }
     }
-
-    const records = getAttendanceRecords();
-    const now = new Date();
     
+    const records = getFromStorage();
+    const newId = records.length > 0 ? Math.max(...records.map(r => r.id)) + 1 : 1;
     const newRecord: AttendanceRecord = {
-        id: Date.now(),
-        employeeId: employeeId,
-        punchInTime: now.toISOString(),
+        id: newId,
+        employeeId,
+        punchInTime: new Date().toISOString(),
         punchOutTime: null,
-        date: now.toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0],
     };
 
-    const updatedRecords = [...records, newRecord];
-    saveAttendanceRecords(updatedRecords);
-    return newRecord;
+    saveToStorage([...records, newRecord]);
+    return Promise.resolve(newRecord);
 };
 
-export const punchOut = (employeeId: number): AttendanceRecord | null => {
-    const records = getAttendanceRecords();
-    const { record: currentRecord } = getEmployeeStatus(employeeId);
-
-    if (currentRecord) {
-        const now = new Date().toISOString();
-        const updatedRecord = { ...currentRecord, punchOutTime: now };
-
-        const updatedRecords = records.map(r => r.id === currentRecord.id ? updatedRecord : r);
-        saveAttendanceRecords(updatedRecords);
-        return updatedRecord;
-    }
-
-    console.error("Punch out attempted for an employee who is not punched in.");
-    return null;
-};
-
-export const undoPunchIn = (employeeId: number): void => {
-    const records = getAttendanceRecords();
-    const employeeRecords = records.filter(r => r.employeeId === employeeId);
+export const punchOut = async (employeeId: number): Promise<AttendanceRecord> => {
+    let records = getFromStorage();
+    let updatedRecord: AttendanceRecord | undefined;
     
-    const latestRecord = employeeRecords.sort((a, b) => new Date(b.punchInTime).getTime() - new Date(a.punchInTime).getTime())[0];
-
-    // Check if the latest record is a punch-in (no punch-out time)
-    if (latestRecord && latestRecord.punchOutTime === null) {
-        const punchInTime = new Date(latestRecord.punchInTime).getTime();
-        const now = new Date().getTime();
-        
-        // Allow undo only within 20 seconds for safety margin
-        if ((now - punchInTime) < 20000) { 
-            const updatedRecords = records.filter(r => r.id !== latestRecord.id);
-            saveAttendanceRecords(updatedRecords);
-        } else {
-            console.warn("Undo punch-in attempted after the grace period.");
+    records = records.map(r => {
+        if(r.employeeId === employeeId && !r.punchOutTime) {
+            updatedRecord = { ...r, punchOutTime: new Date().toISOString() };
+            return updatedRecord;
         }
+        return r;
+    });
+
+    if(!updatedRecord) {
+        return Promise.reject(new Error("No active punch-in record found to punch out."));
     }
+
+    saveToStorage(records);
+    return Promise.resolve(updatedRecord);
+};
+
+export const undoPunchIn = async (employeeId: number): Promise<void> => {
+    let records = getFromStorage();
+    const recordToUndo = records
+        .filter(r => r.employeeId === employeeId && !r.punchOutTime)
+        .sort((a,b) => new Date(b.punchInTime).getTime() - new Date(a.punchInTime).getTime())[0];
+    
+    if (recordToUndo) {
+        records = records.filter(r => r.id !== recordToUndo.id);
+        saveToStorage(records);
+    }
+    return Promise.resolve();
 };

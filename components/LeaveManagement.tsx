@@ -18,24 +18,38 @@ declare global {
 
 const LeaveManagement: React.FC = () => {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Pending');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const canManage = useMemo(() => hasPermission('manage:leaves'), []);
   
   const currentUser = getCurrentUser();
-  const isLeaveDisabled = currentUser?.position === 'Intern' || currentUser?.status === 'Probation';
+  const isLeaveDisabled = currentUser?.position === 'Intern' || currentUser?.status === 'Probation' || currentUser?.status === 'Notice Period';
 
-  const fetchRequests = () => {
-    setRequests(getLeaveRequests());
+  const fetchRequests = async () => {
+    setIsLoading(true);
+    try {
+        const data = await getLeaveRequests();
+        setRequests(data);
+    } catch (error) {
+        console.error("Failed to fetch leave requests", error);
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchRequests();
   }, []);
   
-  const handleUpdateStatus = (id: number, status: 'Approved' | 'Rejected') => {
-    updateLeaveRequestStatus(id, status);
-    fetchRequests();
+  const handleUpdateStatus = async (id: number, status: 'Approved' | 'Rejected') => {
+    try {
+        await updateLeaveRequestStatus(id, status);
+        fetchRequests(); // Re-fetch to get the latest data
+    } catch (error) {
+        console.error("Failed to update leave status", error);
+        alert("Failed to update status. Please try again.");
+    }
   };
 
   const handleModalSubmit = () => {
@@ -191,7 +205,7 @@ const LeaveManagement: React.FC = () => {
                 <button
                     onClick={() => setIsModalOpen(true)}
                     disabled={isLeaveDisabled}
-                    title={isLeaveDisabled ? 'Interns and employees on probation cannot request leave.' : 'Request time off'}
+                    title={isLeaveDisabled ? 'Interns, employees on probation, and employees on notice period cannot request leave.' : 'Request time off'}
                     className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed"
                 >
                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -213,7 +227,9 @@ const LeaveManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredRequests.map(req => (
+              {isLoading ? (
+                <tr><td colSpan={5} className="text-center py-8">Loading requests...</td></tr>
+              ) : filteredRequests.length > 0 ? filteredRequests.map(req => (
                 <tr key={req.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -246,12 +262,11 @@ const LeaveManagement: React.FC = () => {
                     )}
                   </td>
                 </tr>
-              ))}
+              )) : (
+                <tr><td colSpan={5} className="text-center text-gray-500 py-8">No requests found for this status.</td></tr>
+              )}
             </tbody>
           </table>
-           {filteredRequests.length === 0 && (
-              <p className="text-center text-gray-500 py-8">No requests found for this status.</p>
-          )}
         </div>
       </Card>
       <LeaveRequestModal

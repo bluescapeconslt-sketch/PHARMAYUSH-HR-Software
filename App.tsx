@@ -24,27 +24,27 @@ import EmployeeProfile from './components/EmployeeProfile.tsx';
 import Payroll from './components/Payroll.tsx';
 import RaiseComplaint from './components/RaiseComplaint.tsx';
 import ViewComplaints from './components/ViewComplaints.tsx';
+import Recognition from './components/Recognition.tsx';
 // FIX: Import AuthenticatedUser to correctly type the user state.
 import { getCurrentUser, logout, AuthenticatedUser } from './services/authService.ts';
-import { checkAndAllocateMonthlyLeaves } from './services/employeeService.ts';
+import { processMonthlyLeaveAllocation } from './services/leaveAllocationService.ts';
 
 const App: React.FC = () => {
-    // FIX: Explicitly type the user state with AuthenticatedUser for better type safety.
     const [user, setUser] = useState<AuthenticatedUser | null>(null);
+    const [isAuthLoading, setIsAuthLoading] = useState(true);
     const [activeView, setActiveView] = useState('dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
-        // Run startup tasks
-        checkAndAllocateMonthlyLeaves();
-        
+        // This effect runs once on mount to check for an existing session
         const currentUser = getCurrentUser();
         setUser(currentUser);
-        if (!currentUser) {
-            setActiveView('dashboard'); // Should be handled by main check but good practice
+        setIsAuthLoading(false);
+
+        if (currentUser) {
+            processMonthlyLeaveAllocation();
         }
 
-        // Listen for session updates to keep user state in sync
         const handleSessionUpdate = () => {
             setUser(getCurrentUser());
         };
@@ -57,11 +57,12 @@ const App: React.FC = () => {
     }, []);
 
     const handleLogin = () => {
+        // The login component now handles the async login.
+        // After it calls onLogin, we just need to get the user from the service.
         const currentUser = getCurrentUser();
-        // Run leave allocation again in case a month has passed while logged out
         if(currentUser){
-            checkAndAllocateMonthlyLeaves();
-            setUser(getCurrentUser());
+            setUser(currentUser);
+            processMonthlyLeaveAllocation();
         }
         setActiveView('dashboard');
     };
@@ -72,7 +73,7 @@ const App: React.FC = () => {
     };
     
     const renderContent = () => {
-        if (!user) return null; // Should not happen due to the main check
+        if (!user) return null;
 
         switch (activeView) {
             case 'dashboard':
@@ -89,6 +90,8 @@ const App: React.FC = () => {
                 return <Onboarding />;
             case 'policies':
                 return <CompanyPolicies />;
+            case 'recognition':
+                return <Recognition />;
             case 'performance':
                 return <PerformanceReview />;
             case 'job-description':
@@ -123,6 +126,14 @@ const App: React.FC = () => {
                 return <Dashboard />;
         }
     };
+    
+    if (isAuthLoading) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-100">
+                <div className="text-xl font-semibold text-gray-700">Loading...</div>
+            </div>
+        );
+    }
     
     if (!user) {
         return <Login onLogin={handleLogin} />;

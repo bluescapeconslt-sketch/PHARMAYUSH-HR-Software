@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { getEmployees } from '../services/employeeService.ts';
 import { Employee, LetterType, CompanySettings } from '../types.ts';
@@ -14,13 +15,14 @@ const GenerateLetter: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // FIX: The getEmployees and getSettings functions are async and must be awaited.
     const fetchData = async () => {
       const fetchedEmployees = await getEmployees();
       setEmployees(fetchedEmployees);
       if (fetchedEmployees.length > 0) {
         setSelectedEmployee(fetchedEmployees[0].id.toString());
       }
-      setSettings(getSettings());
+      setSettings(await getSettings());
     };
     fetchData();
   }, []);

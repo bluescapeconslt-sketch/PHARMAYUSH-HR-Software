@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 // FIX: Add file extension to import paths
 import Modal from './Modal.tsx';
@@ -29,14 +30,15 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
   const canManagePayroll = useMemo(() => hasPermission('manage:payroll'), []);
 
   useEffect(() => {
+    // FIX: The service functions are async and must be awaited.
     const fetchData = async () => {
-      if (employee) {
-          // Fetch all leave requests for this specific employee and sort by most recent
-          const history = await getLeaveRequestsForEmployee(employee.id);
-          const sortedHistory = history.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-          setLeaveHistory(sortedHistory);
-          setShifts(getShifts());
-      }
+        if (employee) {
+            // Fetch all leave requests for this specific employee and sort by most recent
+            const history = (await getLeaveRequestsForEmployee(employee.id))
+                .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+            setLeaveHistory(history);
+            setShifts(await getShifts());
+        }
     };
     fetchData();
   }, [employee, isOpen]); // Re-fetch if the employee prop changes or modal re-opens
@@ -56,6 +58,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
         case 'Active': return 'bg-green-100 text-green-800';
         case 'On Leave': return 'bg-yellow-100 text-yellow-800';
         case 'Probation': return 'bg-orange-100 text-orange-800';
+        case 'Notice Period': return 'bg-pink-100 text-pink-800';
         default: return 'bg-gray-100 text-gray-800';
     }
   };

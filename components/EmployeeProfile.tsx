@@ -4,7 +4,8 @@ import { AuthenticatedUser } from '../services/authService.ts';
 import { getLeaveRequestsForEmployee } from '../services/leaveService.ts';
 import { getOnboardingTasks } from '../services/onboardingService.ts';
 import { getShifts } from '../services/shiftService.ts';
-import { LeaveRequest, OnboardingTask, Position, Employee, Shift } from '../types.ts';
+import { LeaveRequest, OnboardingTask, Position, Employee, Shift, Badge } from '../types.ts';
+import { BADGES } from '../constants.tsx';
 
 // FIX: Corrected position types to align with the 'Position' type definition.
 const getPositionBadgeColor = (position: Position) => {
@@ -23,6 +24,7 @@ const getEmployeeStatusBadgeColor = (status: Employee['status']) => {
         case 'Active': return 'bg-green-100 text-green-800';
         case 'On Leave': return 'bg-yellow-100 text-yellow-800';
         case 'Probation': return 'bg-orange-100 text-orange-800';
+        case 'Notice Period': return 'bg-pink-100 text-pink-800';
         default: return 'bg-gray-100 text-gray-800';
     }
 };
@@ -40,27 +42,27 @@ interface EmployeeProfileProps {
 }
 
 const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
+    const [activeTab, setActiveTab] = useState('overview');
     const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
     const [onboardingTasks, setOnboardingTasks] = useState<(OnboardingTask & { employeeName: string })[]>([]);
     const [assignedShift, setAssignedShift] = useState<Shift | null>(null);
 
     useEffect(() => {
+        // FIX: All service calls are async and must be awaited.
         const fetchData = async () => {
             if (user) {
                 // Fetch recent 5 leave requests
-                const history = await getLeaveRequestsForEmployee(user.id);
-                const sortedHistory = history
-                    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-                    .slice(0, 5);
-                setLeaveHistory(sortedHistory);
-
+                const history = (await getLeaveRequestsForEmployee(user.id))
+                    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+                setLeaveHistory(history);
+    
                 // Fetch pending onboarding tasks
-                const tasks = getOnboardingTasks().filter(task => task.employeeId === user.id && !task.completed);
+                const tasks = (await getOnboardingTasks()).filter(task => task.employeeId === user.id && !task.completed);
                 setOnboardingTasks(tasks);
-
+                
                 // Fetch shift info
                 if(user.shiftId){
-                    const shifts = getShifts();
+                    const shifts = await getShifts();
                     const shift = shifts.find(s => s.id === user.shiftId);
                     setAssignedShift(shift || null);
                 } else {
@@ -75,22 +77,132 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
         return <Card title="My Profile"><p>Loading profile...</p></Card>;
     }
 
-    const formatInr = (amount: number) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(amount);
-    };
-
     const displayLeaveBalance = user.status === 'Probation'
         ? { short: 0, sick: 0, personal: 0 }
         : user.leaveBalance;
+        
+    const earnedBadges: Badge[] = BADGES.filter(b => user.badges.includes(b.name));
+
+    const OverviewTab = () => (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 space-y-6">
+                <Card title="Contact & Personal Info">
+                     <div className="space-y-4 text-sm">
+                         <div className="flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" /><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" /></svg>
+                            <span className="text-gray-700">{user.email}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+                            <span className="text-gray-700">Born on {new Date(user.birthday).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clipRule="evenodd" /></svg>
+                            <span className="text-gray-700">Shift: {assignedShift ? `${assignedShift.name} (${assignedShift.startTime} - ${assignedShift.endTime})` : 'N/A'}</span>
+                        </div>
+                     </div>
+                </Card>
+                <Card title="Performance">
+                    <div className="text-center mb-4">
+                        <p className="text-sm text-gray-500">Total Points</p>
+                        <p className="text-5xl font-bold text-indigo-600">{user.performancePoints}</p>
+                    </div>
+                    {earnedBadges.length > 0 && (
+                        <div>
+                             <h4 className="text-sm font-semibold text-center text-gray-600 mb-2">Badges Earned</h4>
+                             <div className="flex justify-center items-center gap-4 text-yellow-500">
+                                {earnedBadges.map(badge => (
+                                    <div key={badge.name} title={badge.description} className="flex flex-col items-center">
+                                        {badge.icon}
+                                        <span className="text-xs text-gray-500 mt-1">{badge.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </Card>
+            </div>
+            <div className="lg:col-span-2">
+                 <Card title="Leave Balance">
+                     <div className="grid grid-cols-3 gap-4 text-center">
+                        <div className="bg-blue-50 p-3 rounded-lg">
+                            <p className="text-sm text-blue-700 font-semibold">Short</p>
+                            <p className="text-2xl font-bold text-blue-800">{displayLeaveBalance.short}</p>
+                            <p className="text-xs text-blue-600">hours left</p>
+                        </div>
+                         <div className="bg-green-50 p-3 rounded-lg">
+                            <p className="text-sm text-green-700 font-semibold">Sick</p>
+                            <p className="text-2xl font-bold text-green-800">{displayLeaveBalance.sick}</p>
+                            <p className="text-xs text-green-600">days left</p>
+                        </div>
+                         <div className="bg-purple-50 p-3 rounded-lg">
+                            <p className="text-sm text-purple-700 font-semibold">Personal</p>
+                            <p className="text-2xl font-bold text-purple-800">{displayLeaveBalance.personal}</p>
+                            <p className="text-xs text-purple-600">days left</p>
+                        </div>
+                    </div>
+                </Card>
+            </div>
+        </div>
+    );
+    
+    const ActivityTab = () => (
+         <Card title="Activity">
+            <div className="space-y-6">
+                {onboardingTasks.length > 0 && (
+                    <div>
+                        <h4 className="text-md font-semibold text-gray-700 mb-2">Pending Onboarding Tasks</h4>
+                        <ul className="space-y-2">
+                            {onboardingTasks.map(task => (
+                                <li key={task.id} className="p-3 bg-gray-50 rounded-md text-sm text-gray-800">
+                                    {task.task} - <span className="text-gray-500">Due: {task.dueDate}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+                <div>
+                    <h4 className="text-md font-semibold text-gray-700 mb-2">Leave Request History</h4>
+                    {leaveHistory.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Dates</th>
+                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {leaveHistory.map(req => (
+                                        <tr key={req.id}>
+                                            <td className="px-4 py-2 whitespace-nowrap text-sm">{req.leaveType}</td>
+                                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                                {req.leaveType === 'Short Leave' && req.startTime && req.endTime
+                                                    ? `${req.startDate} (${req.startTime} - ${req.endTime})`
+                                                    : `${req.startDate} to ${req.endDate}`
+                                                }
+                                            </td>
+                                            <td className="px-4 py-2 whitespace-nowrap">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getLeaveStatusBadgeColor(req.status)}`}>
+                                                    {req.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <p className="text-center text-gray-500 py-4">No leave requests found.</p>
+                    )}
+                </div>
+            </div>
+        </Card>
+    );
 
     return (
         <div className="space-y-6">
-            {/* Profile Header Card */}
             <Card>
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                     <img src={user.avatar} alt={user.name} className="h-24 w-24 md:h-32 md:w-32 rounded-full object-cover border-4 border-white shadow-lg" />
@@ -110,119 +222,24 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
                 </div>
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Contact & Personal Info Card */}
-                <div className="lg:col-span-1 space-y-6">
-                    <Card title="Contact & Personal Info">
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                                </svg>
-                                <span className="text-gray-700">{user.email}</span>
-                            </div>
-                             <div className="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                                </svg>
-                                <span className="text-gray-700">Born on {new Date(user.birthday).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clipRule="evenodd" />
-                                </svg>
-                                <span className="text-gray-700">Shift: {assignedShift ? `${assignedShift.name} (${assignedShift.startTime} - ${assignedShift.endTime})` : 'N/A'}</span>
-                            </div>
-                             <div className="flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.134 0v-1.43zM11.567 7.151c.22.07.412.164.567.267v1.43a2.5 2.5 0 00-1.134 0V7.15z" />
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-13a1 1 0 10-2 0v.092a4.5 4.5 0 00-1.29.632l-1.5-1.5a1 1 0 10-1.414 1.414l1.5 1.5A4.495 4.495 0 005 10c0 .954.293 1.836.805 2.574l-1.5 1.5a1 1 0 001.414 1.414l1.5-1.5a4.495 4.495 0 002.574.805 4.5 4.5 0 004.5-4.5c0-.954-.293-1.836-.805-2.574l1.5-1.5a1 1 0 00-1.414-1.414l-1.5 1.5A4.495 4.495 0 0013 5.5a4.5 4.5 0 00-3-1z" clipRule="evenodd" />
-                                </svg>
-                                <span className="text-gray-700">Salary: {user.baseSalary ? `${formatInr(user.baseSalary)} / month` : 'Not Set'}</span>
-                            </div>
-                        </div>
-                    </Card>
-                    <Card title="Leave Balance">
-                         <div className="grid grid-cols-3 gap-4 text-center">
-                            <div className="bg-blue-50 p-3 rounded-lg">
-                                <p className="text-sm text-blue-700 font-semibold">Short</p>
-                                <p className="text-2xl font-bold text-blue-800">{displayLeaveBalance.short}</p>
-                                <p className="text-xs text-blue-600">hours left</p>
-                            </div>
-                             <div className="bg-green-50 p-3 rounded-lg">
-                                <p className="text-sm text-green-700 font-semibold">Sick</p>
-                                <p className="text-2xl font-bold text-green-800">{displayLeaveBalance.sick}</p>
-                                <p className="text-xs text-green-600">days left</p>
-                            </div>
-                             <div className="bg-purple-50 p-3 rounded-lg">
-                                <p className="text-sm text-purple-700 font-semibold">Personal</p>
-                                <p className="text-2xl font-bold text-purple-800">{displayLeaveBalance.personal}</p>
-                                <p className="text-xs text-purple-600">days left</p>
-                            </div>
-                        </div>
-                    </Card>
-                </div>
-                
-                {/* Recent Activity Card */}
-                <div className="lg:col-span-2">
-                    <Card title="Recent Activity">
-                        <div className="space-y-6">
-                            {/* Onboarding Tasks */}
-                            {onboardingTasks.length > 0 && (
-                                <div>
-                                    <h4 className="text-md font-semibold text-gray-700 mb-2">Pending Onboarding Tasks</h4>
-                                    <ul className="space-y-2">
-                                        {onboardingTasks.map(task => (
-                                            <li key={task.id} className="p-3 bg-gray-50 rounded-md text-sm text-gray-800">
-                                                {task.task} - <span className="text-gray-500">Due: {task.dueDate}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-
-                             {/* Leave History */}
-                            <div>
-                                <h4 className="text-md font-semibold text-gray-700 mb-2">Recent Leave Requests</h4>
-                                {leaveHistory.length > 0 ? (
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Dates</th>
-                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {leaveHistory.map(req => (
-                                                    <tr key={req.id}>
-                                                        <td className="px-4 py-2 whitespace-nowrap text-sm">{req.leaveType}</td>
-                                                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                                                            {req.leaveType === 'Short Leave' && req.startTime && req.endTime
-                                                                ? `${req.startDate} (${req.startTime} - ${req.endTime})`
-                                                                : `${req.startDate} to ${req.endDate}`
-                                                            }
-                                                        </td>
-                                                        <td className="px-4 py-2 whitespace-nowrap">
-                                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getLeaveStatusBadgeColor(req.status)}`}>
-                                                                {req.status}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                ) : (
-                                    <p className="text-center text-gray-500 py-4">No recent leave requests found.</p>
-                                )}
-                            </div>
-                        </div>
-                    </Card>
-                </div>
+            <div className="border-b border-gray-200">
+                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button
+                        onClick={() => setActiveTab('overview')}
+                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'overview' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                    >
+                        Overview
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('activity')}
+                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'activity' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                    >
+                        Activity
+                    </button>
+                </nav>
             </div>
+            
+            {activeTab === 'overview' ? <OverviewTab /> : <ActivityTab />}
         </div>
     );
 };

@@ -19,7 +19,7 @@ interface EnrichedAttendanceRecord extends AttendanceRecord {
 const AttendanceReport: React.FC = () => {
     const [allRecords, setAllRecords] = useState<AttendanceRecord[]>([]);
     const [employees, setEmployees] = useState<Employee[]>([]);
-    const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [filters, setFilters] = useState<ReportFilters>({
         employeeId: 'all',
         startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
@@ -27,21 +27,32 @@ const AttendanceReport: React.FC = () => {
     });
 
     const canViewAll = useMemo(() => hasPermission('manage:employees'), []);
+    const currentUser = useMemo(() => getCurrentUser(), []);
 
     useEffect(() => {
         const fetchData = async () => {
-            const user = getCurrentUser();
-            setCurrentUser(user);
-            setAllRecords(getAttendanceRecords());
-            const emps = await getEmployees();
-            setEmployees(emps);
+            setIsLoading(true);
+            try {
+                const [recordsData, employeesData] = await Promise.all([
+                    getAttendanceRecords(),
+                    getEmployees(),
+                ]);
+                setAllRecords(recordsData || []);
+                setEmployees(employeesData || []);
 
-            if (user && !hasPermission('manage:employees')) {
-                setFilters(prev => ({ ...prev, employeeId: user.id.toString() }));
+                if (currentUser && !canViewAll) {
+                    setFilters(prev => ({ ...prev, employeeId: currentUser.id.toString() }));
+                }
+            } catch (error) {
+                console.error("Failed to load attendance data", error);
+                setAllRecords([]);
+                setEmployees([]);
+            } finally {
+                setIsLoading(false);
             }
         };
         fetchData();
-    }, []);
+    }, [currentUser, canViewAll]);
 
     const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -63,9 +74,9 @@ const AttendanceReport: React.FC = () => {
     };
 
     const filteredAndEnrichedRecords = useMemo<EnrichedAttendanceRecord[]>(() => {
-        const employeeMap = new Map(employees.map(e => [e.id, e.name]));
+        const employeeMap = new Map((employees || []).map(e => [e.id, e.name]));
 
-        return allRecords
+        return (allRecords || [])
             .filter(record => {
                 const recordDate = new Date(record.date);
                 const startDate = new Date(filters.startDate);
@@ -199,7 +210,9 @@ const AttendanceReport: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredAndEnrichedRecords.map(rec => (
+                            {isLoading ? (
+                                <tr><td colSpan={5} className="text-center py-8">Loading records...</td></tr>
+                            ) : filteredAndEnrichedRecords.length > 0 ? filteredAndEnrichedRecords.map(rec => (
                                 <tr key={rec.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{rec.employeeName}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{rec.date}</td>
@@ -207,8 +220,7 @@ const AttendanceReport: React.FC = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{rec.punchOutTime ? new Date(rec.punchOutTime).toLocaleTimeString() : 'N/A'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-700">{rec.duration}</td>
                                 </tr>
-                            ))}
-                            {filteredAndEnrichedRecords.length === 0 && (
+                            )) : (
                                 <tr>
                                     <td colSpan={5} className="text-center py-8 text-gray-500">No records found for the selected criteria.</td>
                                 </tr>

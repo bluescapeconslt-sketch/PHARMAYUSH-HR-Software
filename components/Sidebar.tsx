@@ -22,6 +22,7 @@ const navItems = [
   { id: 'leaves', label: 'Leave', icon: ICONS.leaves, permission: 'view:leaves' },
   { id: 'onboarding', label: 'Onboarding', icon: ICONS.onboarding, permission: 'view:onboarding' },
   { id: 'policies', label: 'Policies', icon: ICONS.policies, permission: 'view:policies' },
+  { id: 'recognition', label: 'Recognition', icon: ICONS.recognition, permission: 'view:recognition' },
   
   { id: 'ai-tools', label: 'AI Tools', isHeader: true, permission: null },
   { id: 'performance', label: 'Performance Review', icon: ICONS.performance, permission: 'use:performance-review' },

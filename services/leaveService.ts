@@ -1,87 +1,91 @@
-import { LeaveRequest } from '../types.ts';
-import { LEAVE_REQUESTS as initialData } from '../constants.tsx';
-import { getCurrentUser, hasPermission } from './authService.ts';
+import { LeaveRequest, Employee } from '../types.ts';
+import { DEFAULT_LEAVE_REQUESTS } from './mockData.ts';
 import { getEmployees, updateEmployee } from './employeeService.ts';
+import { getCurrentUser } from './authService.ts';
 
-const STORAGE_KEY = 'pharmayush_hr_leave_requests';
+const LEAVE_REQUESTS_KEY = 'pharmayush_hr_leave_requests';
 
-export const getLeaveRequests = (): LeaveRequest[] => {
-  let allRequests: LeaveRequest[] = [];
-  try {
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    if (!storedData) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
-      allRequests = initialData;
-    } else {
-        allRequests = JSON.parse(storedData);
+const getFromStorage = (): LeaveRequest[] => {
+    try {
+        const data = localStorage.getItem(LEAVE_REQUESTS_KEY);
+        if (!data) {
+            localStorage.setItem(LEAVE_REQUESTS_KEY, JSON.stringify(DEFAULT_LEAVE_REQUESTS));
+            return DEFAULT_LEAVE_REQUESTS;
+        }
+        const parsedData = JSON.parse(data);
+        return Array.isArray(parsedData) ? parsedData : [];
+    } catch (e) {
+        return DEFAULT_LEAVE_REQUESTS;
     }
-  } catch (error) {
-    console.error("Failed to parse leave requests from localStorage", error);
-    allRequests = [];
-  }
-
-  const currentUser = getCurrentUser();
-  if (!currentUser) return [];
-
-  if (hasPermission('manage:leaves')) {
-    return allRequests;
-  }
-
-  return allRequests.filter(req => req.employeeId === currentUser.id);
 };
 
-export const getLeaveRequestsForEmployee = (employeeId: number): LeaveRequest[] => {
-  let allRequests: LeaveRequest[] = [];
-  try {
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    allRequests = storedData ? JSON.parse(storedData) : initialData;
-  } catch (error) {
-    console.error("Failed to parse leave requests from localStorage", error);
-    allRequests = [];
-  }
-  return allRequests.filter(req => req.employeeId === employeeId);
+const saveToStorage = (requests: LeaveRequest[]): void => {
+    localStorage.setItem(LEAVE_REQUESTS_KEY, JSON.stringify(requests));
 };
 
-export const addLeaveRequest = (newRequestData: Omit<LeaveRequest, 'id' | 'status'>): void => {
-  const allRequests: LeaveRequest[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-  const newRequest: LeaveRequest = {
-    ...newRequestData,
-    id: Date.now(),
-    status: 'Pending',
-  };
-  const updatedRequests = [...allRequests, newRequest];
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedRequests));
-};
 
-export const updateLeaveRequestStatus = (id: number, status: 'Approved' | 'Rejected'): LeaveRequest[] => {
-  let allRequests: LeaveRequest[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  const request = allRequests.find(r => r.id === id);
-  if (!request) return allRequests;
-
-  allRequests = allRequests.map(r => r.id === id ? { ...r, status } : r);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(allRequests));
-
-  if (status === 'Approved' && request) {
-    const employees = getEmployees();
-    const employee = employees.find(e => e.id === request.employeeId);
-    if (employee) {
-      const leaveBalance = { ...employee.leaveBalance };
-      const start = new Date(request.startDate);
-      const end = new Date(request.endDate);
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-      if (request.leaveType === 'Short Leave' && leaveBalance.short > 0) {
-        leaveBalance.short = Math.max(0, leaveBalance.short - 1);
-      } else if (request.leaveType === 'Sick Leave' && leaveBalance.sick >= diffDays) {
-        leaveBalance.sick -= diffDays;
-      } else if (request.leaveType === 'Personal' && leaveBalance.personal >= diffDays) {
-        leaveBalance.personal -= diffDays;
-      }
-
-      updateEmployee({ ...employee, leaveBalance });
+export const getLeaveRequests = async (): Promise<LeaveRequest[]> => {
+    const allRequests = getFromStorage();
+    const currentUser = getCurrentUser();
+    const canManage = currentUser?.permissions.includes('manage:leaves');
+    if (canManage || !currentUser) {
+        return Promise.resolve(allRequests);
     }
-  }
+    // If not a manager, only return their own requests
+    return Promise.resolve(allRequests.filter(r => r.employeeId === currentUser.id));
+};
 
-  return allRequests;
+export const getLeaveRequestsForEmployee = async (employeeId: number): Promise<LeaveRequest[]> => {
+    const allRequests = getFromStorage();
+    return Promise.resolve(allRequests.filter(r => r.employeeId === employeeId));
+};
+
+export const addLeaveRequest = async (newRequestData: Omit<LeaveRequest, 'id' | 'status'>): Promise<LeaveRequest> => {
+    const requests = getFromStorage();
+    const newId = requests.length > 0 ? Math.max(...requests.map(r => r.id)) + 1 : 1;
+    const newRequest = { ...newRequestData, id: newId, status: 'Pending' as const };
+    saveToStorage([...requests, newRequest]);
+    return Promise.resolve(newRequest);
+};
+
+export const updateLeaveRequestStatus = async (id: number, status: 'Approved' | 'Rejected'): Promise<LeaveRequest> => {
+    let requests = getFromStorage();
+    let updatedRequest: LeaveRequest | undefined;
+    
+    requests = requests.map(r => {
+        if (r.id === id) {
+            updatedRequest = { ...r, status };
+            return updatedRequest;
+        }
+        return r;
+    });
+
+    if (!updatedRequest) {
+        return Promise.reject(new Error("Request not found"));
+    }
+    
+    // Deduct from leave balance if approved
+    if (status === 'Approved') {
+        const employees = await getEmployees();
+        const employee = employees.find(e => e.id === updatedRequest!.employeeId);
+        if(employee) {
+            const startDate = new Date(updatedRequest.startDate);
+            const endDate = new Date(updatedRequest.endDate);
+            let daysToDeduct = (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24) + 1;
+            
+            const newBalance = { ...employee.leaveBalance };
+            if(updatedRequest.leaveType === 'Short Leave') {
+                 // no deduction for short leave, assuming it's handled differently or unpaid.
+            } else if (updatedRequest.leaveType === 'Sick Leave') {
+                newBalance.sick -= daysToDeduct;
+            } else if (updatedRequest.leaveType === 'Personal') {
+                newBalance.personal -= daysToDeduct;
+            }
+            
+            await updateEmployee({ ...employee, leaveBalance: newBalance });
+        }
+    }
+    
+    saveToStorage(requests);
+    return Promise.resolve(updatedRequest);
 };

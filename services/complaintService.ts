@@ -1,43 +1,56 @@
 import { Complaint } from '../types.ts';
+import { DEFAULT_COMPLAINTS } from './mockData.ts';
 
-const STORAGE_KEY = 'pharmayush_hr_complaints';
+const COMPLAINTS_KEY = 'pharmayush_hr_complaints';
 
-const initialData: Complaint[] = [];
-
-export const getComplaints = (): Complaint[] => {
-  try {
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    if (!storedData) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
-      return initialData;
+const getFromStorage = (): Complaint[] => {
+    try {
+        const data = localStorage.getItem(COMPLAINTS_KEY);
+        if (!data) {
+            localStorage.setItem(COMPLAINTS_KEY, JSON.stringify(DEFAULT_COMPLAINTS));
+            return DEFAULT_COMPLAINTS;
+        }
+        const parsedData = JSON.parse(data);
+        return Array.isArray(parsedData) ? parsedData : [];
+    } catch (e) {
+        return DEFAULT_COMPLAINTS;
     }
-    return JSON.parse(storedData);
-  } catch (error) {
-    console.error("Failed to parse complaints from localStorage", error);
-    return initialData;
-  }
 };
 
-export const addComplaint = (newComplaintData: Omit<Complaint, 'id'>): void => {
-    const complaints = getComplaints();
-    const newComplaint: Complaint = {
-        ...newComplaintData,
-        id: Date.now(),
-    };
-    const updatedComplaints = [...complaints, newComplaint];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedComplaints));
+const saveToStorage = (complaints: Complaint[]): void => {
+    localStorage.setItem(COMPLAINTS_KEY, JSON.stringify(complaints));
 };
 
-export const updateComplaintStatus = (id: number, status: Complaint['status']): Complaint[] => {
-    let complaints = getComplaints();
-    complaints = complaints.map(c => c.id === id ? { ...c, status } : c);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(complaints));
-    return complaints;
+export const getComplaints = async (): Promise<Complaint[]> => {
+  return Promise.resolve(getFromStorage());
 };
 
-export const deleteComplaint = (id: number): Complaint[] => {
-    let complaints = getComplaints();
+export const addComplaint = async (newComplaintData: Omit<Complaint, 'id'>): Promise<Complaint> => {
+    const complaints = getFromStorage();
+    const newId = complaints.length > 0 ? Math.max(...complaints.map(c => c.id)) + 1 : 1;
+    const newComplaint = { ...newComplaintData, id: newId };
+    saveToStorage([...complaints, newComplaint]);
+    return Promise.resolve(newComplaint);
+};
+
+export const updateComplaintStatus = async (id: number, status: Complaint['status']): Promise<Complaint> => {
+    let complaints = getFromStorage();
+    let updatedComplaint: Complaint | undefined;
+    complaints = complaints.map(c => {
+        if (c.id === id) {
+            updatedComplaint = { ...c, status };
+            return updatedComplaint;
+        }
+        return c;
+    });
+    if (!updatedComplaint) return Promise.reject(new Error("Complaint not found"));
+    saveToStorage(complaints);
+    return Promise.resolve(updatedComplaint);
+};
+
+export const deleteComplaint = async (id: number): Promise<void> => {
+    let complaints = getFromStorage();
     complaints = complaints.filter(c => c.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(complaints));
-    return complaints;
+    saveToStorage(complaints);
+    return Promise.resolve();
 };

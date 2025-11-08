@@ -25,9 +25,12 @@ const getWorkingDaysInMonth = (year: number, month: number): number => {
   return workingDays;
 };
 
-export const calculatePayrollForMonth = (year: number, month: number): PayrollData[] => {
-  const employees = getEmployees();
-  const attendanceRecords = getAttendanceRecords();
+export const calculatePayrollForMonth = async (year: number, month: number): Promise<PayrollData[]> => {
+  const [employees, attendanceRecords] = await Promise.all([
+    getEmployees(),
+    getAttendanceRecords()
+  ]);
+  
   const workingDays = getWorkingDaysInMonth(year, month);
 
   const payrollResults: PayrollData[] = [];
@@ -54,7 +57,6 @@ export const calculatePayrollForMonth = (year: number, month: number): PayrollDa
         new Date(record.date).getMonth() === month
     );
     
-    // Get unique days the employee punched in
     const attendedDaysSet = new Set(employeeAttendance.map(rec => rec.date));
     const attendedDays = attendedDaysSet.size;
 

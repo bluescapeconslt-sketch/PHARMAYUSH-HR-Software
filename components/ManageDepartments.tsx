@@ -6,11 +6,21 @@ import { Department } from '../types.ts';
 
 const ManageDepartments: React.FC = () => {
     const [departments, setDepartments] = useState<Department[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
 
-    const fetchDepartments = () => {
-        setDepartments(getDepartments());
+    const fetchDepartments = async () => {
+        setIsLoading(true);
+        try {
+            const data = await getDepartments();
+            setDepartments(data || []);
+        } catch (error) {
+            console.error("Failed to fetch departments", error);
+            setDepartments([]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -27,10 +37,15 @@ const ManageDepartments: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if (window.confirm('Are you sure you want to delete this department? This might affect existing employee records.')) {
-            const updatedDepartments = deleteDepartment(id);
-            setDepartments(updatedDepartments);
+            try {
+                await deleteDepartment(id);
+                fetchDepartments();
+            } catch (error) {
+                console.error("Failed to delete department", error);
+                alert("Could not delete department. Please try again.");
+            }
         }
     };
 
@@ -46,18 +61,20 @@ const ManageDepartments: React.FC = () => {
                         Add New Department
                     </button>
                 </div>
-                <div className="space-y-4">
-                    {departments.map(dept => (
-                        <div key={dept.id} className="bg-white p-4 rounded-lg border flex justify-between items-center">
-                            <h3 className="font-semibold text-md text-gray-800">{dept.name}</h3>
-                            <div className="flex items-center gap-4">
-                                <button onClick={() => handleOpenModal(dept)} className="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</button>
-                                <button onClick={() => handleDelete(dept.id)} className="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>
+                {isLoading ? <p className="text-center py-8">Loading departments...</p> : (
+                    <div className="space-y-4">
+                        {departments.map(dept => (
+                            <div key={dept.id} className="bg-white p-4 rounded-lg border flex justify-between items-center">
+                                <h3 className="font-semibold text-md text-gray-800">{dept.name}</h3>
+                                <div className="flex items-center gap-4">
+                                    <button onClick={() => handleOpenModal(dept)} className="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</button>
+                                    <button onClick={() => handleDelete(dept.id)} className="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                     {departments.length === 0 && <p className="text-center text-gray-500 py-8">No departments have been created yet.</p>}
-                </div>
+                        ))}
+                        {departments.length === 0 && <p className="text-center text-gray-500 py-8">No departments have been created yet.</p>}
+                    </div>
+                )}
             </Card>
             <DepartmentModal
                 isOpen={isModalOpen}

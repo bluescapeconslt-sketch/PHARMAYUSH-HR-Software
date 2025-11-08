@@ -6,11 +6,21 @@ import { Meeting } from '../types.ts';
 
 const MeetingScheduler: React.FC = () => {
     const [meetings, setMeetings] = useState<EnrichedMeeting[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
 
-    const fetchMeetings = () => {
-        setMeetings(getMeetings());
+    const fetchMeetings = async () => {
+        setIsLoading(true);
+        try {
+            const data = await getMeetings();
+            setMeetings(data || []);
+        } catch (error) {
+            console.error("Failed to fetch meetings", error);
+            setMeetings([]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -27,15 +37,20 @@ const MeetingScheduler: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if (window.confirm('Are you sure you want to cancel this meeting?')) {
-            const updatedMeetings = deleteMeeting(id);
-            setMeetings(updatedMeetings);
+            try {
+                await deleteMeeting(id);
+                fetchMeetings();
+            } catch (error) {
+                console.error("Failed to delete meeting", error);
+                alert("Could not delete meeting. Please try again.");
+            }
         }
     };
     
     const groupedMeetings = useMemo(() => {
-        return meetings.reduce((acc, meeting) => {
+        return (meetings || []).reduce((acc, meeting) => {
             const date = meeting.date;
             if (!acc[date]) {
                 acc[date] = [];
@@ -57,36 +72,38 @@ const MeetingScheduler: React.FC = () => {
                         Schedule Meeting
                     </button>
                 </div>
-                <div className="space-y-6">
-                    {Object.keys(groupedMeetings).sort().map(date => (
-                        <div key={date}>
-                             <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">
-                                {new Date(date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                            </h3>
-                            <div className="space-y-3">
-                                {groupedMeetings[date].map(meeting => (
-                                    <div key={meeting.id} className="bg-white p-4 rounded-lg border flex flex-col sm:flex-row justify-between sm:items-center">
-                                        <div className="flex items-center gap-4">
-                                            <div className="text-lg font-bold text-indigo-600">{meeting.time}</div>
-                                            <div>
-                                                <p className="font-semibold text-gray-800">{meeting.title}</p>
-                                                <p className="text-sm text-gray-500">{meeting.departmentName}</p>
+                {isLoading ? <p className="text-center py-8">Loading meetings...</p> : (
+                    <div className="space-y-6">
+                        {Object.keys(groupedMeetings).sort().map(date => (
+                            <div key={date}>
+                                <h3 className="text-lg font-semibold text-gray-700 mb-2 border-b pb-2">
+                                    {new Date(date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                </h3>
+                                <div className="space-y-3">
+                                    {groupedMeetings[date].map(meeting => (
+                                        <div key={meeting.id} className="bg-white p-4 rounded-lg border flex flex-col sm:flex-row justify-between sm:items-center">
+                                            <div className="flex items-center gap-4">
+                                                <div className="text-lg font-bold text-indigo-600">{meeting.time}</div>
+                                                <div>
+                                                    <p className="font-semibold text-gray-800">{meeting.title}</p>
+                                                    <p className="text-sm text-gray-500">{meeting.departmentName}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4 mt-3 sm:mt-0">
+                                                {meeting.recurrence !== 'None' && (
+                                                    <span className="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded-full">{meeting.recurrence}</span>
+                                                )}
+                                                <button onClick={() => handleOpenModal(meeting)} className="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</button>
+                                                <button onClick={() => handleDelete(meeting.id)} className="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-4 mt-3 sm:mt-0">
-                                            {meeting.recurrence !== 'None' && (
-                                                <span className="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded-full">{meeting.recurrence}</span>
-                                            )}
-                                            <button onClick={() => handleOpenModal(meeting)} className="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</button>
-                                            <button onClick={() => handleDelete(meeting.id)} className="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                    {meetings.length === 0 && <p className="text-center text-gray-500 py-8">No meetings scheduled yet.</p>}
-                </div>
+                        ))}
+                        {meetings.length === 0 && <p className="text-center text-gray-500 py-8">No meetings scheduled yet.</p>}
+                    </div>
+                )}
             </Card>
             <MeetingModal
                 isOpen={isModalOpen}

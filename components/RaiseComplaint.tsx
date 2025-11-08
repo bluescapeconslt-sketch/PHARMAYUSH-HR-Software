@@ -14,7 +14,7 @@ const RaiseComplaint: React.FC = () => {
 
     const currentUser = getCurrentUser();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccessMessage('');
@@ -35,20 +35,17 @@ const RaiseComplaint: React.FC = () => {
             status: 'Submitted',
         };
 
-        // Simulate API call
-        setTimeout(() => {
-            try {
-                addComplaint(complaintData);
-                setSuccessMessage('Your complaint has been submitted successfully. It will be reviewed by the appropriate personnel.');
-                setSubject('');
-                setDetails('');
-                setIsAnonymous(false);
-            } catch (err) {
-                setError('Failed to submit complaint. Please try again later.');
-            } finally {
-                setIsSubmitting(false);
-            }
-        }, 500);
+        try {
+            await addComplaint(complaintData);
+            setSuccessMessage('Your complaint has been submitted successfully. It will be reviewed by the appropriate personnel.');
+            setSubject('');
+            setDetails('');
+            setIsAnonymous(false);
+        } catch (err) {
+            setError('Failed to submit complaint. Please try again later.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (

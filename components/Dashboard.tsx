@@ -29,7 +29,7 @@ const TimeClock: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [showUndo, setShowUndo] = useState(false);
 
-    const currentUser = getCurrentUser();
+    const currentUser = useMemo(() => getCurrentUser(), []);
     
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -37,16 +37,24 @@ const TimeClock: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (currentUser) {
-            const currentStatus = getEmployeeStatus(currentUser.id);
-            setStatus(currentStatus.status);
-            if (currentStatus.record) {
-                setLastPunchIn(new Date(currentStatus.record.punchInTime));
-            } else {
-                setLastPunchIn(null);
+        const fetchStatus = async () => {
+            if (currentUser) {
+                try {
+                    const currentStatus = await getEmployeeStatus(currentUser.id);
+                    setStatus(currentStatus.status);
+                    if (currentStatus.record) {
+                        setLastPunchIn(new Date(currentStatus.record.punchInTime));
+                    } else {
+                        setLastPunchIn(null);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch employee status", e);
+                    setError("Could not retrieve current punch-in status.");
+                }
             }
+            setIsLoading(false);
         }
-        setIsLoading(false);
+        fetchStatus();
     }, [currentUser]);
     
     const formatDuration = (milliseconds: number): string => {
@@ -83,21 +91,29 @@ const TimeClock: React.FC = () => {
         }
     };
 
-    const handlePunchOut = () => {
+    const handlePunchOut = async () => {
         if (!currentUser) return;
-        punchOut(currentUser.id);
-        setStatus('out');
-        setLastPunchIn(null);
-        setError(null);
+        try {
+            await punchOut(currentUser.id);
+            setStatus('out');
+            setLastPunchIn(null);
+            setError(null);
+        } catch (err: any) {
+            setError(err.message || 'An unknown error occurred while trying to punch out.');
+        }
     };
     
-    const handleUndoPunchIn = () => {
+    const handleUndoPunchIn = async () => {
         if (!currentUser) return;
-        undoPunchIn(currentUser.id);
-        setStatus('out');
-        setLastPunchIn(null);
-        setShowUndo(false);
-        setError(null);
+        try {
+            await undoPunchIn(currentUser.id);
+            setStatus('out');
+            setLastPunchIn(null);
+            setShowUndo(false);
+            setError(null);
+        } catch (err: any) {
+            setError(err.message || 'An unknown error occurred while undoing punch in.');
+        }
     };
     
     const buttonDisabled = isLoading || !currentUser || isLocating;
@@ -151,7 +167,6 @@ const TimeClock: React.FC = () => {
 };
 
 const PharmayushBuddy: React.FC = () => {
-    // FIX: Corrected a syntax error where the useState call was split across two lines.
     const [tip, setTip] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [buddyImage, setBuddyImage] = useState('');
@@ -189,9 +204,12 @@ const PharmayushBuddy: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchTip(false);
-        const settings = getBuddySettings();
-        setBuddyImage(settings.avatarImage);
+        const loadBuddy = async () => {
+            fetchTip(false);
+            const settings = await getBuddySettings();
+            setBuddyImage(settings.avatarImage);
+        };
+        loadBuddy();
     }, []);
 
     return (
@@ -225,36 +243,41 @@ const PharmayushBuddy: React.FC = () => {
 
 const TodaysMeetings: React.FC = () => {
     const [meetings, setMeetings] = useState<EnrichedMeeting[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const allMeetings = getMeetings();
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
-        const todayDay = today.getDay(); // 0 for Sunday, 1 for Monday, etc.
+        const fetchMeetings = async () => {
+            setIsLoading(true);
+            try {
+                const allMeetings = await getMeetings();
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+                const todayDay = today.getDay(); // 0 for Sunday, 1 for Monday, etc.
 
-        const todaysMeetings = allMeetings.filter(m => {
-            const meetingDate = new Date(m.date + "T00:00:00");
-            
-            if (m.recurrence === 'None') {
-                return m.date === todayStr;
-            }
-            if (meetingDate > today) {
-                return false; // Recurring meeting hasn't started yet
-            }
-            if (m.recurrence === 'Daily') {
-                return true;
-            }
-            if (m.recurrence === 'Weekly') {
-                return meetingDate.getDay() === todayDay;
-            }
-            if (m.recurrence === 'Monthly') {
-                return meetingDate.getDate() === today.getDate();
-            }
-            return false;
-        }).sort((a,b) => a.time.localeCompare(b.time));
+                const todaysMeetings = (allMeetings || []).filter(m => {
+                    const meetingDate = new Date(m.date + "T00:00:00");
+                    if (m.recurrence === 'None') return m.date === todayStr;
+                    if (meetingDate > today) return false;
+                    if (m.recurrence === 'Daily') return true;
+                    if (m.recurrence === 'Weekly') return meetingDate.getDay() === todayDay;
+                    if (m.recurrence === 'Monthly') return meetingDate.getDate() === today.getDate();
+                    return false;
+                }).sort((a,b) => a.time.localeCompare(b.time));
 
-        setMeetings(todaysMeetings);
+                setMeetings(todaysMeetings);
+            } catch (error) {
+                console.error("Failed to fetch meetings", error);
+                setMeetings([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchMeetings();
     }, []);
+
+    if (isLoading) {
+        return <Card title="Today's Meetings"><div className="text-center p-4">Loading meetings...</div></Card>;
+    }
 
     if (meetings.length === 0) {
         return (
@@ -289,30 +312,41 @@ const TodaysMeetings: React.FC = () => {
 const Dashboard: React.FC = () => {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const canViewAllEmployees = useMemo(() => hasPermission('view:employees'), []);
 
     useEffect(() => {
-        if (canViewAllEmployees) {
-            setEmployees(getEmployees());
-        }
-        setLeaveRequests(getLeaveRequests());
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const [employeeData, leaveData] = await Promise.all([
+                    canViewAllEmployees ? getEmployees() : Promise.resolve([]),
+                    getLeaveRequests()
+                ]);
+                setEmployees(employeeData || []);
+                setLeaveRequests(leaveData || []);
+            } catch (error) {
+                console.error("Failed to load dashboard data", error);
+                setEmployees([]);
+                setLeaveRequests([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
     }, [canViewAllEmployees]);
 
-    const pendingRequests = useMemo(() => leaveRequests.filter(r => r.status === 'Pending'), [leaveRequests]);
+    const pendingRequests = useMemo(() => (leaveRequests || []).filter(r => r.status === 'Pending'), [leaveRequests]);
     
-    // These memos will be based on the full employee list for managers, or an empty list for employees.
-    // This is efficient and avoids fetching unnecessary data.
-    const activeEmployees = useMemo(() => employees.filter(e => e.status === 'Active'), [employees]);
-    const onLeaveEmployeesCount = useMemo(() => employees.filter(e => e.status === 'On Leave').length, [employees]);
+    const activeEmployees = useMemo(() => (employees || []).filter(e => e.status === 'Active'), [employees]);
+    const onLeaveEmployeesCount = useMemo(() => (employees || []).filter(e => e.status === 'On Leave').length, [employees]);
     const upcomingBirthdays = useMemo(() => {
         const today = new Date();
         const inAWeek = new Date();
         inAWeek.setDate(today.getDate() + 7);
 
-        return employees.filter(employee => {
+        return (employees || []).filter(employee => {
             const birthDate = new Date(employee.birthday);
-            
-            // To handle year-end cases, we create two dates for the birthday: one for this year, one for next.
             const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
             const nextYearBirthday = new Date(today.getFullYear() + 1, birthDate.getMonth(), birthDate.getDate());
 
@@ -354,23 +388,23 @@ const Dashboard: React.FC = () => {
                 {canViewAllEmployees && (
                     <>
                         <Card title="Total Employees">
-                            <p className="text-4xl font-bold text-gray-800">{employees.length}</p>
+                            {isLoading ? <div className="h-10 bg-slate-200 rounded w-1/2 animate-pulse"></div> : <p className="text-4xl font-bold text-gray-800">{employees.length}</p>}
                             <p className="text-sm text-gray-500">{activeEmployees.length} Active</p>
                         </Card>
                     </>
                 )}
                 <Card title={requestsCardTitle}>
-                    <p className="text-4xl font-bold text-indigo-600">{pendingRequests.length}</p>
+                    {isLoading ? <div className="h-10 bg-slate-200 rounded w-1/2 animate-pulse"></div> : <p className="text-4xl font-bold text-indigo-600">{pendingRequests.length}</p>}
                     <p className="text-sm text-gray-500">Awaiting approval</p>
                 </Card>
                 {canViewAllEmployees && (
                     <>
                         <Card title="Employees on Leave">
-                            <p className="text-4xl font-bold text-gray-800">{onLeaveEmployeesCount}</p>
+                             {isLoading ? <div className="h-10 bg-slate-200 rounded w-1/2 animate-pulse"></div> : <p className="text-4xl font-bold text-gray-800">{onLeaveEmployeesCount}</p>}
                             <p className="text-sm text-gray-500">Currently on leave</p>
                         </Card>
                         <Card title="Upcoming Birthdays">
-                            <p className="text-4xl font-bold text-gray-800">{upcomingBirthdays.length}</p>
+                            {isLoading ? <div className="h-10 bg-slate-200 rounded w-1/2 animate-pulse"></div> : <p className="text-4xl font-bold text-gray-800">{upcomingBirthdays.length}</p>}
                             <p className="text-sm text-gray-500">In the next 7 days</p>
                         </Card>
                     </>
