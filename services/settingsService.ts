@@ -1,3 +1,4 @@
+
 import { CompanySettings } from '../types.ts';
 
 const SETTINGS_KEY = 'pharmayush_hr_company_settings';

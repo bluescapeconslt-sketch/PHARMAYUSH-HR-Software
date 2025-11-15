@@ -1,5 +1,5 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-// FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
 import { getLeaveRequests, updateLeaveRequestStatus } from '../services/leaveService.ts';
 import { LeaveRequest } from '../types.ts';

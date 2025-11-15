@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import Card from './common/Card.tsx';
 import { getSettings, saveSettings } from '../services/settingsService.ts';
@@ -9,7 +10,6 @@ import { GEM_AVATAR as defaultGemAvatar } from '../constants.tsx';
 
 
 const Settings: React.FC = () => {
-  // FIX: Initialize state with default values and fetch async data in useEffect.
   const [settings, setSettings] = useState<CompanySettings>({ companyName: '', companyAddress: '', companyLogo: '' });
   const [buddySettings, setBuddySettings] = useState<BuddySettings>({ avatarImage: '' });
   const [leaveSettings, setLeaveSettings] = useState<LeaveAllocationSettings>({ short: 0, sick: 0, personal: 0 });

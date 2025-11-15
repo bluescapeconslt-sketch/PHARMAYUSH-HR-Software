@@ -1,6 +1,5 @@
 
 import React from 'react';
-// FIX: Add file extension to import paths
 import { Employee } from '../../types.ts';
 
 interface BirthdayNotificationProps {

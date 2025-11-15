@@ -13,7 +13,6 @@ interface AddEmployeeModalProps {
   onClose: () => void;
   onSubmitted: () => void;
 }
-
 const initialFormState: Omit<Employee, 'id' | 'workLocation' | 'lastLeaveAllocation' | 'leaveBalance'> = {
   name: '',
   position: 'Worker',
@@ -27,7 +26,7 @@ const initialFormState: Omit<Employee, 'id' | 'workLocation' | 'lastLeaveAllocat
   roleId: 0,
   shiftId: undefined,
   baseSalary: 0,
-  // FIX: Add missing properties to satisfy the Omit<Employee, ...> type.
+  // FIX: Added missing properties to satisfy the Omit<Employee, ...> type.
   performancePoints: 0,
   badges: [],
 };
@@ -156,9 +155,8 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
         }
     }
     
-    // The backend will handle setting initial leave balances
     const leaveSettings = await getLeaveAllocationSettings();
-    const payload = {
+    const payload: Omit<Employee, 'id'> = {
       ...formData,
       shiftId: formData.shiftId ? Number(formData.shiftId) : undefined,
       baseSalary: formData.baseSalary ? Number(formData.baseSalary) : undefined,
@@ -170,10 +168,12 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
           sick: leaveSettings.sick,
           personal: leaveSettings.personal,
       },
+      performancePoints: 0,
+      badges: [],
     };
 
     try {
-        await addEmployee(payload);
+        await addEmployee(payload as Omit<Employee, 'id'>);
         onSubmitted();
         handleClose();
     } catch (error) {

@@ -1,5 +1,5 @@
+
 import React, { useState, useEffect } from 'react';
-// FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
 import { getOnboardingTasks, updateOnboardingTask } from '../services/onboardingService.ts';
 import { OnboardingTask } from '../types.ts';

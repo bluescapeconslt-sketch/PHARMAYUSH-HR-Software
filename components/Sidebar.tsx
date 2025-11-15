@@ -1,11 +1,9 @@
 import React from 'react';
 import { ICONS } from '../constants.tsx';
-// FIX: Use the more specific AuthenticatedUser type which omits the password property.
 import { Permission } from '../types.ts';
 import { AuthenticatedUser } from '../services/authService.ts';
 
 interface SidebarProps {
-  // FIX: Update the user prop to AuthenticatedUser to align with the state in App.tsx and improve security by not expecting a password.
   user: AuthenticatedUser;
   activeView: string;
   setActiveView: (view: string) => void;
@@ -30,7 +28,8 @@ const navItems = [
   { id: 'generate-letter', label: 'Generate Letter', icon: ICONS.jobDescription, permission: 'use:generate-letter' },
   { id: 'hr-assistant', label: 'HR Assistant', icon: ICONS.hrAssistant, permission: 'use:hr-assistant' },
   
-  { id: 'admin-tools', label: 'Administration', isHeader: true, permission: 'manage:users' }, // Header for admin section
+  // The header's permission is removed and its visibility is now calculated dynamically
+  { id: 'admin-tools', label: 'Management Tools', isHeader: true, permission: null }, 
   { id: 'view-complaints', label: 'View Complaints', icon: ICONS.viewComplaints, permission: 'view:complaints' },
   { id: 'manage-notices', label: 'Manage Notices', icon: ICONS.notices, permission: 'manage:notices' },
   { id: 'manage-departments', label: 'Manage Departments', icon: ICONS.departments, permission: 'manage:departments' },
@@ -47,18 +46,37 @@ const Sidebar: React.FC<SidebarProps> = ({ user, activeView, setActiveView, isOp
 
   const hasPermission = (permission: Permission | null) => {
     if (!permission) return true; // Always show items without a specific permission
-    // FIX: The user-provided line number for the error was likely incorrect. The type error occurs here where a generic 'string' was passed to a function expecting the specific 'Permission' type. Casting the argument resolves the error.
     return user.permissions.includes(permission as Permission);
   };
-
-  const filteredNavItems = navItems.filter(item => hasPermission(item.permission as Permission | null));
-
-  // A little hacky, but prevents showing the "Administration" header if the user has no admin permissions
-  const cleanedNavItems = filteredNavItems.filter((item, index, arr) => {
-    if (item.isHeader && arr[index + 1]?.isHeader) return false;
-    if (item.isHeader && !arr[index + 1]) return false; // Don't show header if it's the last item
-    return true;
-  });
+  
+  // Build the final navigation list, showing headers only if their children are visible
+  const finalNavItems = [];
+  for (let i = 0; i < navItems.length; i++) {
+    const item = navItems[i];
+    if (item.isHeader) {
+      // Look ahead to see if any children are visible
+      let hasVisibleChild = false;
+      for (let j = i + 1; j < navItems.length; j++) {
+        const childItem = navItems[j];
+        if (childItem.isHeader) {
+          // Reached the next header, stop checking
+          break;
+        }
+        if (hasPermission(childItem.permission as Permission | null)) {
+          hasVisibleChild = true;
+          break;
+        }
+      }
+      if (hasVisibleChild) {
+        finalNavItems.push(item);
+      }
+    } else {
+      // It's a regular nav item, check its permission
+      if (hasPermission(item.permission as Permission | null)) {
+        finalNavItems.push(item);
+      }
+    }
+  }
 
   const handleNavClick = (view: string) => {
       setActiveView(view);
@@ -82,7 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user, activeView, setActiveView, isOp
           </button>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto sidebar-nav">
-          {cleanedNavItems.map(item => (
+          {finalNavItems.map(item => (
             item.isHeader ? (
               <h3 key={item.id} className="px-2 pt-4 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">{item.label}</h3>
             ) : (

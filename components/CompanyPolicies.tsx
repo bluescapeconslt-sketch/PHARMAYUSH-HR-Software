@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from './common/Card.tsx';
 import { getPolicies, deletePolicy } from '../services/policyService.ts';

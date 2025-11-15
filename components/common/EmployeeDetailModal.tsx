@@ -1,8 +1,8 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
-// FIX: Add file extension to import paths
 import Modal from './Modal.tsx';
-import { Employee, Position, LeaveRequest, Shift } from '../../types.ts';
+import { Employee, Position, LeaveRequest, Shift, Badge } from '../../types.ts';
 import { getLeaveRequestsForEmployee } from '../../services/leaveService.ts';
 import { getShifts } from '../../services/shiftService.ts';
 import { hasPermission } from '../../services/authService.ts';
@@ -30,10 +30,8 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
   const canManagePayroll = useMemo(() => hasPermission('manage:payroll'), []);
 
   useEffect(() => {
-    // FIX: The service functions are async and must be awaited.
     const fetchData = async () => {
-        if (employee) {
-            // Fetch all leave requests for this specific employee and sort by most recent
+        if (employee && isOpen) {
             const history = (await getLeaveRequestsForEmployee(employee.id))
                 .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
             setLeaveHistory(history);
@@ -41,7 +39,7 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
         }
     };
     fetchData();
-  }, [employee, isOpen]); // Re-fetch if the employee prop changes or modal re-opens
+  }, [employee, isOpen]);
 
   if (!employee) return null;
 
@@ -89,7 +87,6 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
                 {employee.position}
             </span>
           </div>
-          {/* FIX: The 'role' property on the Employee type was renamed to 'jobTitle'. */}
           <p className="text-md text-gray-600 mt-2">{employee.jobTitle}</p>
           <p className="text-sm text-gray-500">{employee.department}</p>
         </div>
@@ -120,11 +117,9 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
             </div>
          )}
       </div>
-      {/* --- New Leave Balance & History Section --- */}
       <div className="mt-6 border-t pt-6">
         <h4 className="text-lg font-semibold text-gray-700 mb-4">Monthly Leave Balance &amp; History</h4>
         
-        {/* Balance Section */}
         <div className="grid grid-cols-3 gap-4 mb-6 text-center">
             <div className="bg-blue-50 p-3 rounded-lg">
                 <p className="text-sm text-blue-700 font-semibold">Short Leave</p>
@@ -143,7 +138,6 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
             </div>
         </div>
 
-        {/* History Table */}
         <div className="overflow-x-auto max-h-60">
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0">

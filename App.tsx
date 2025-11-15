@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar.tsx';
 import Header from './components/Header.tsx';
@@ -25,7 +26,6 @@ import Payroll from './components/Payroll.tsx';
 import RaiseComplaint from './components/RaiseComplaint.tsx';
 import ViewComplaints from './components/ViewComplaints.tsx';
 import Recognition from './components/Recognition.tsx';
-// FIX: Import AuthenticatedUser to correctly type the user state.
 import { getCurrentUser, logout, AuthenticatedUser } from './services/authService.ts';
 import { processMonthlyLeaveAllocation } from './services/leaveAllocationService.ts';
 
@@ -34,6 +34,23 @@ const App: React.FC = () => {
     const [isAuthLoading, setIsAuthLoading] = useState(true);
     const [activeView, setActiveView] = useState('dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+    useEffect(() => {
+        const root = window.document.documentElement;
+        if (theme === 'dark') {
+            root.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            root.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+    };
+
 
     useEffect(() => {
         // This effect runs once on mount to check for an existing session
@@ -129,8 +146,8 @@ const App: React.FC = () => {
     
     if (isAuthLoading) {
         return (
-            <div className="flex items-center justify-center h-screen bg-gray-100">
-                <div className="text-xl font-semibold text-gray-700">Loading...</div>
+            <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
+                <div className="text-xl font-semibold text-gray-700 dark:text-gray-300">Loading...</div>
             </div>
         );
     }
@@ -140,7 +157,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="flex h-screen bg-gray-100 font-sans">
+        <div className="flex h-screen bg-gray-100 dark:bg-gray-900 font-sans">
             <Sidebar 
                 user={user} 
                 activeView={activeView} 
@@ -153,8 +170,10 @@ const App: React.FC = () => {
                     user={user} 
                     onLogout={handleLogout} 
                     onMenuClick={() => setIsSidebarOpen(true)}
+                    theme={theme}
+                    toggleTheme={toggleTheme}
                 />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 sm:p-8">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900 p-4 sm:p-8">
                     {renderContent()}
                 </main>
             </div>

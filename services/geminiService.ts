@@ -1,9 +1,9 @@
 
+
 import { GoogleGenAI, Chat } from "@google/genai";
 import { ReviewTone, LetterType } from '../types.ts';
 import { getSettings } from "./settingsService.ts";
 
-// FIX: Removed 'as string' for API key
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generatePerformanceReview = async (
@@ -76,7 +76,6 @@ export const generateHrLetter = async (
     employeeName: string,
     details: string
 ): Promise<string> => {
-    // FIX: The getSettings function is async and must be awaited.
     const settings = await getSettings();
     const prompt = `Generate a formal ${letterType} letter for an employee.
 
@@ -107,7 +106,6 @@ export const generatePolicyDocument = async (
     title: string,
     keyPoints: string
 ): Promise<string> => {
-    // FIX: The getSettings function is async and must be awaited.
     const settings = await getSettings();
     const prompt = `Draft a comprehensive and professional company policy document.
 

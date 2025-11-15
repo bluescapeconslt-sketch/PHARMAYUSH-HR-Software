@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Card from './common/Card.tsx';
 import { AuthenticatedUser } from '../services/authService.ts';
@@ -7,7 +8,6 @@ import { getShifts } from '../services/shiftService.ts';
 import { LeaveRequest, OnboardingTask, Position, Employee, Shift, Badge } from '../types.ts';
 import { BADGES } from '../constants.tsx';
 
-// FIX: Corrected position types to align with the 'Position' type definition.
 const getPositionBadgeColor = (position: Position) => {
     switch (position) {
         case 'CEO': return 'bg-yellow-100 text-yellow-800';
@@ -48,19 +48,15 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
     const [assignedShift, setAssignedShift] = useState<Shift | null>(null);
 
     useEffect(() => {
-        // FIX: All service calls are async and must be awaited.
         const fetchData = async () => {
             if (user) {
-                // Fetch recent 5 leave requests
                 const history = (await getLeaveRequestsForEmployee(user.id))
                     .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
                 setLeaveHistory(history);
     
-                // Fetch pending onboarding tasks
                 const tasks = (await getOnboardingTasks()).filter(task => task.employeeId === user.id && !task.completed);
                 setOnboardingTasks(tasks);
                 
-                // Fetch shift info
                 if(user.shiftId){
                     const shifts = await getShifts();
                     const shift = shifts.find(s => s.id === user.shiftId);

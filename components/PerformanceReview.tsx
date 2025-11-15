@@ -1,7 +1,6 @@
 
 
 import React, { useState, useEffect } from 'react';
-// FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
 import { getEmployees } from '../services/employeeService.ts';
 import { Employee, ReviewTone } from '../types.ts';
@@ -15,14 +14,21 @@ const PerformanceReview: React.FC = () => {
   const [tone, setTone] = useState<ReviewTone>(ReviewTone.CONSTRUCTIVE);
   const [generatedReview, setGeneratedReview] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(true);
 
   useEffect(() => {
-    // FIX: The getEmployees function is async and must be awaited.
     const fetchAndSetEmployees = async () => {
-      const fetchedEmployees = await getEmployees();
-      setEmployees(fetchedEmployees);
-      if (fetchedEmployees.length > 0) {
-        setSelectedEmployee(fetchedEmployees[0].id.toString());
+      setIsLoadingEmployees(true);
+      try {
+        const fetchedEmployees = await getEmployees();
+        setEmployees(fetchedEmployees);
+        if (fetchedEmployees.length > 0) {
+          setSelectedEmployee(fetchedEmployees[0].id.toString());
+        }
+      } catch (error) {
+        console.error("Failed to load employees", error);
+      } finally {
+        setIsLoadingEmployees(false);
       }
     };
     fetchAndSetEmployees();
@@ -56,8 +62,9 @@ const PerformanceReview: React.FC = () => {
                 value={selectedEmployee}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                disabled={isLoadingEmployees}
               >
-                {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+                {isLoadingEmployees ? <option>Loading...</option> : employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
               </select>
             </div>
             <div>
@@ -90,13 +97,12 @@ const PerformanceReview: React.FC = () => {
                 onChange={(e) => setTone(e.target.value as ReviewTone)}
                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
               >
-                {/* FIX: Ensure `t` is a string and used as a key */}
                 {Object.values(ReviewTone).map((t: string) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isLoadingEmployees}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300"
             >
               {isLoading ? 'Generating...' : 'Generate Review'}

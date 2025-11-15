@@ -54,6 +54,17 @@ const ManagePointsModal: React.FC<ManagePointsModalProps> = ({ isOpen, onClose, 
       setError('Please fill out all fields.');
       return;
     }
+
+    if (points < 0) {
+        const selectedEmployee = employees.find(emp => emp.id.toString() === employeeId);
+        const employeeName = selectedEmployee ? selectedEmployee.name : 'this employee';
+        const confirmation = window.confirm(
+            `Are you sure you want to deduct ${Math.abs(points)} points from ${employeeName}? This action cannot be undone.`
+        );
+        if (!confirmation) {
+            return; // User cancelled the action
+        }
+    }
     
     setIsLoading(true);
     setError('');

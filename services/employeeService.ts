@@ -1,3 +1,4 @@
+
 import { Employee } from '../types.ts';
 import { DEFAULT_EMPLOYEES } from './mockData.ts';
 import { getCurrentUser, updateCurrentUserSession } from './authService.ts';

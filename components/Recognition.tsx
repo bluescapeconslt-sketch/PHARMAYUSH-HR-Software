@@ -1,3 +1,6 @@
+
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from './common/Card.tsx';
 import { getCurrentUser, hasPermission } from '../services/authService.ts';
@@ -151,9 +154,9 @@ const Recognition: React.FC = () => {
     };
     
     const ManagePoints = () => {
-        const totalPointsAwarded = records.reduce((sum, rec) => sum + rec.points, 0);
+        // FIX: Explicitly typing the reduce callback parameters to avoid potential type inference issues.
+        const totalPointsAwarded = records.reduce((sum: number, rec: PerformancePointRecord) => sum + rec.points, 0);
         
-        // FIX: Correctly type the accumulator for the reduce function to prevent type errors during the arithmetic operation.
         const topDept = employees.reduce<Record<string, number>>((acc, emp) => {
             acc[emp.department] = (acc[emp.department] || 0) + emp.performancePoints;
             return acc;

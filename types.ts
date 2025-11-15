@@ -1,5 +1,4 @@
-// FIX: Removed self-import which was causing a circular dependency and declaration conflict.
-// FIX: Import React to make React-specific types like ReactElement available.
+
 import React from 'react';
 
 export type Permission =
@@ -104,7 +103,6 @@ export interface PerformancePointRecord {
 export interface Badge {
   name: string;
   description: string;
-  // FIX: Changed JSX.Element to React.ReactElement to fix 'Cannot find namespace JSX' error.
   icon: React.ReactElement;
   requiredPoints: number;
 }

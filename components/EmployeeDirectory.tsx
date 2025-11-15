@@ -1,5 +1,5 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-// FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
 import { getEmployees } from '../services/employeeService.ts';
 import { Employee, Position } from '../types.ts';

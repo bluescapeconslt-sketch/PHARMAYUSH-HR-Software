@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import Card from './common/Card.tsx';
 import NoticeModal from './common/NoticeModal.tsx';
@@ -11,8 +12,8 @@ const ManageNotices: React.FC = () => {
     const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
 
     const fetchNotices = async () => {
-        // FIX: The getNotices function is async and must be awaited.
-        setNotices((await getNotices()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        const data = await getNotices();
+        setNotices(data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     };
 
     useEffect(() => {
@@ -31,7 +32,6 @@ const ManageNotices: React.FC = () => {
 
     const handleDelete = async (id: number) => {
         if (window.confirm('Are you sure you want to delete this notice?')) {
-            // FIX: Await the delete operation, then re-fetch the list. `deleteNotice` does not return the updated array.
             await deleteNotice(id);
             fetchNotices();
         }

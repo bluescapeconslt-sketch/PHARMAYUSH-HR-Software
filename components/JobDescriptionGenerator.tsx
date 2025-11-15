@@ -1,6 +1,6 @@
 
+
 import React, { useState } from 'react';
-// FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
 import { generateJobDescription } from '../services/geminiService.ts';
 

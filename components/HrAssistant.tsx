@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import Card from './common/Card.tsx';
 import { getHrAssistantChat } from '../services/geminiService.ts';
@@ -24,7 +25,6 @@ const HrAssistant: React.FC = () => {
   };
 
   useEffect(() => {
-    // FIX: The getBuddySettings function is async and must be awaited.
     const fetchAvatar = async () => {
       const settings = await getBuddySettings();
       setAvatar(settings.avatarImage);
@@ -49,7 +49,6 @@ const HrAssistant: React.FC = () => {
     // Check for policy-related keywords to provide context to the AI
     const policyKeywords = ['policy', 'policies', 'rule', 'guideline', 'bylaw', 'conduct', 'pto', 'leave', 'time off', 'vacation', 'sick'];
     if (policyKeywords.some(keyword => lowerCaseInput.includes(keyword))) {
-        // FIX: The getPolicies function is async and must be awaited.
         const policies = await getPolicies();
         
         if (policies.length > 0) {
