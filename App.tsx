@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar.tsx';
 import Header from './components/Header.tsx';
@@ -26,8 +28,10 @@ import Payroll from './components/Payroll.tsx';
 import RaiseComplaint from './components/RaiseComplaint.tsx';
 import ViewComplaints from './components/ViewComplaints.tsx';
 import Recognition from './components/Recognition.tsx';
-import { getCurrentUser, logout, AuthenticatedUser } from './services/authService.ts';
+import TeamChat from './components/TeamChat.tsx';
+import { logout, AuthenticatedUser, getCurrentUser } from './services/authService.ts';
 import { processMonthlyLeaveAllocation } from './services/leaveAllocationService.ts';
+
 
 const App: React.FC = () => {
     const [user, setUser] = useState<AuthenticatedUser | null>(null);
@@ -51,19 +55,17 @@ const App: React.FC = () => {
         setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
     };
 
-
     useEffect(() => {
-        // This effect runs once on mount to check for an existing session
-        const currentUser = getCurrentUser();
-        setUser(currentUser);
-        setIsAuthLoading(false);
-
-        if (currentUser) {
+        const userFromSession = getCurrentUser();
+        setUser(userFromSession);
+        if (userFromSession) {
             processMonthlyLeaveAllocation();
         }
+        setIsAuthLoading(false);
 
         const handleSessionUpdate = () => {
-            setUser(getCurrentUser());
+            const updatedUser = getCurrentUser();
+            setUser(updatedUser);
         };
 
         window.addEventListener('session-updated', handleSessionUpdate);
@@ -74,19 +76,14 @@ const App: React.FC = () => {
     }, []);
 
     const handleLogin = () => {
-        // The login component now handles the async login.
-        // After it calls onLogin, we just need to get the user from the service.
-        const currentUser = getCurrentUser();
-        if(currentUser){
-            setUser(currentUser);
-            processMonthlyLeaveAllocation();
-        }
+        // The auth service now handles setting the session and activeUser.
+        // The 'session-updated' event will trigger the user state update in useEffect.
         setActiveView('dashboard');
+        processMonthlyLeaveAllocation();
     };
 
-    const handleLogout = () => {
-        logout();
-        setUser(null);
+    const handleLogout = async () => {
+        await logout(); // This will clear session and trigger 'session-updated' event
     };
     
     const renderContent = () => {
@@ -97,6 +94,8 @@ const App: React.FC = () => {
                 return <Dashboard />;
             case 'my-profile':
                 return <EmployeeProfile user={user} />;
+            case 'team-chat':
+                return <TeamChat />;
             case 'employees':
                 return <EmployeeDirectory />;
             case 'org-chart':

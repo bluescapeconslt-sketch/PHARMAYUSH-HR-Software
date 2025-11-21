@@ -1,56 +1,17 @@
 import { Complaint } from '../types.ts';
-import { DEFAULT_COMPLAINTS } from './mockData.ts';
+import { find, findById, insert, update, remove } from './db.ts';
 
-const COMPLAINTS_KEY = 'pharmayush_hr_complaints';
+const TABLE = 'complaints';
 
-const getFromStorage = (): Complaint[] => {
-    try {
-        const data = localStorage.getItem(COMPLAINTS_KEY);
-        if (!data) {
-            localStorage.setItem(COMPLAINTS_KEY, JSON.stringify(DEFAULT_COMPLAINTS));
-            return DEFAULT_COMPLAINTS;
-        }
-        const parsedData = JSON.parse(data);
-        return Array.isArray(parsedData) ? parsedData : [];
-    } catch (e) {
-        return DEFAULT_COMPLAINTS;
-    }
-};
+export const getComplaints = (): Promise<Complaint[]> => find(TABLE);
 
-const saveToStorage = (complaints: Complaint[]): void => {
-    localStorage.setItem(COMPLAINTS_KEY, JSON.stringify(complaints));
-};
-
-export const getComplaints = async (): Promise<Complaint[]> => {
-  return Promise.resolve(getFromStorage());
-};
-
-export const addComplaint = async (newComplaintData: Omit<Complaint, 'id'>): Promise<Complaint> => {
-    const complaints = getFromStorage();
-    const newId = complaints.length > 0 ? Math.max(...complaints.map(c => c.id)) + 1 : 1;
-    const newComplaint = { ...newComplaintData, id: newId };
-    saveToStorage([...complaints, newComplaint]);
-    return Promise.resolve(newComplaint);
-};
+export const addComplaint = (newComplaintData: Omit<Complaint, 'id'>): Promise<Complaint> => insert(TABLE, newComplaintData);
 
 export const updateComplaintStatus = async (id: number, status: Complaint['status']): Promise<Complaint> => {
-    let complaints = getFromStorage();
-    let updatedComplaint: Complaint | undefined;
-    complaints = complaints.map(c => {
-        if (c.id === id) {
-            updatedComplaint = { ...c, status };
-            return updatedComplaint;
-        }
-        return c;
-    });
-    if (!updatedComplaint) return Promise.reject(new Error("Complaint not found"));
-    saveToStorage(complaints);
-    return Promise.resolve(updatedComplaint);
+    const complaint = await findById<Complaint>(TABLE, id);
+    if (!complaint) throw new Error('Complaint not found');
+    const updatedComplaint = { ...complaint, status };
+    return update<Complaint>(TABLE, updatedComplaint);
 };
 
-export const deleteComplaint = async (id: number): Promise<void> => {
-    let complaints = getFromStorage();
-    complaints = complaints.filter(c => c.id !== id);
-    saveToStorage(complaints);
-    return Promise.resolve();
-};
+export const deleteComplaint = (id: number): Promise<void> => remove(TABLE, id);

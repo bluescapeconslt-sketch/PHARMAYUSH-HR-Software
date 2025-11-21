@@ -16,12 +16,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setError('');
         setIsLoading(true);
 
-        const success = await login(email, password);
+        const result = await login(email, password);
         
-        if (success) {
+        if (result.success) {
+            // onLogin is called, but the App's onAuthStateChange will handle the user state update.
             onLogin();
         } else {
-            setError('Invalid credentials. Please try again.');
+            setError(result.error || 'Invalid credentials. Please try again.');
             setIsLoading(false);
         }
     };

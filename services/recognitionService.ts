@@ -1,36 +1,16 @@
 import { PerformancePointRecord, PerformancePointCriteria, Employee } from '../types.ts';
-import { DEFAULT_PERFORMANCE_RECORDS } from './mockData.ts';
+import { find, insert } from './db.ts';
 import { getEmployees, updateEmployee } from './employeeService.ts';
 import { BADGES } from '../constants.tsx';
 import { getCurrentUser } from './authService.ts';
 
-const RECOGNITION_KEY = 'pharmayush_hr_performance_records';
+const TABLE = 'performance_records';
 
-const getFromStorage = (): PerformancePointRecord[] => {
-    try {
-        const data = localStorage.getItem(RECOGNITION_KEY);
-        if (!data) {
-            localStorage.setItem(RECOGNITION_KEY, JSON.stringify(DEFAULT_PERFORMANCE_RECORDS));
-            return DEFAULT_PERFORMANCE_RECORDS;
-        }
-        const parsedData = JSON.parse(data);
-        return Array.isArray(parsedData) ? parsedData : [];
-    } catch (e) {
-        return DEFAULT_PERFORMANCE_RECORDS;
-    }
-};
-
-const saveToStorage = (records: PerformancePointRecord[]): void => {
-    localStorage.setItem(RECOGNITION_KEY, JSON.stringify(records));
-};
-
-export const getPerformanceRecords = async (): Promise<PerformancePointRecord[]> => {
-    return Promise.resolve(getFromStorage());
-};
+export const getPerformanceRecords = (): Promise<PerformancePointRecord[]> => find(TABLE);
 
 export const getRecordsForEmployee = async (employeeId: number): Promise<PerformancePointRecord[]> => {
-    const records = getFromStorage();
-    return Promise.resolve(records.filter(r => r.employeeId === employeeId));
+    const allRecords = await find<PerformancePointRecord>(TABLE);
+    return allRecords.filter(r => r.employeeId === employeeId);
 };
 
 export const awardPoints = async (
@@ -39,7 +19,6 @@ export const awardPoints = async (
     criteria: PerformancePointCriteria, 
     reason: string
 ): Promise<Employee> => {
-    const records = getFromStorage();
     const employees = await getEmployees();
     const adminUser = getCurrentUser();
     
@@ -49,9 +28,7 @@ export const awardPoints = async (
     }
 
     // 1. Create a new point record
-    const newId = records.length > 0 ? Math.max(...records.map(r => r.id)) + 1 : 1;
-    const newRecord: PerformancePointRecord = {
-        id: newId,
+    const newRecord: Omit<PerformancePointRecord, 'id'> = {
         employeeId,
         points,
         criteria,
@@ -59,7 +36,7 @@ export const awardPoints = async (
         date: new Date().toISOString().split('T')[0],
         awardedBy: adminUser?.name || 'System',
     };
-    saveToStorage([...records, newRecord]);
+    await insert(TABLE, newRecord);
 
     // 2. Update employee's total points
     const updatedPoints = employee.performancePoints + points;
@@ -73,12 +50,12 @@ export const awardPoints = async (
     }
 
     // 4. Save updated employee
-    const updatedEmployee: Employee = {
+    const updatedEmployeeData: Employee = {
         ...employee,
         performancePoints: updatedPoints,
         badges: updatedBadges,
     };
-    await updateEmployee(updatedEmployee);
+    const updatedEmployee = await updateEmployee(updatedEmployeeData);
 
-    return Promise.resolve(updatedEmployee);
+    return updatedEmployee;
 };

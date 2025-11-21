@@ -9,7 +9,15 @@ interface StoredQuote {
     date: string;
 }
 
-const DailyMotivation: React.FC = () => {
+interface DailyMotivationProps {
+    className?: string;
+    authorClassName?: string;
+}
+
+const DailyMotivation: React.FC<DailyMotivationProps> = ({ 
+    className = "text-gray-700 dark:text-gray-300", 
+    authorClassName = "text-gray-500 dark:text-gray-400" 
+}) => {
     const [quote, setQuote] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -46,8 +54,8 @@ const DailyMotivation: React.FC = () => {
     if (isLoading) {
         return (
             <div className="animate-pulse flex flex-col items-center justify-center text-center p-4">
-                <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-slate-200 rounded w-1/4"></div>
+                <div className={`h-4 rounded w-3/4 mb-2 ${className.includes('text-white') ? 'bg-white/30' : 'bg-slate-200 dark:bg-gray-700'}`}></div>
+                <div className={`h-3 rounded w-1/4 ${className.includes('text-white') ? 'bg-white/30' : 'bg-slate-200 dark:bg-gray-700'}`}></div>
             </div>
         );
     }
@@ -60,10 +68,10 @@ const DailyMotivation: React.FC = () => {
 
     return (
         <div className="text-center p-4">
-            <blockquote className="text-lg italic text-gray-700">
+            <blockquote className={`text-lg italic ${className}`}>
                 "{mainQuote}"
             </blockquote>
-            {author && <cite className="block text-right mt-2 text-sm text-gray-500">{author}</cite>}
+            {author && <cite className={`block text-right mt-2 text-sm ${authorClassName}`}>{author}</cite>}
         </div>
     );
 };

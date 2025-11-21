@@ -1,95 +1,87 @@
 
-import { Employee, Permission, Role } from '../types.ts';
-import { getEmployees } from './employeeService.ts';
-import { getRoles } from './roleService.ts';
 
-const USER_KEY = 'pharmayush_hr_user';
+import { find } from './db.ts';
+import { Employee, Permission } from '../types.ts';
+import { getRoles } from './roleService.ts';
 
 export interface AuthenticatedUser extends Omit<Employee, 'password'> {
     permissions: Permission[];
-    token: string;
 }
 
-// In-memory fallback for environments where localStorage is not available
-let sessionUser: AuthenticatedUser | null = null;
+const SESSION_KEY = 'pharmayush_hr_session';
 
-export const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-        const employees = await getEmployees();
-        const roles = await getRoles();
-
-        const employee = employees.find(e => e.email.toLowerCase() === email.toLowerCase() && e.password === password);
-        
-        if (!employee) {
-            return false;
-        }
-
-        const role = roles.find(r => r.id === employee.roleId);
-        const { password: _, ...userProfile } = employee;
-
-        const user: AuthenticatedUser = {
-            ...userProfile,
-            permissions: role?.permissions || [],
-            token: 'mock-token-for-local-dev',
-        };
-        
-        try {
-            localStorage.setItem(USER_KEY, JSON.stringify(user));
-        } catch (e) {
-            console.warn("localStorage is not available. Session will not persist.", e);
-            sessionUser = user;
-        }
-        window.dispatchEvent(new Event('session-updated'));
-        return true;
-    } catch (error) {
-        console.error('Login failed:', error);
-        return false;
+// This module-level variable holds the user state, allowing synchronous access
+let activeUser: AuthenticatedUser | null = null;
+try {
+    const sessionData = sessionStorage.getItem(SESSION_KEY);
+    if (sessionData) {
+        activeUser = JSON.parse(sessionData);
     }
+} catch (e) {
+    console.error("Could not parse session data", e);
+    sessionStorage.removeItem(SESSION_KEY);
+}
+
+export const setActiveUser = (user: AuthenticatedUser | null) => {
+    activeUser = user;
+    if (user) {
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    } else {
+        sessionStorage.removeItem(SESSION_KEY);
+    }
+    // Dispatch a custom event for App.tsx to react to changes.
+    window.dispatchEvent(new Event('session-updated'));
 };
 
-export const logout = (): void => {
-  try {
-    localStorage.removeItem(USER_KEY);
-  } catch (e) {
-    console.warn('Could not remove user from localStorage.', e);
-  }
-  sessionUser = null;
-  window.dispatchEvent(new Event('session-updated'));
+export const login = async (email: string, password: string): Promise<{ success: boolean, error?: string }> => {
+    const employees = await find<Employee>('employees');
+    const employee = employees.find(e => e.email.toLowerCase() === email.toLowerCase() && e.password === password);
+
+    if (!employee) {
+        return { success: false, error: 'Invalid credentials' };
+    }
+
+    const fullUser = await buildAuthenticatedUser(employee);
+    if (fullUser) {
+        setActiveUser(fullUser);
+        return { success: true };
+    }
+    return { success: false, error: 'Could not build user session.' };
+};
+
+export const logout = async (): Promise<void> => {
+  setActiveUser(null);
 };
 
 export const getCurrentUser = (): AuthenticatedUser | null => {
-  try {
-    const userJson = localStorage.getItem(USER_KEY);
-    if (userJson) {
-        // Clear in-memory user if localStorage becomes available
-        if(sessionUser) sessionUser = null;
-        return JSON.parse(userJson);
-    }
-    // Return in-memory user if localStorage is not available
-    return sessionUser;
-  } catch (error) {
-    console.error("Failed to get current user.", error);
-    return sessionUser;
-  }
+  return activeUser;
 };
 
 export const updateCurrentUserSession = (updatedEmployeeData: Omit<Employee, 'password'>): void => {
-    const currentUser = getCurrentUser();
-    if (currentUser && currentUser.id === updatedEmployeeData.id) {
+    if (activeUser && activeUser.id === updatedEmployeeData.id) {
         const updatedUser: AuthenticatedUser = {
-            ...currentUser,
+            ...activeUser,
             ...updatedEmployeeData,
         };
-        try {
-            localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-        } catch (error) {
-            sessionUser = updatedUser;
-        }
-        window.dispatchEvent(new Event('session-updated'));
+        setActiveUser(updatedUser);
     }
 };
 
 export const hasPermission = (permission: Permission): boolean => {
     const user = getCurrentUser();
     return user?.permissions.includes(permission) ?? false;
+};
+
+export const buildAuthenticatedUser = async (employee: Employee): Promise<AuthenticatedUser | null> => {
+    const roles = await getRoles();
+    const role = roles.find(r => r.id === employee.roleId);
+    if (!role) {
+        console.error(`Role with ID ${employee.roleId} not found for employee ${employee.name}`);
+        return null;
+    }
+    const { password, ...userProfile } = employee;
+    return {
+        ...userProfile,
+        permissions: role.permissions,
+    };
 };

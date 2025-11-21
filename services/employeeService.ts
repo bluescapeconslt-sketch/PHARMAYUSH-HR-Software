@@ -1,57 +1,31 @@
 
 import { Employee } from '../types.ts';
-import { DEFAULT_EMPLOYEES } from './mockData.ts';
-import { getCurrentUser, updateCurrentUserSession } from './authService.ts';
+import * as db from './db.ts';
+import { getCurrentUser, updateCurrentUserSession, buildAuthenticatedUser } from './authService.ts';
 
-const EMPLOYEES_KEY = 'pharmayush_hr_employees';
+const TABLE = 'employees';
 
-const getFromStorage = (): Employee[] => {
-    try {
-        const data = localStorage.getItem(EMPLOYEES_KEY);
-        if (!data) {
-            localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(DEFAULT_EMPLOYEES));
-            return DEFAULT_EMPLOYEES;
-        }
-        const parsedData = JSON.parse(data);
-        return Array.isArray(parsedData) ? parsedData : [];
-    } catch (e) {
-        return DEFAULT_EMPLOYEES;
-    }
-};
+export const getEmployees = (): Promise<Employee[]> => db.find<Employee>(TABLE);
 
-const saveToStorage = (employees: Employee[]): void => {
-    localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(employees));
-};
-
-export const getEmployees = async (): Promise<Employee[]> => {
-    return Promise.resolve(getFromStorage());
-};
-
-export const addEmployee = async (newEmployeeData: Omit<Employee, 'id'>): Promise<Employee> => {
-    const employees = getFromStorage();
-    const newId = employees.length > 0 ? Math.max(...employees.map(e => e.id)) + 1 : 1;
-    const newEmployee = { ...newEmployeeData, id: newId, performancePoints: 0, badges: [] };
-    saveToStorage([...employees, newEmployee]);
-    return Promise.resolve(newEmployee);
+export const addEmployee = (newEmployeeData: Omit<Employee, 'id'>): Promise<Employee> => {
+    // With mock DB, password is just a property on the employee object.
+    return db.insert<Employee>(TABLE, newEmployeeData);
 };
 
 export const updateEmployee = async (updatedEmployee: Employee): Promise<Employee> => {
-    let employees = getFromStorage();
-    employees = employees.map(e => e.id === updatedEmployee.id ? updatedEmployee : e);
-    saveToStorage(employees);
+    const data = await db.update<Employee>(TABLE, updatedEmployee);
     
-    // If the updated employee is the one currently logged in, update their session data.
+    // If the updated employee is the one currently logged in, update the session object.
     const currentUser = getCurrentUser();
-    if (currentUser && currentUser.id === updatedEmployee.id) {
-        const { password: _, ...userProfile } = updatedEmployee;
-        updateCurrentUserSession(userProfile);
+    if (currentUser && currentUser.id === data.id) {
+        // Re-build user to capture potential role/permission changes
+        const fullUser = await buildAuthenticatedUser(data);
+        if (fullUser) {
+            updateCurrentUserSession(fullUser);
+        }
     }
-    return Promise.resolve(updatedEmployee);
+    
+    return data;
 };
 
-export const deleteEmployee = async (id: number): Promise<void> => {
-    let employees = getFromStorage();
-    employees = employees.filter(e => e.id !== id);
-    saveToStorage(employees);
-    return Promise.resolve();
-};
+export const deleteEmployee = (id: number): Promise<void> => db.remove<Employee>(TABLE, id);

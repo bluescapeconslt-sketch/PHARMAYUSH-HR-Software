@@ -1,35 +1,17 @@
+
 import { LeaveAllocationSettings, Employee } from '../types.ts';
 import { getEmployees, updateEmployee } from './employeeService.ts';
+import { getKV, saveKV } from './db.ts';
 
-const LEAVE_ALLOCATION_KEY = 'pharmayush_hr_leave_allocation_settings';
-
-const DEFAULT_LEAVE_SETTINGS: LeaveAllocationSettings = {
-    short: 3,
-    sick: 1,
-    personal: 1,
-};
+const LEAVE_ALLOCATION_KEY = 'leave_allocation_settings';
 
 export const getLeaveAllocationSettings = async (): Promise<LeaveAllocationSettings> => {
-    try {
-        const data = localStorage.getItem(LEAVE_ALLOCATION_KEY);
-        if (!data) {
-            localStorage.setItem(LEAVE_ALLOCATION_KEY, JSON.stringify(DEFAULT_LEAVE_SETTINGS));
-            return Promise.resolve(DEFAULT_LEAVE_SETTINGS);
-        }
-        return Promise.resolve(JSON.parse(data));
-    } catch (e) {
-        return Promise.resolve(DEFAULT_LEAVE_SETTINGS);
-    }
+    return getKV<LeaveAllocationSettings>(LEAVE_ALLOCATION_KEY);
 };
 
 export const saveLeaveAllocationSettings = async (settings: LeaveAllocationSettings): Promise<LeaveAllocationSettings> => {
-    try {
-        localStorage.setItem(LEAVE_ALLOCATION_KEY, JSON.stringify(settings));
-        return Promise.resolve(settings);
-    } catch (e) {
-        console.error("Failed to save leave settings", e);
-        return Promise.reject(e);
-    }
+    await saveKV(LEAVE_ALLOCATION_KEY, settings);
+    return settings;
 };
 
 /**

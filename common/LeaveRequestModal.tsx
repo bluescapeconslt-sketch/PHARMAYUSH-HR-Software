@@ -27,14 +27,14 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const currentUser = getCurrentUser();
-  const canManage = hasPermission('manage:leaves');
+  const currentUser = useMemo(() => getCurrentUser(), []);
+  const canManage = useMemo(() => hasPermission('manage:leaves'), []);
 
   const selectedEmployee = useMemo(() => {
     return employees.find(e => e.id === Number(formData.employeeId));
   }, [employees, formData.employeeId]);
   
-  const isEligibleForLeave = !selectedEmployee || (selectedEmployee.position !== 'Intern' && selectedEmployee.status !== 'Probation');
+  const isEligibleForLeave = !selectedEmployee || (selectedEmployee.position !== 'Intern' && selectedEmployee.status !== 'Probation' && selectedEmployee.status !== 'Notice Period');
   const isShortLeave = formData.leaveType === 'Short Leave';
   const formDisabled = !isEligibleForLeave || isLoading;
 
@@ -172,7 +172,7 @@ const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({ isOpen, onClose, 
             </div>
             {!isEligibleForLeave && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-md text-center">
-                    <p className="text-sm text-red-700">Interns and employees on probation are not eligible for leave requests.</p>
+                    <p className="text-sm text-red-700">Interns, employees on probation, and employees on notice period are not eligible for leave requests.</p>
                 </div>
             )}
             <div>

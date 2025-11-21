@@ -1,8 +1,6 @@
 import { AttendanceRecord } from '../types.ts';
-import { DEFAULT_ATTENDANCE_RECORDS } from './mockData.ts';
+import { find, insert, update, remove } from './db.ts';
 import { getEmployees } from './employeeService.ts';
-
-const ATTENDANCE_KEY = 'pharmayush_hr_attendance';
 
 const haversineDistance = (
     lat1: number, lon1: number,
@@ -32,38 +30,20 @@ const getCurrentPosition = (): Promise<GeolocationPosition> => {
     });
 };
 
-const getFromStorage = (): AttendanceRecord[] => {
-    try {
-        const data = localStorage.getItem(ATTENDANCE_KEY);
-        if (!data) {
-            localStorage.setItem(ATTENDANCE_KEY, JSON.stringify(DEFAULT_ATTENDANCE_RECORDS));
-            return DEFAULT_ATTENDANCE_RECORDS;
-        }
-        const parsedData = JSON.parse(data);
-        return Array.isArray(parsedData) ? parsedData : [];
-    } catch (e) {
-        return DEFAULT_ATTENDANCE_RECORDS;
-    }
-};
-
-const saveToStorage = (records: AttendanceRecord[]): void => {
-    localStorage.setItem(ATTENDANCE_KEY, JSON.stringify(records));
-};
-
-export const getAttendanceRecords = async (): Promise<AttendanceRecord[]> => {
-    return Promise.resolve(getFromStorage());
-};
+export const getAttendanceRecords = (): Promise<AttendanceRecord[]> => find('attendance_records');
 
 export const getEmployeeStatus = async (employeeId: number): Promise<{ status: 'in' | 'out', record: AttendanceRecord | null }> => {
-    const records = getFromStorage();
-    const lastRecord = records
+    const allRecords = await find<AttendanceRecord>('attendance_records');
+    const employeeRecords = allRecords
         .filter(r => r.employeeId === employeeId)
-        .sort((a, b) => new Date(b.punchInTime).getTime() - new Date(a.punchInTime).getTime())[0];
+        .sort((a, b) => new Date(b.punchInTime).getTime() - new Date(a.punchInTime).getTime());
+    
+    const lastRecord = employeeRecords[0] || null;
 
     if (lastRecord && !lastRecord.punchOutTime) {
-        return Promise.resolve({ status: 'in', record: lastRecord });
+        return { status: 'in', record: lastRecord };
     }
-    return Promise.resolve({ status: 'out', record: null });
+    return { status: 'out', record: null };
 };
 
 export const punchIn = async (employeeId: number): Promise<AttendanceRecord> => {
@@ -92,49 +72,31 @@ export const punchIn = async (employeeId: number): Promise<AttendanceRecord> => 
         }
     }
     
-    const records = getFromStorage();
-    const newId = records.length > 0 ? Math.max(...records.map(r => r.id)) + 1 : 1;
-    const newRecord: AttendanceRecord = {
-        id: newId,
+    const newRecord: Omit<AttendanceRecord, 'id'> = {
         employeeId,
         punchInTime: new Date().toISOString(),
         punchOutTime: null,
         date: new Date().toISOString().split('T')[0],
     };
 
-    saveToStorage([...records, newRecord]);
-    return Promise.resolve(newRecord);
+    return insert('attendance_records', newRecord);
 };
 
 export const punchOut = async (employeeId: number): Promise<AttendanceRecord> => {
-    let records = getFromStorage();
-    let updatedRecord: AttendanceRecord | undefined;
-    
-    records = records.map(r => {
-        if(r.employeeId === employeeId && !r.punchOutTime) {
-            updatedRecord = { ...r, punchOutTime: new Date().toISOString() };
-            return updatedRecord;
-        }
-        return r;
-    });
+    const { record: recordToUpdate } = await getEmployeeStatus(employeeId);
 
-    if(!updatedRecord) {
-        return Promise.reject(new Error("No active punch-in record found to punch out."));
+    if(!recordToUpdate) {
+        throw new Error("No active punch-in record found to punch out.");
     }
 
-    saveToStorage(records);
-    return Promise.resolve(updatedRecord);
+    const updatedRecord = { ...recordToUpdate, punchOutTime: new Date().toISOString() };
+    return update('attendance_records', updatedRecord);
 };
 
 export const undoPunchIn = async (employeeId: number): Promise<void> => {
-    let records = getFromStorage();
-    const recordToUndo = records
-        .filter(r => r.employeeId === employeeId && !r.punchOutTime)
-        .sort((a,b) => new Date(b.punchInTime).getTime() - new Date(a.punchInTime).getTime())[0];
+    const { record: recordToUndo } = await getEmployeeStatus(employeeId);
     
-    if (recordToUndo) {
-        records = records.filter(r => r.id !== recordToUndo.id);
-        saveToStorage(records);
+    if (recordToUndo && recordToUndo.id) {
+        await remove('attendance_records', recordToUndo.id);
     }
-    return Promise.resolve();
 };

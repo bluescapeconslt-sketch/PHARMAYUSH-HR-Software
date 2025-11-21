@@ -239,6 +239,7 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
                         <option>Active</option>
                         <option>On Leave</option>
                         <option>Probation</option>
+                        <option>Notice Period</option>
                     </select>
                 </div>
             </div>

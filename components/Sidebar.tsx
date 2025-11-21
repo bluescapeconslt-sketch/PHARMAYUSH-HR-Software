@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ICONS } from '../constants.tsx';
 import { Permission } from '../types.ts';
@@ -14,6 +15,7 @@ interface SidebarProps {
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: ICONS.dashboard, permission: null },
   { id: 'my-profile', label: 'My Profile', icon: ICONS.myProfile, permission: null },
+  { id: 'team-chat', label: 'Team Chat', icon: ICONS.chat, permission: null },
   { id: 'raise-complaint', label: 'Raise Complaint', icon: ICONS.raiseComplaint, permission: null },
   { id: 'employees', label: 'Employees', icon: ICONS.employees, permission: 'view:employees' },
   { id: 'org-chart', label: 'Org Chart', icon: ICONS.orgChart, permission: 'view:employees' },

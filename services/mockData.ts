@@ -1,4 +1,5 @@
-import { Role, Department, Shift, Policy, Employee, LeaveRequest, OnboardingTask, Meeting, Notice, Complaint, AttendanceRecord, PerformancePointRecord } from '../types.ts';
+
+import { Role, Department, Shift, Policy, Employee, LeaveRequest, OnboardingTask, Meeting, Notice, Complaint, AttendanceRecord, PerformancePointRecord, TeamChatMessage } from '../types.ts';
 
 // Default Data to seed the mock database (localStorage)
 
@@ -43,6 +44,11 @@ export const DEFAULT_PERFORMANCE_RECORDS: PerformancePointRecord[] = [
     { id: 1, employeeId: 4, points: 25, criteria: 'Leadership', reason: 'Successfully led the Q2 company-wide initiative.', date: '2024-06-28', awardedBy: 'Board' },
     { id: 2, employeeId: 1, points: 10, criteria: 'Teamwork', reason: 'Excellent collaboration on the new feature launch.', date: '2024-07-15', awardedBy: 'Diana Prince' },
     { id: 3, employeeId: 2, points: 15, criteria: 'Task Completion', reason: 'Delivered project ahead of schedule.', date: '2024-07-10', awardedBy: 'John Doe' },
+];
+
+export const DEFAULT_TEAM_CHAT_MESSAGES: TeamChatMessage[] = [
+    { id: 1, employeeId: 4, employeeName: 'Diana Prince', employeeAvatar: 'https://i.pravatar.cc/150?u=4', message: 'Welcome to the team chat everyone! Feel free to use this for quick updates and collaboration.', timestamp: new Date(Date.now() - 86400000).toISOString() },
+    { id: 2, employeeId: 1, employeeName: 'John Doe', employeeAvatar: 'https://i.pravatar.cc/150?u=1', message: 'Thanks Diana! This looks great.', timestamp: new Date(Date.now() - 82800000).toISOString() },
 ];
 
 export const DEFAULT_LEAVE_REQUESTS: LeaveRequest[] = [];

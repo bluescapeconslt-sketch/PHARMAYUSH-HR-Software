@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from './common/Card.tsx';
 import { getCurrentUser, hasPermission } from '../services/authService.ts';
@@ -154,7 +151,6 @@ const Recognition: React.FC = () => {
     };
     
     const ManagePoints = () => {
-        // FIX: Explicitly typing the reduce callback parameters to avoid potential type inference issues.
         const totalPointsAwarded = records.reduce((sum: number, rec: PerformancePointRecord) => sum + rec.points, 0);
         
         const topDept = employees.reduce<Record<string, number>>((acc, emp) => {
@@ -162,7 +158,8 @@ const Recognition: React.FC = () => {
             return acc;
         }, {});
         
-        const topDepartmentName = Object.entries(topDept).sort((a,b) => b[1] - a[1])[0]?.[0] || 'N/A';
+        // FIX: Explicitly cast sort values to numbers to satisfy TypeScript's strict arithmetic operation checks.
+        const topDepartmentName = Object.entries(topDept).sort((a,b) => Number(b[1]) - Number(a[1]))[0]?.[0] || 'N/A';
         
         return (
             <div className="space-y-6">

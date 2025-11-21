@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 
 export type Permission =
@@ -60,12 +61,13 @@ export type Position = 'CEO' | 'Manager' | 'TL' | 'Worker' | 'Intern';
 
 export interface Employee {
   id: number;
+  auth_user_id?: string; // Foreign key to supabase.auth.users.id. REQUIRED FOR AUTH.
   name: string;
   position: Position;
   jobTitle: string; // Renamed from 'role'
   department: string;
   email: string; // Used as login ID
-  password: string;
+  password?: string; // Password should not be stored here long-term
   avatar: string;
   status: 'Active' | 'On Leave' | 'Probation' | 'Notice Period';
   birthday: string; // YYYY-MM-DD
@@ -204,4 +206,13 @@ export interface Complaint {
   details: string;
   date: string; // YYYY-MM-DD
   status: 'Submitted' | 'In Review' | 'Resolved';
+}
+
+export interface TeamChatMessage {
+  id: number;
+  employeeId: number;
+  employeeName: string;
+  employeeAvatar: string;
+  message: string;
+  timestamp: string; // ISO string
 }

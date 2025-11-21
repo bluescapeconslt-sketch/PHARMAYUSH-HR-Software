@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from './common/Card.tsx';
 import { getLeaveRequests, updateLeaveRequestStatus } from '../services/leaveService.ts';

@@ -7,12 +7,14 @@ import { getShifts } from '../../services/shiftService.ts';
 import { Employee, Role, Department, Position, Shift } from '../../types.ts';
 import { POSITIONS } from '../../constants.tsx';
 import { getLeaveAllocationSettings } from '../../services/leaveAllocationService.ts';
+import { uploadFile } from '../../services/gcsService.ts';
 
 interface AddEmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmitted: () => void;
 }
+// FIX: Added missing properties `performancePoints` and `badges` to satisfy the Omit<Employee, ...> type.
 const initialFormState: Omit<Employee, 'id' | 'workLocation' | 'lastLeaveAllocation' | 'leaveBalance'> = {
   name: '',
   position: 'Worker',
@@ -26,7 +28,6 @@ const initialFormState: Omit<Employee, 'id' | 'workLocation' | 'lastLeaveAllocat
   roleId: 0,
   shiftId: undefined,
   baseSalary: 0,
-  // FIX: Added missing properties to satisfy the Omit<Employee, ...> type.
   performancePoints: 0,
   badges: [],
 };
@@ -37,6 +38,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
   const [departments, setDepartments] = useState<Department[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [locationData, setLocationData] = useState({ latitude: '', longitude: '', radius: '50' });
   const [error, setError] = useState('');
 
@@ -84,18 +86,23 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
     setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
   
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
         if (!file.type.startsWith('image/')) {
             setError('Please select a valid image file.');
             return;
         }
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setFormData(prev => ({ ...prev, avatar: reader.result as string }));
-        };
-        reader.readAsDataURL(file);
+        setIsUploadingAvatar(true);
+        setError('');
+        try {
+            const uploadedUrl = await uploadFile(file);
+            setFormData(prev => ({ ...prev, avatar: uploadedUrl }));
+        } catch (uploadError: any) {
+            setError(uploadError.message || 'Avatar upload failed.');
+        } finally {
+            setIsUploadingAvatar(false);
+        }
     }
   };
 
@@ -205,7 +212,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
                         accept="image/*" 
                         onChange={handleAvatarChange} 
                     />
-                    {formData.avatar && (
+                    {formData.avatar && !isUploadingAvatar && (
                         <button 
                             type="button" 
                             onClick={() => setFormData(prev => ({ ...prev, avatar: '' }))} 
@@ -214,7 +221,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
                             Remove
                         </button>
                     )}
-                    <p className="text-xs text-gray-500 mt-2">If no image is uploaded, a default avatar will be assigned.</p>
+                    <p className="text-xs text-gray-500 mt-2">
+                        {isUploadingAvatar ? <span className="text-indigo-600 animate-pulse">Uploading...</span> : 'If no image is uploaded, a default avatar will be assigned.'}
+                    </p>
                 </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

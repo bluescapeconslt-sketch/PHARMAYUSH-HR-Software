@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal.tsx';
 import { updateEmployee } from '../../services/employeeService.ts';
@@ -7,6 +6,7 @@ import { getDepartments } from '../../services/departmentService.ts';
 import { getShifts } from '../../services/shiftService.ts';
 import { Employee, Role, Department, Position, Shift } from '../../types.ts';
 import { POSITIONS } from '../../constants.tsx';
+import { uploadFile } from '../../services/gcsService.ts';
 
 interface EditEmployeeModalProps {
   isOpen: boolean;
@@ -21,6 +21,7 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [locationData, setLocationData] = useState({ latitude: '', longitude: '', radius: '50' });
   const [error, setError] = useState('');
 
@@ -67,7 +68,7 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
     setFormData(prev => prev ? { ...prev, [name]: finalValue } : null);
   };
   
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!formData) return;
     if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
@@ -75,11 +76,16 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
             setError('Please select a valid image file.');
             return;
         }
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setFormData(prev => prev ? { ...prev, avatar: reader.result as string } : null);
-        };
-        reader.readAsDataURL(file);
+        setIsUploadingAvatar(true);
+        setError('');
+        try {
+            const uploadedUrl = await uploadFile(file);
+            setFormData(prev => prev ? { ...prev, avatar: uploadedUrl } : null);
+        } catch (uploadError: any) {
+            setError(uploadError.message || 'Avatar upload failed.');
+        } finally {
+            setIsUploadingAvatar(false);
+        }
     }
   };
 
@@ -182,6 +188,9 @@ const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, 
                         accept="image/*" 
                         onChange={handleAvatarChange} 
                     />
+                     <p className="text-xs text-gray-500 mt-2">
+                        {isUploadingAvatar && <span className="text-indigo-600 animate-pulse">Uploading...</span>}
+                    </p>
                 </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
