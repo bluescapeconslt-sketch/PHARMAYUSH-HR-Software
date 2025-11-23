@@ -1,12 +1,12 @@
-import { storage } from './firebase.ts';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
+// Use import.meta.env for Vite, with a fallback to /api if undefined.
+const API_BASE = (import.meta as any).env?.VITE_API_URL || '/api';
 
 /**
- * Uploads a file to Cloud Storage (Firebase Storage) if connected, 
- * otherwise creates a local simulation URL.
+ * Uploads a file to the backend server.
  * 
  * @param file The file to upload.
- * @returns A promise that resolves to the file URL.
+ * @returns A promise that resolves to the relative file URL.
  */
 export const uploadFile = async (file: File): Promise<string> => {
   console.log(`Processing upload for file: ${file.name}`);
@@ -15,32 +15,24 @@ export const uploadFile = async (file: File): Promise<string> => {
     throw new Error('Only image files are supported.');
   }
 
-  if (storage) {
-      // --- Cloud Mode ---
-      try {
-          // Create a unique filename
-          const uniqueName = `${Date.now()}-${file.name}`;
-          const storageRef = ref(storage, `uploads/${uniqueName}`);
-          
-          console.log("Uploading to Firebase Storage...");
-          const snapshot = await uploadBytes(storageRef, file);
-          const downloadURL = await getDownloadURL(snapshot.ref);
-          
-          console.log("Upload successful:", downloadURL);
-          return downloadURL;
-      } catch (error: any) {
-          console.error("Firebase Upload Error:", error);
-          throw new Error("Cloud upload failed: " + error.message);
-      }
-  } else {
-      // --- Local Simulation Mode ---
-      console.log("Firebase not configured. Using local simulation.");
-      
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+  const formData = new FormData();
+  formData.append('file', file);
 
-      const blobUrl = URL.createObjectURL(file);
-      console.log(`File "uploaded" locally. Blob URL: ${blobUrl}`);
-      return blobUrl;
+  try {
+      const response = await fetch(`${API_BASE}/upload`, {
+          method: 'POST',
+          body: formData,
+      });
+
+      if (!response.ok) {
+          throw new Error(`Upload failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      // Return the URL provided by the backend (e.g., /uploads/filename.jpg)
+      return data.url; 
+  } catch (error: any) {
+      console.error("Upload Error:", error);
+      throw new Error("File upload failed: " + error.message);
   }
 };

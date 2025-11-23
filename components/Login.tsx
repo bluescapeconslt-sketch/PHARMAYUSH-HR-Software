@@ -18,16 +18,22 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setError('');
         setIsLoading(true);
 
-        // Simulate network delay for better UX feel
-        await new Promise(resolve => setTimeout(resolve, 500));
+        try {
+            // Simulate network delay for better UX feel
+            await new Promise(resolve => setTimeout(resolve, 500));
 
-        const result = await login(email, password);
-        
-        if (result.success) {
-            // onLogin is called, but the App's onAuthStateChange will handle the user state update.
-            onLogin();
-        } else {
-            setError(result.error || 'Invalid credentials. Please try again.');
+            const result = await login(email, password);
+            
+            if (result.success) {
+                // onLogin is called, but the App's onAuthStateChange will handle the user state update.
+                onLogin();
+            } else {
+                setError(result.error || 'Invalid credentials. Please try again.');
+                setIsLoading(false);
+            }
+        } catch (err: any) {
+            console.error("Login error:", err);
+            setError('Unable to connect to the server. Please ensure the backend is running.');
             setIsLoading(false);
         }
     };
@@ -181,6 +187,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                             </button>
                         </div>
                         
+                        <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                            <p className="text-xs text-blue-800 font-semibold mb-1">Demo Credentials:</p>
+                            <p className="text-xs text-blue-600">Email: <span className="font-mono">admin@example.com</span></p>
+                            <p className="text-xs text-blue-600">Password: <span className="font-mono">admin</span></p>
+                        </div>
+
                         <div className="mt-6 text-center">
                              <p className="text-xs text-gray-500">
                                  © {new Date().getFullYear()} PHARMAYUSH HR. All rights reserved.
