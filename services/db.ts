@@ -1,110 +1,150 @@
 
+import {
+  DEFAULT_ROLES,
+  DEFAULT_DEPARTMENTS,
+  DEFAULT_SHIFTS,
+  DEFAULT_POLICIES,
+  DEFAULT_EMPLOYEES,
+  DEFAULT_LEAVE_REQUESTS,
+  DEFAULT_ONBOARDING_TASKS,
+  DEFAULT_MEETINGS,
+  DEFAULT_NOTICES,
+  DEFAULT_ATTENDANCE_RECORDS,
+  DEFAULT_COMPLAINTS,
+  DEFAULT_PERFORMANCE_RECORDS,
+  DEFAULT_TEAM_CHAT_MESSAGES,
+} from './mockData.ts';
 import { CompanySettings, BuddySettings, LeaveAllocationSettings } from '../types.ts';
+import { GEM_AVATAR as defaultAvatar } from '../constants.tsx';
 
-// Robust API Base URL determination
-// If VITE_API_URL is set, use it.
-// If not, and we are in DEV mode, default to localhost:3000/api to ensure direct connection.
-// If in PROD (and variable missing), assume relative path /api.
-const getApiBase = () => {
-    const env = (import.meta as any).env;
-    if (env?.VITE_API_URL) return env.VITE_API_URL;
-    if (env?.DEV) return 'http://localhost:3000/api'; 
-    return '/api';
+const DB_PREFIX = 'pharmayush_hr_';
+const VERSION_KEY = `${DB_PREFIX}version`;
+const CURRENT_VERSION = '2.0.1'; // Version bumped for chat feature
+
+// --- Initialization ---
+const initializeTable = <T>(key: string, defaultData: T[]): void => {
+  if (!localStorage.getItem(`${DB_PREFIX}${key}`)) {
+    localStorage.setItem(`${DB_PREFIX}${key}`, JSON.stringify(defaultData));
+  }
 };
 
-const API_BASE = getApiBase();
+const initializeDB = (): void => {
+  const storedVersion = localStorage.getItem(VERSION_KEY);
+  if (storedVersion !== CURRENT_VERSION) {
+    console.log(`Storage version mismatch. Clearing and re-initializing database.`);
+    Object.keys(localStorage)
+      .filter(key => key.startsWith(DB_PREFIX))
+      .forEach(key => localStorage.removeItem(key));
+    localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
+  }
 
-// --- Helper: Generic Fetch Wrapper ---
-const apiRequest = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-    try {
-        const response = await fetch(`${API_BASE}${endpoint}`, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            ...options,
-        });
+  initializeTable('roles', DEFAULT_ROLES);
+  initializeTable('departments', DEFAULT_DEPARTMENTS);
+  initializeTable('shifts', DEFAULT_SHIFTS);
+  initializeTable('policies', DEFAULT_POLICIES);
+  initializeTable('employees', DEFAULT_EMPLOYEES);
+  initializeTable('leave_requests', DEFAULT_LEAVE_REQUESTS);
+  initializeTable('onboarding_tasks', DEFAULT_ONBOARDING_TASKS);
+  initializeTable('meetings', DEFAULT_MEETINGS);
+  initializeTable('notices', DEFAULT_NOTICES);
+  initializeTable('attendance_records', DEFAULT_ATTENDANCE_RECORDS);
+  initializeTable('complaints', DEFAULT_COMPLAINTS);
+  initializeTable('performance_records', DEFAULT_PERFORMANCE_RECORDS);
+  initializeTable('team_chat_messages', DEFAULT_TEAM_CHAT_MESSAGES);
 
-        if (!response.ok) {
-            // If 404, check if it's a "File not found" HTML response (common with bad proxies/static server fallbacks)
-            if (response.status === 404) {
-                const text = await response.text();
-                if (text.includes('<!DOCTYPE html>') || text.includes('File not found')) {
-                    throw new Error('API endpoint not found. Ensure the backend server is running and accessible.');
-                }
-                // Try to parse JSON error if available
-                try {
-                    const jsonError = JSON.parse(text);
-                    throw new Error(jsonError.error || `API Error: ${response.status} ${response.statusText}`);
-                } catch (e) {
-                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
-                }
-            }
-            throw new Error(`API Error: ${response.status} ${response.statusText}`);
-        }
+  // Initialize KV storage items
+  if (!localStorage.getItem(`${DB_PREFIX}company_settings`)) {
+      const defaultSettings: CompanySettings = {
+          companyName: 'PHARMAYUSH HR',
+          companyAddress: '123 Cloud St, Suite 500, Web City, 10101',
+          companyLogo: '',
+      };
+      localStorage.setItem(`${DB_PREFIX}company_settings`, JSON.stringify(defaultSettings));
+  }
+  if (!localStorage.getItem(`${DB_PREFIX}buddy_settings`)) {
+      const defaultBuddySettings: BuddySettings = { avatarImage: defaultAvatar };
+      localStorage.setItem(`${DB_PREFIX}buddy_settings`, JSON.stringify(defaultBuddySettings));
+  }
+  if (!localStorage.getItem(`${DB_PREFIX}leave_allocation_settings`)) {
+      const defaultLeaveSettings: LeaveAllocationSettings = { short: 3, sick: 1, personal: 1 };
+      localStorage.setItem(`${DB_PREFIX}leave_allocation_settings`, JSON.stringify(defaultLeaveSettings));
+  }
+};
 
-        // Handle empty responses (e.g. from DELETE)
-        if (response.status === 204) {
-            return {} as T;
-        }
+initializeDB();
 
-        return await response.json();
-    } catch (error) {
-        console.error(`Request failed for ${endpoint} at ${API_BASE}:`, error);
-        throw error;
+// --- Generic DB operations ---
+
+const getTable = <T>(table: string): T[] => {
+  return JSON.parse(localStorage.getItem(`${DB_PREFIX}${table}`) || '[]');
+};
+
+const saveTable = <T>(table: string, data: T[]) => {
+  localStorage.setItem(`${DB_PREFIX}${table}`, JSON.stringify(data));
+};
+
+const getNextId = (data: { id: number }[]): number => {
+  return data.length > 0 ? Math.max(...data.map(item => item.id)) + 1 : 1;
+};
+
+// --- Exported DB functions ---
+
+export const find = <T>(table: string): Promise<T[]> => {
+  return new Promise(resolve => resolve(getTable<T>(table)));
+};
+
+export const findById = <T extends {id: number}>(table: string, id: number): Promise<T | undefined> => {
+  return new Promise(resolve => {
+    const data = getTable<T>(table);
+    resolve(data.find(item => item.id === id));
+  });
+};
+
+export const insert = <T extends {id: number}>(table: string, newItem: Omit<T, 'id'>): Promise<T> => {
+  return new Promise(resolve => {
+    const data = getTable<T>(table);
+    const itemWithId = { ...newItem, id: getNextId(data) } as T;
+    data.push(itemWithId);
+    saveTable(table, data);
+    resolve(itemWithId);
+  });
+};
+
+export const update = <T extends {id: number}>(table: string, updatedItem: T): Promise<T> => {
+  return new Promise((resolve, reject) => {
+    const data = getTable<T>(table);
+    const index = data.findIndex(item => item.id === updatedItem.id);
+    if (index !== -1) {
+      data[index] = updatedItem;
+      saveTable(table, data);
+      resolve(updatedItem);
+    } else {
+      reject(new Error("Item not found"));
     }
+  });
 };
 
-// --- Generic Operations ---
-
-export const find = async <T>(table: string): Promise<T[]> => {
-    return apiRequest<T[]>(`/${table}`);
+export const remove = <T extends {id: number}>(table: string, id: number): Promise<void> => {
+  return new Promise(resolve => {
+    const data = getTable<T>(table);
+    const newData = data.filter(item => item.id !== id);
+    saveTable(table, newData);
+    resolve();
+  });
 };
 
-export const findById = async <T extends {id: number}>(table: string, id: number): Promise<T | undefined> => {
-    try {
-        return await apiRequest<T>(`/${table}/${id}`);
-    } catch (error) {
-        // If 404, return undefined
-        return undefined;
-    }
-};
+// --- KV storage operations ---
 
-export const insert = async <T extends {id: number}>(table: string, newItem: Omit<T, 'id'>): Promise<T> => {
-    return apiRequest<T>(`/${table}`, {
-        method: 'POST',
-        body: JSON.stringify(newItem),
+export const getKV = <T>(key: string): Promise<T> => {
+    return new Promise(resolve => {
+        const data = localStorage.getItem(`${DB_PREFIX}${key}`);
+        resolve(JSON.parse(data!)); // Assumes it was initialized
     });
 };
 
-export const update = async <T extends {id: number}>(table: string, updatedItem: T): Promise<T> => {
-    return apiRequest<T>(`/${table}/${updatedItem.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(updatedItem),
-    });
-};
-
-export const remove = async <T extends {id: number}>(table: string, id: number): Promise<void> => {
-    await apiRequest(`/${table}/${id}`, {
-        method: 'DELETE',
-    });
-};
-
-// --- Key-Value Store Operations (Settings) ---
-
-export const getKV = async <T>(key: string): Promise<T> => {
-    try {
-        const result = await apiRequest<{ value: T }>(`/settings/${key}`);
-        return result.value;
-    } catch (error) {
-        console.warn(`Setting ${key} not found, returning default if handled by caller.`);
-        // Return an empty object as fallback, letting the caller handle defaults
-        return {} as T; 
-    }
-};
-
-export const saveKV = async <T>(key: string, value: T): Promise<void> => {
-    await apiRequest(`/settings/${key}`, {
-        method: 'POST',
-        body: JSON.stringify({ value }),
+export const saveKV = <T>(key: string, value: T): Promise<void> => {
+    return new Promise(resolve => {
+        localStorage.setItem(`${DB_PREFIX}${key}`, JSON.stringify(value));
+        resolve();
     });
 };
