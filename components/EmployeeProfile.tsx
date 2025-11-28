@@ -1,10 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import Card from './common/Card.tsx';
+import SalaryDisplay from './common/SalaryDisplay.tsx';
 import { AuthenticatedUser } from '../services/authService.ts';
 import { getLeaveRequestsForEmployee } from '../services/leaveService.ts';
 import { getOnboardingTasks } from '../services/onboardingService.ts';
 import { getShifts } from '../services/shiftService.ts';
-import { LeaveRequest, OnboardingTask, Position, Employee, Shift, Badge } from '../types.ts';
+import { updateEmployee, getEmployees } from '../services/employeeService.ts';
+import { LeaveRequest, OnboardingTask, Position, Employee, Shift, NotificationPreferences, Badge } from '../types.ts';
 import { BADGES } from '../constants.tsx';
 
 const getPositionBadgeColor = (position: Position) => {
@@ -45,6 +48,17 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
     const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
     const [onboardingTasks, setOnboardingTasks] = useState<(OnboardingTask & { employeeName: string })[]>([]);
     const [assignedShift, setAssignedShift] = useState<Shift | null>(null);
+    const [preferences, setPreferences] = useState<NotificationPreferences>({
+        leaveUpdates: true,
+        policyUpdates: true,
+        meetingInvites: true,
+        generalAnnouncements: true,
+    });
+    
+    // Security PIN State
+    const [newPin, setNewPin] = useState('');
+    const [confirmPin, setConfirmPin] = useState('');
+    const [isSavingPrefs, setIsSavingPrefs] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -63,6 +77,10 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
                 } else {
                     setAssignedShift(null);
                 }
+
+                if (user.notificationPreferences) {
+                    setPreferences(user.notificationPreferences);
+                }
             }
         };
         fetchData();
@@ -77,6 +95,65 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
         : user.leaveBalance;
         
     const earnedBadges: Badge[] = BADGES.filter(b => user.badges.includes(b.name));
+
+    const handlePreferenceChange = (key: keyof NotificationPreferences) => {
+        setPreferences(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    const handlePinInput = (e: React.ChangeEvent<HTMLInputElement>, setPin: (val: string) => void) => {
+        const val = e.target.value;
+        // Only allow digits and max 4 characters
+        if (/^\d*$/.test(val) && val.length <= 4) {
+            setPin(val);
+        }
+    };
+
+    const savePreferences = async (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault(); // Prevent any default button behavior
+        setIsSavingPrefs(true);
+        
+        try {
+            // 1. Fetch full employee record from DB to ensure we have the password and all fields
+            const allEmployees = await getEmployees();
+            const currentEmployee = allEmployees.find(emp => emp.id === user.id);
+
+            if (!currentEmployee) {
+                throw new Error("User record not found in database.");
+            }
+
+            const updatedUser: Employee = { 
+                ...currentEmployee, 
+                notificationPreferences: preferences 
+            };
+            
+            // 2. Handle PIN Update
+            if (newPin || confirmPin) {
+                if (newPin.length !== 4) {
+                    alert("PIN must be exactly 4 digits.");
+                    setIsSavingPrefs(false);
+                    return;
+                }
+                if (newPin !== confirmPin) {
+                    alert("New PIN and Confirm PIN do not match.");
+                    setIsSavingPrefs(false);
+                    return;
+                }
+                updatedUser.salaryPin = newPin;
+            }
+
+            // 3. Update Database (this also updates the session via employeeService)
+            await updateEmployee(updatedUser);
+            
+            alert("Settings saved successfully!");
+            setNewPin('');
+            setConfirmPin('');
+        } catch (error) {
+            console.error("Failed to save preferences", error);
+            alert("Failed to save preferences. Please try again.");
+        } finally {
+            setIsSavingPrefs(false);
+        }
+    };
 
     const OverviewTab = () => (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -94,6 +171,13 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
                         <div className="flex items-center gap-3">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clipRule="evenodd" /></svg>
                             <span className="text-gray-700 dark:text-gray-300">Shift: {assignedShift ? `${assignedShift.name} (${assignedShift.startTime} - ${assignedShift.endTime})` : 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-3 pt-2 border-t dark:border-gray-700 justify-between">
+                            <div className="flex items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+                                <span className="text-sm text-gray-700 dark:text-gray-300">Monthly Salary</span>
+                            </div>
+                            <SalaryDisplay amount={user.baseSalary} />
                         </div>
                      </div>
                 </Card>
@@ -196,6 +280,107 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
         </Card>
     );
 
+    const SettingsTab = () => (
+        <Card title="Settings">
+            <div className="space-y-6 divide-y divide-gray-200 dark:divide-gray-700">
+                
+                {/* Security PIN Section */}
+                <div className="pb-6">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">Security</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Set a 4-digit PIN code to view sensitive information like your salary.</p>
+                    
+                    {user.salaryPin && (
+                        <div className="mb-4 p-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded border border-green-200 dark:border-green-800 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            A security PIN is currently active.
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">New PIN</label>
+                            <input 
+                                type="password" 
+                                value={newPin} 
+                                onChange={(e) => handlePinInput(e, setNewPin)}
+                                maxLength={4}
+                                inputMode="numeric"
+                                autoComplete="new-password"
+                                placeholder="••••"
+                                className="w-full p-2 border border-gray-300 rounded-md text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white text-center tracking-[0.5em] font-bold placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm PIN</label>
+                            <input 
+                                type="password" 
+                                value={confirmPin} 
+                                onChange={(e) => handlePinInput(e, setConfirmPin)}
+                                maxLength={4}
+                                inputMode="numeric"
+                                autoComplete="new-password"
+                                placeholder="••••"
+                                className="w-full p-2 border border-gray-300 rounded-md text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white text-center tracking-[0.5em] font-bold placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Notification Preferences */}
+                <div className="pt-6 space-y-4">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">Notification Preferences</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Choose what notifications you want to receive.</p>
+                    
+                    <div className="flex items-center justify-between py-2 border-b dark:border-gray-700">
+                        <div>
+                            <h4 className="text-sm font-medium text-gray-800 dark:text-gray-300">Leave Updates</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Status changes to your requests or new requests from your team.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked={preferences.leaveUpdates} onChange={() => handlePreferenceChange('leaveUpdates')} className="sr-only peer" />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
+                    <div className="flex items-center justify-between py-2 border-b dark:border-gray-700">
+                        <div>
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-gray-200">Policy Updates</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">New company policies or changes to existing ones.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked={preferences.policyUpdates} onChange={() => handlePreferenceChange('policyUpdates')} className="sr-only peer" />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
+                    <div className="flex items-center justify-between py-2 border-b dark:border-gray-700">
+                        <div>
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-gray-200">General Announcements</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">News, events, and general company updates.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked={preferences.generalAnnouncements} onChange={() => handlePreferenceChange('generalAnnouncements')} className="sr-only peer" />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
+                    <div className="pt-4 flex justify-end">
+                        <button 
+                            type="button"
+                            onClick={savePreferences} 
+                            disabled={isSavingPrefs}
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium shadow-sm transition-colors"
+                        >
+                            {isSavingPrefs ? 'Saving...' : 'Save Settings'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Card>
+    );
+
     return (
         <div className="space-y-6">
             <Card>
@@ -231,10 +416,18 @@ const EmployeeProfile: React.FC<EmployeeProfileProps> = ({ user }) => {
                     >
                         Activity
                     </button>
+                    <button
+                        onClick={() => setActiveTab('settings')}
+                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'settings' ? 'border-indigo-500 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600'}`}
+                    >
+                        Settings
+                    </button>
                 </nav>
             </div>
             
-            {activeTab === 'overview' ? <OverviewTab /> : <ActivityTab />}
+            {activeTab === 'overview' && <OverviewTab />}
+            {activeTab === 'activity' && <ActivityTab />}
+            {activeTab === 'settings' && <SettingsTab />}
         </div>
     );
 };

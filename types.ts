@@ -59,6 +59,13 @@ export interface Shift {
 
 export type Position = 'CEO' | 'Manager' | 'TL' | 'Worker' | 'Intern';
 
+export interface NotificationPreferences {
+    leaveUpdates: boolean;
+    policyUpdates: boolean;
+    meetingInvites: boolean;
+    generalAnnouncements: boolean;
+}
+
 export interface Employee {
   id: number;
   auth_user_id?: string; // Foreign key to supabase.auth.users.id. REQUIRED FOR AUTH.
@@ -88,6 +95,8 @@ export interface Employee {
   };
   performancePoints: number;
   badges: string[]; // Names of earned badges
+  notificationPreferences: NotificationPreferences;
+  salaryPin?: string;
 }
 
 export type PerformancePointCriteria = 'Punctuality' | 'Task Completion' | 'Innovation' | 'Teamwork' | 'Leadership';
@@ -215,4 +224,17 @@ export interface TeamChatMessage {
   employeeAvatar: string;
   message: string;
   timestamp: string; // ISO string
+}
+
+export type NotificationType = 'leave_status' | 'leave_request' | 'policy_update' | 'meeting' | 'general' | 'upcoming_leave';
+
+export interface Notification {
+    id: number;
+    userId: number; // The recipient
+    type: NotificationType;
+    title: string;
+    message: string;
+    isRead: boolean;
+    createdAt: string; // ISO String
+    link?: string; // Optional internal link to navigate to
 }

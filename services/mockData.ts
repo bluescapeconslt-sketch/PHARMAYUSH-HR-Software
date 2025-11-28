@@ -1,5 +1,6 @@
 
-import { Role, Department, Shift, Policy, Employee, LeaveRequest, OnboardingTask, Meeting, Notice, Complaint, AttendanceRecord, PerformancePointRecord, TeamChatMessage } from '../types.ts';
+
+import { Role, Department, Shift, Policy, Employee, LeaveRequest, OnboardingTask, Meeting, Notice, Complaint, AttendanceRecord, PerformancePointRecord, TeamChatMessage, Notification } from '../types.ts';
 
 // Default Data to seed the mock database (localStorage)
 
@@ -33,11 +34,18 @@ export const DEFAULT_NOTICES: Notice[] = [
     { id: 1, title: 'Quarterly All-Hands Meeting', content: 'The Q3 All-Hands meeting will be held on Friday at 10:00 AM in the main conference room.', authorName: 'HR Department', date: new Date().toISOString().split('T')[0], color: 'blue' },
 ];
 
+const defaultPreferences = {
+    leaveUpdates: true,
+    policyUpdates: true,
+    meetingInvites: true,
+    generalAnnouncements: true,
+};
+
 export const DEFAULT_EMPLOYEES: Employee[] = [
-    { id: 4, name: 'Diana Prince', position: 'CEO', jobTitle: 'Chief Executive Officer', department: 'Executive', email: 'admin@example.com', password: 'admin', roleId: 1, avatar: 'https://i.pravatar.cc/150?u=4', status: 'Active', birthday: '1985-03-10', leaveBalance: { short: 20, sick: 10, personal: 5 }, baseSalary: 150000, lastLeaveAllocation: '2024-07', performancePoints: 250, badges: ['Rising Star', 'Team Player'] },
-    { id: 1, name: 'John Doe', position: 'Manager', jobTitle: 'Engineering Manager', department: 'Engineering', email: 'john.doe@example.com', password: 'password123', avatar: 'https://i.pravatar.cc/150?u=1', status: 'Active', birthday: '1988-05-15', leaveBalance: { short: 24, sick: 12, personal: 10 }, roleId: 3, shiftId: 1, baseSalary: 90000, lastLeaveAllocation: '2024-07', reportsTo: 4, performancePoints: 65, badges: ['Rising Star'] },
-    { id: 2, name: 'Jane Smith', position: 'Worker', jobTitle: 'Software Engineer', department: 'Engineering', email: 'jane.smith@example.com', password: 'password123', avatar: 'https://i.pravatar.cc/150?u=2', status: 'Active', birthday: '1992-09-20', leaveBalance: { short: 24, sick: 12, personal: 10 }, roleId: 2, shiftId: 1, baseSalary: 75000, lastLeaveAllocation: '2024-07', reportsTo: 1, performancePoints: 120, badges: ['Rising Star'] },
-    { id: 3, name: 'Peter Jones', position: 'Intern', jobTitle: 'Marketing Intern', department: 'Marketing', email: 'peter.jones@example.com', password: 'password123', avatar: 'https://i.pravatar.cc/150?u=3', status: 'Probation', birthday: '2001-02-10', leaveBalance: { short: 0, sick: 0, personal: 0 }, roleId: 2, shiftId: 1, baseSalary: 25000, lastLeaveAllocation: '2024-07', reportsTo: 1, performancePoints: 15, badges: [] },
+    { id: 4, name: 'Diana Prince', position: 'CEO', jobTitle: 'Chief Executive Officer', department: 'Executive', email: 'admin@example.com', password: 'admin', roleId: 1, avatar: 'https://i.pravatar.cc/150?u=4', status: 'Active', birthday: '1985-03-10', leaveBalance: { short: 20, sick: 10, personal: 5 }, baseSalary: 150000, lastLeaveAllocation: '2024-07', performancePoints: 250, badges: ['Rising Star', 'Team Player'], notificationPreferences: defaultPreferences },
+    { id: 1, name: 'John Doe', position: 'Manager', jobTitle: 'Engineering Manager', department: 'Engineering', email: 'john.doe@example.com', password: 'password123', avatar: 'https://i.pravatar.cc/150?u=1', status: 'Active', birthday: '1988-05-15', leaveBalance: { short: 24, sick: 12, personal: 10 }, roleId: 3, shiftId: 1, baseSalary: 90000, lastLeaveAllocation: '2024-07', reportsTo: 4, performancePoints: 65, badges: ['Rising Star'], notificationPreferences: defaultPreferences },
+    { id: 2, name: 'Jane Smith', position: 'Worker', jobTitle: 'Software Engineer', department: 'Engineering', email: 'jane.smith@example.com', password: 'password123', avatar: 'https://i.pravatar.cc/150?u=2', status: 'Active', birthday: '1992-09-20', leaveBalance: { short: 24, sick: 12, personal: 10 }, roleId: 2, shiftId: 1, baseSalary: 75000, lastLeaveAllocation: '2024-07', reportsTo: 1, performancePoints: 120, badges: ['Rising Star'], notificationPreferences: defaultPreferences },
+    { id: 3, name: 'Peter Jones', position: 'Intern', jobTitle: 'Marketing Intern', department: 'Marketing', email: 'peter.jones@example.com', password: 'password123', avatar: 'https://i.pravatar.cc/150?u=3', status: 'Probation', birthday: '2001-02-10', leaveBalance: { short: 0, sick: 0, personal: 0 }, roleId: 2, shiftId: 1, baseSalary: 25000, lastLeaveAllocation: '2024-07', reportsTo: 1, performancePoints: 15, badges: [], notificationPreferences: defaultPreferences },
 ];
 
 export const DEFAULT_PERFORMANCE_RECORDS: PerformancePointRecord[] = [
@@ -49,6 +57,10 @@ export const DEFAULT_PERFORMANCE_RECORDS: PerformancePointRecord[] = [
 export const DEFAULT_TEAM_CHAT_MESSAGES: TeamChatMessage[] = [
     { id: 1, employeeId: 4, employeeName: 'Diana Prince', employeeAvatar: 'https://i.pravatar.cc/150?u=4', message: 'Welcome to the team chat everyone! Feel free to use this for quick updates and collaboration.', timestamp: new Date(Date.now() - 86400000).toISOString() },
     { id: 2, employeeId: 1, employeeName: 'John Doe', employeeAvatar: 'https://i.pravatar.cc/150?u=1', message: 'Thanks Diana! This looks great.', timestamp: new Date(Date.now() - 82800000).toISOString() },
+];
+
+export const DEFAULT_NOTIFICATIONS: Notification[] = [
+    { id: 1, userId: 1, type: 'general', title: 'Welcome', message: 'Welcome to the new HR Portal!', isRead: false, createdAt: new Date().toISOString() },
 ];
 
 export const DEFAULT_LEAVE_REQUESTS: LeaveRequest[] = [];

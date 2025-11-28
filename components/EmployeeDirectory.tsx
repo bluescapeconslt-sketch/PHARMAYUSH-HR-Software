@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+// FIX: Add file extension to import paths
 import Card from './common/Card.tsx';
 import { getEmployees } from '../services/employeeService.ts';
 import { Employee, Position } from '../types.ts';
 import AddEmployeeModal from './common/AddEmployeeModal.tsx';
 import EditEmployeeModal from './common/EditEmployeeModal.tsx';
 import EmployeeDetailModal from './common/EmployeeDetailModal.tsx';
+import { getCurrentUser } from '../services/authService.ts';
 
 const getPositionBadgeColor = (position: Position) => {
     switch (position) {
@@ -28,6 +30,8 @@ const EmployeeDirectory: React.FC = () => {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
+    const currentUser = useMemo(() => getCurrentUser(), []);
+
     const fetchEmployees = async () => {
         setIsLoading(true);
         setError(null);
@@ -47,13 +51,20 @@ const EmployeeDirectory: React.FC = () => {
     }, []);
 
     const filteredEmployees = useMemo(() => {
-        return employees.filter(employee =>
-            employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            employee.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            employee.department.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [employees, searchTerm]);
+        return employees.filter(employee => {
+            // Restriction: Only Admins (roleId 1) can see the CEO
+            if (currentUser?.roleId !== 1 && employee.position === 'CEO') {
+                return false;
+            }
+
+            return (
+                employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                employee.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                employee.department.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        });
+    }, [employees, searchTerm, currentUser]);
     
     const handleViewDetails = (employee: Employee) => {
         setSelectedEmployee(employee);

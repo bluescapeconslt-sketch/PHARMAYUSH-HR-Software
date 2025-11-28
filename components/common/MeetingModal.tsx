@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal.tsx';
 import { Meeting, Department } from '../../types.ts';
@@ -9,9 +10,10 @@ interface MeetingModalProps {
   onClose: () => void;
   onSave: () => void;
   meeting: Meeting | null;
+  initialValues?: Partial<Omit<Meeting, 'id'>>;
 }
 
-const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, onSave, meeting }) => {
+const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, onSave, meeting, initialValues }) => {
   const [formData, setFormData] = useState<Omit<Meeting, 'id'>>({ title: '', departmentId: 0, date: '', time: '', recurrence: 'None' });
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,11 +31,11 @@ const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, onSave, me
                     setFormData(meeting);
                 } else {
                     setFormData({
-                        title: '',
-                        departmentId: fetchedDepts.length > 0 ? fetchedDepts[0].id : 0,
-                        date: new Date().toISOString().split('T')[0],
-                        time: '',
-                        recurrence: 'None'
+                        title: initialValues?.title || '',
+                        departmentId: initialValues?.departmentId || (fetchedDepts.length > 0 ? fetchedDepts[0].id : 0),
+                        date: initialValues?.date || new Date().toISOString().split('T')[0],
+                        time: initialValues?.time || '',
+                        recurrence: initialValues?.recurrence || 'None'
                     });
                 }
                 setError('');
@@ -46,7 +48,7 @@ const MeetingModal: React.FC<MeetingModalProps> = ({ isOpen, onClose, onSave, me
         }
     };
     loadData();
-  }, [isOpen, meeting]);
+  }, [isOpen, meeting, initialValues]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

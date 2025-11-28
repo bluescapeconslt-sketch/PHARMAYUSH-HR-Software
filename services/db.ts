@@ -1,4 +1,5 @@
 
+
 import {
   DEFAULT_ROLES,
   DEFAULT_DEPARTMENTS,
@@ -13,13 +14,14 @@ import {
   DEFAULT_COMPLAINTS,
   DEFAULT_PERFORMANCE_RECORDS,
   DEFAULT_TEAM_CHAT_MESSAGES,
+  DEFAULT_NOTIFICATIONS,
 } from './mockData.ts';
 import { CompanySettings, BuddySettings, LeaveAllocationSettings } from '../types.ts';
 import { GEM_AVATAR as defaultAvatar } from '../constants.tsx';
 
 const DB_PREFIX = 'pharmayush_hr_';
 const VERSION_KEY = `${DB_PREFIX}version`;
-const CURRENT_VERSION = '2.0.1'; // Version bumped for chat feature
+const CURRENT_VERSION = '2.1.0'; // Version bumped for notifications
 
 // --- Initialization ---
 const initializeTable = <T>(key: string, defaultData: T[]): void => {
@@ -51,6 +53,7 @@ const initializeDB = (): void => {
   initializeTable('complaints', DEFAULT_COMPLAINTS);
   initializeTable('performance_records', DEFAULT_PERFORMANCE_RECORDS);
   initializeTable('team_chat_messages', DEFAULT_TEAM_CHAT_MESSAGES);
+  initializeTable('notifications', DEFAULT_NOTIFICATIONS);
 
   // Initialize KV storage items
   if (!localStorage.getItem(`${DB_PREFIX}company_settings`)) {

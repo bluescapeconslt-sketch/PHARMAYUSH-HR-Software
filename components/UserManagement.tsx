@@ -1,29 +1,40 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from './common/Card.tsx';
 import { getEmployees, deleteEmployee } from '../services/employeeService.ts';
 import { getRoles } from '../services/roleService.ts';
-import { Employee, Role } from '../types.ts';
+import { getDepartments } from '../services/departmentService.ts';
+import { Employee, Role, Department, Meeting } from '../types.ts';
 import AddEmployeeModal from './common/AddEmployeeModal.tsx';
 import EditEmployeeModal from './common/EditEmployeeModal.tsx';
+import MeetingModal from './common/MeetingModal.tsx';
 
 const UserManagement: React.FC = () => {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    
+    // Modal states
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
+    
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+    const [meetingInitialValues, setMeetingInitialValues] = useState<Partial<Omit<Meeting, 'id'>>>({});
 
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const [employeesData, rolesData] = await Promise.all([
+            const [employeesData, rolesData, departmentsData] = await Promise.all([
                 getEmployees(),
-                getRoles()
+                getRoles(),
+                getDepartments()
             ]);
             setEmployees(employeesData);
             setRoles(rolesData);
+            setDepartments(departmentsData);
         } catch (error) {
             console.error("Failed to fetch user management data", error);
         } finally {
@@ -49,6 +60,15 @@ const UserManagement: React.FC = () => {
     const handleEdit = (employee: Employee) => {
         setSelectedEmployee(employee);
         setIsEditModalOpen(true);
+    };
+
+    const handleScheduleMeeting = (employee: Employee) => {
+        const empDepartment = departments.find(d => d.name === employee.department);
+        setMeetingInitialValues({
+            title: `Meeting with ${employee.name}`,
+            departmentId: empDepartment ? empDepartment.id : undefined,
+        });
+        setIsMeetingModalOpen(true);
     };
 
     const handleDelete = async (id: number) => {
@@ -102,7 +122,16 @@ const UserManagement: React.FC = () => {
                     </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end items-center gap-4">
+                    <div className="flex justify-end items-center gap-3">
+                        <button 
+                            onClick={() => handleScheduleMeeting(employee)} 
+                            className="text-gray-500 hover:text-indigo-600"
+                            title="Schedule Meeting"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </button>
                         <button onClick={() => handleEdit(employee)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
                         <button onClick={() => handleDelete(employee.id)} className="text-red-600 hover:text-red-900">Delete</button>
                     </div>
@@ -164,6 +193,13 @@ const UserManagement: React.FC = () => {
                 onClose={() => setIsEditModalOpen(false)}
                 employee={selectedEmployee}
                 onSubmitted={handleModalSubmit}
+            />
+            <MeetingModal
+                isOpen={isMeetingModalOpen}
+                onClose={() => setIsMeetingModalOpen(false)}
+                onSave={() => setIsMeetingModalOpen(false)}
+                meeting={null}
+                initialValues={meetingInitialValues}
             />
         </>
     );

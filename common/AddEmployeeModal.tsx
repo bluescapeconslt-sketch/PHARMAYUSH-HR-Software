@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal.tsx';
 import { addEmployee } from '../../services/employeeService.ts';
@@ -29,6 +30,12 @@ const initialFormState: Omit<Employee, 'id' | 'workLocation' | 'lastLeaveAllocat
   baseSalary: 0,
   performancePoints: 0,
   badges: [],
+  notificationPreferences: {
+      leaveUpdates: true,
+      policyUpdates: true,
+      meetingInvites: true,
+      generalAnnouncements: true,
+  }
 };
 
 const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, onSubmitted }) => {

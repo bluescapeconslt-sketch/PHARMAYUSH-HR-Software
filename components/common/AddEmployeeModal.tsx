@@ -8,6 +8,7 @@ import { Employee, Role, Department, Position, Shift } from '../../types.ts';
 import { POSITIONS } from '../../constants.tsx';
 import { getLeaveAllocationSettings } from '../../services/leaveAllocationService.ts';
 import { uploadFile } from '../../services/gcsService.ts';
+import { getCurrentUser } from '../../services/authService.ts';
 
 interface AddEmployeeModalProps {
   isOpen: boolean;
@@ -30,6 +31,13 @@ const initialFormState: Omit<Employee, 'id' | 'workLocation' | 'lastLeaveAllocat
   baseSalary: 0,
   performancePoints: 0,
   badges: [],
+  salaryPin: '1234',
+  notificationPreferences: {
+      leaveUpdates: true,
+      policyUpdates: true,
+      meetingInvites: true,
+      generalAnnouncements: true,
+  }
 };
 
 const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, onSubmitted }) => {
@@ -47,11 +55,17 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
         if (isOpen) {
             setIsLoading(true);
             try {
-                const [fetchedRoles, fetchedDepts, fetchedShifts] = await Promise.all([
+                const currentUser = getCurrentUser();
+                let [fetchedRoles, fetchedDepts, fetchedShifts] = await Promise.all([
                     getRoles(),
                     getDepartments(),
                     getShifts()
                 ]);
+
+                // Restriction: Non-admin users cannot create Admin users
+                if (currentUser && currentUser.roleId !== 1) {
+                    fetchedRoles = fetchedRoles.filter(r => r.name !== 'Admin');
+                }
 
                 setRoles(fetchedRoles);
                 setDepartments(fetchedDepts);
@@ -177,6 +191,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, on
       },
       performancePoints: 0,
       badges: [],
+      salaryPin: '1234', // Default PIN for new users
     };
 
     try {

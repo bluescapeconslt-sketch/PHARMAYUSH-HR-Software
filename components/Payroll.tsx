@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from './common/Card.tsx';
+import SalaryDisplay from './common/SalaryDisplay.tsx';
 import { calculatePayrollForMonth, PayrollData } from '../services/payrollService.ts';
 
 const Payroll: React.FC = () => {
@@ -32,13 +33,6 @@ const Payroll: React.FC = () => {
             newDate.setMonth(newDate.getMonth() + offset);
             return newDate;
         });
-    };
-    
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-        }).format(amount);
     };
 
     return (
@@ -75,10 +69,14 @@ const Payroll: React.FC = () => {
                         ) : payrollData.map(data => (
                             <tr key={data.employeeId}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{data.employeeName}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{formatCurrency(data.baseMonthlySalary)}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                                    <SalaryDisplay amount={data.baseMonthlySalary} />
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{data.workingDays}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{data.attendedDays}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800 text-right">{formatCurrency(data.payableSalary)}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800 text-right">
+                                    <SalaryDisplay amount={data.payableSalary} />
+                                </td>
                             </tr>
                         ))}
                          {payrollData.length === 0 && !isLoading && (

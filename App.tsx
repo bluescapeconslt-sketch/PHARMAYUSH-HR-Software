@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar.tsx';
 import Header from './components/Header.tsx';
@@ -31,6 +30,8 @@ import Recognition from './components/Recognition.tsx';
 import TeamChat from './components/TeamChat.tsx';
 import { logout, AuthenticatedUser, getCurrentUser } from './services/authService.ts';
 import { processMonthlyLeaveAllocation } from './services/leaveAllocationService.ts';
+import { getLeaveRequestsForEmployee } from './services/leaveService.ts';
+import { createNotification, getNotifications } from './services/notificationService.ts';
 
 
 const App: React.FC = () => {
@@ -60,6 +61,7 @@ const App: React.FC = () => {
         setUser(userFromSession);
         if (userFromSession) {
             processMonthlyLeaveAllocation();
+            checkUpcomingLeave(userFromSession.id);
         }
         setIsAuthLoading(false);
 
@@ -75,11 +77,44 @@ const App: React.FC = () => {
         };
     }, []);
 
+    const checkUpcomingLeave = async (userId: number) => {
+        // Check for approved leaves starting tomorrow
+        const requests = await getLeaveRequestsForEmployee(userId);
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+        const upcomingLeave = requests.find(req => req.startDate === tomorrowStr && req.status === 'Approved');
+        
+        if (upcomingLeave) {
+            // Check if we already notified
+            const existingNotes = await getNotifications(userId);
+            const alreadyNotified = existingNotes.some(n => 
+                n.type === 'upcoming_leave' && 
+                n.message.includes(upcomingLeave.startDate)
+            );
+
+            if (!alreadyNotified) {
+                await createNotification(
+                    userId,
+                    'upcoming_leave',
+                    'Upcoming Leave Reminder',
+                    `You have an approved leave starting tomorrow (${upcomingLeave.startDate}).`,
+                    'leaves'
+                );
+            }
+        }
+    };
+
     const handleLogin = () => {
         // The auth service now handles setting the session and activeUser.
         // The 'session-updated' event will trigger the user state update in useEffect.
         setActiveView('dashboard');
-        processMonthlyLeaveAllocation();
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+            processMonthlyLeaveAllocation();
+            checkUpcomingLeave(currentUser.id);
+        }
     };
 
     const handleLogout = async () => {

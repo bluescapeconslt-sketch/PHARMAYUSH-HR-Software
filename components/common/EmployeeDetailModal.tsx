@@ -1,7 +1,6 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import Modal from './Modal.tsx';
+import SalaryDisplay from './SalaryDisplay.tsx';
 import { Employee, Position, LeaveRequest, Shift, Badge } from '../../types.ts';
 import { getLeaveRequestsForEmployee } from '../../services/leaveService.ts';
 import { getShifts } from '../../services/shiftService.ts';
@@ -63,15 +62,6 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
 
   const assignedShift = shifts.find(s => s.id === employee.shiftId);
   
-  const formatInr = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const displayLeaveBalance = employee.status === 'Probation'
     ? { short: 0, sick: 0, personal: 0 }
     : employee.leaveBalance;
@@ -111,9 +101,9 @@ const EmployeeDetailModal: React.FC<EmployeeDetailModalProps> = ({ isOpen, onClo
           <span className="text-gray-800">{new Date(employee.birthday).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
         </div>
          {canManagePayroll && (
-             <div className="flex justify-between">
+             <div className="flex justify-between items-center">
                 <span className="font-medium text-gray-500">Monthly Salary</span>
-                <span className="text-gray-800 font-semibold">{employee.baseSalary ? formatInr(employee.baseSalary) : 'Not Set'}</span>
+                <SalaryDisplay amount={employee.baseSalary} />
             </div>
          )}
       </div>
